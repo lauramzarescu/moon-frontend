@@ -18,47 +18,76 @@ const router = createRouter({
     {
       path: '/',
       redirect: '/aws/clusters',
+      meta: {
+        title: 'AWS Clusters',
+      },
     },
     {
       path: '/login',
       name: 'Login',
       component: LoginView,
+      meta: {
+        title: 'Login',
+      },
     },
     {
       path: '/aws/clusters',
       name: 'clusters',
       component: ClustersView,
+      meta: {
+        title: 'AWS Clusters',
+      },
     },
     {
       path: '/aws/services',
       name: 'services',
       component: ServiceView,
+      meta: {
+        title: 'AWS Services',
+      },
     },
     {
       path: '/aws/scheduled-tasks',
       name: 'scheduled-tasks',
       component: ScheduledTasksView,
+      meta: {
+        title: 'AWS Scheduled Tasks',
+      },
     },
     {
       path: '/settings',
       component: SettingsView,
+      meta: {
+        title: 'Settings',
+      },
     },
     {
       path: '/settings/saml-setup',
       component: SAMLSetup,
+      meta: {
+        title: 'SAML Setup',
+      },
     },
     {
       path: '/settings/profile',
       component: ProfileView,
+      meta: {
+        title: 'Profile',
+      },
     },
     {
       path: '/settings/account',
       component: AccountView,
+      meta: {
+        title: 'Account',
+      },
     },
   ],
 })
 
 router.beforeEach((to, from, next) => {
+  document.title = to.meta.title ? `${to.meta.title} - Moon` : 'Moon'
+
   const token = Cookies.get('token')
   const isTokenExpired = authService.isTokenExpired(token || '')
   const isAuthenticated = !!token && !isTokenExpired
