@@ -1,64 +1,60 @@
-# moon-frontend
+# Moon - Cloud Data Aggregator
 
-This template should help get you started developing with Vue 3 in Vite.
+Moon is a powerful cloud data aggregator that provides a unified interface for managing and monitoring resources across
+multiple cloud providers including AWS, Google Cloud Platform (GCP), and Digital Ocean.
 
-## Recommended IDE Setup
+## Overview
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+Moon helps organizations consolidate their cloud infrastructure data into a single dashboard, enabling better visibility
+and management. With support for two-factor authentication and role-based access control, Moon ensures secure access to
+your cloud resources.
 
-## Type Support for `.vue` Imports in TS
+## Features
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+- **Multi-Cloud Support**: Aggregate data from AWS, GCP, and Digital Ocean
+- **Secure Authentication**: Local authentication with email/password and SAML support
+- **Two-Factor Authentication**: Enhanced security with 2FA
+- **Role-Based Access Control**: Manage user permissions with different roles (root, admin, user)
+- **Organization Management**: Group users and resources by organization
+- **Service Configuration**: Manage different service types across cloud providers
 
-## Customize configuration
+## Technology Stack
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- **Frontend**: Vue.js with TypeScript
+- **Backend**: Node.js with Express
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT, SAML, and Two-Factor Authentication
+- **Cloud Integrations**: AWS SDK, GCP and Digital Ocean APIs
 
-## Project Setup
+## Getting Started
 
-```sh
-npm install
-```
+### Prerequisites
 
-### Compile and Hot-Reload for Development
+- Node.js (v14 or higher)
+- PostgreSQL
+- Docker (optional)
 
-```sh
-npm run dev
-```
+### Installation
 
-### Type-Check, Compile and Minify for Production
+1. Clone the repository:
+    ```sh
+    git clone https://github.com/lauramzarescu/moon-frontend.git
+    cd moon-frontend
+    ```
 
-```sh
-npm run build
-```
+2. Install dependencies:
+    ```sh
+    npm install
+    ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+3. Start the development server:
+    ```sh
+    npm run start-dev
+    ```
 
-```sh
-npm run test:unit
-```
+### Docker Setup
 
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
-
-```sh
-# Install browsers for the first run
-npx playwright install
-
-# When testing on CI, must build the project first
-npm run build
-
-# Runs the end-to-end tests
-npm run test:e2e
-# Runs the tests only on Chromium
-npm run test:e2e -- --project=chromium
-# Runs the tests of a specific file
-npm run test:e2e -- tests/example.spec.ts
-# Runs the tests in debug mode
-npm run test:e2e -- --debug
-```
-
-### Lint with [ESLint](https://eslint.org/)
+You can also run Moon using Docker:
 
 ```sh
-npm run lint
-```
+docker-compose up -d
