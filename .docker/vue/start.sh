@@ -2,6 +2,19 @@
 
 ROOT_DIR=/code/dist
 
+RESOLVER=$(grep -i '^nameserver' /etc/resolv.conf | head -n1 | cut -d ' ' -f2)
+export RESOLVER
+
+# shellcheck disable=SC2016
+# shellcheck disable=SC2046
+defined_envs=$(printf '${%s} ' $(env | cut -d= -f1))
+
+# replace template values for nginx config
+dest="/etc/nginx/nginx.conf"
+src="$dest.template"
+echo "Running envsubst on $src to $dest"
+envsubst "$defined_envs" <"$src" >"$dest"
+
 # Run the replacement when environment is not "local"
 if [ "$ENVIRONMENT" != "local" ]; then
   # Replace env vars in JavaScript files

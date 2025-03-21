@@ -19,19 +19,20 @@ RUN apk add --no-cache \
     git \
     wget curl \
     nginx \
-    supervisor
+    supervisor \
+    gettext
 
 WORKDIR /code
 
 COPY package.json ./
-COPY .docker/vue/nginx-app.conf ./
+COPY .docker/vue/nginx-app.conf.template ./
 
 # Copy the built application files
 COPY --from=builder /code/dist /code/dist
 COPY --from=builder /code/node_modules /code/node_modules
 
 # Configure nginx
-RUN mv ./nginx-app.conf /etc/nginx/nginx.conf
+RUN mv ./nginx-app.conf.template /etc/nginx/nginx.conf.template
 
 # Copy startup script
 COPY .docker/vue/start.sh /start.sh
