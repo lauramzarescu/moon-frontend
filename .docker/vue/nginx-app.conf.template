@@ -40,5 +40,15 @@ http {
             proxy_pass $upstream;
             add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
         }
+
+        location ~ ^\/socket.io\/(.*)$ {
+            client_max_body_size 25m;
+            client_body_buffer_size 25m;
+            resolver ${RESOLVER};
+            set $upstream ${VITE_SOCKET_URL};
+            proxy_http_version 1.1;
+            proxy_pass $upstream;
+            add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        }
     }
 }
