@@ -33,7 +33,11 @@ COPY --from=builder /code/node_modules /code/node_modules
 # Configure nginx
 RUN mv ./nginx-app.conf /etc/nginx/nginx.conf
 
+# Copy startup script
+COPY .docker/vue/start.sh /start.sh
+RUN chmod +x /start.sh
+
 EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/start.sh"]
 

@@ -1,6 +1,6 @@
 # Variables
 IMAGE_NAME = lauramzarescu/moon-v2-frontend
-VERSION = v1.0.0
+VERSION = v1.0.4
 DOCKERFILE = .docker/vue/Dockerfile
 PLATFORM = linux/amd64
 

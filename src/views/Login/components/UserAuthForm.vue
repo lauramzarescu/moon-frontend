@@ -18,6 +18,7 @@ import { resetVerificationCode } from '@/utils/twoFactorUtils.ts'
 import VerificationCodeInput
   from '@/components/ui/verification-code-input/VerificationCodeInput.vue'
 import Cookies from 'js-cookie'
+import { config } from '../../../../app.config.ts'
 
 const authService = new AuthService()
 const userService = new UserService()
@@ -104,7 +105,7 @@ function cancelTwoFactorVerification() {
 }
 
 const handleSAMLLogin = async () => {
-  window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/saml/login`
+  window.location.href = `${config.BACKEND_URL}/auth/saml/login`
 }
 </script>
 

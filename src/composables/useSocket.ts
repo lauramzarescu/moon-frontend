@@ -10,12 +10,13 @@ import type { ClusterResponseInterface } from '@/types/response/cluster.interfac
 import type {
   ScheduledTaskInterface,
 } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts'
+import { config } from '../../app.config.ts'
 
 let socket: Socket | null = null
 
 export function useSocket() {
   if (!socket) {
-    socket = io(import.meta.env.VITE_SOCKET_URL, {
+    socket = io(config.SOCKET_URL, {
       withCredentials: true,
       transports: ['polling', 'websocket'],
       reconnection: true,

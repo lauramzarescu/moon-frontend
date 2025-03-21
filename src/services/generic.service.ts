@@ -3,9 +3,10 @@ import { useRouter } from 'vue-router'
 import { jwtDecode } from 'jwt-decode'
 import type { JwtInterface } from '@/types/jwt/jwt.interface.ts'
 import Cookies from 'js-cookie'
+import { config } from '../../app.config.ts'
 
 export class ApiService {
-  private baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
+  private baseUrl = config.BACKEND_URL
   protected jwt: string | null | undefined = null
 
   constructor() {
