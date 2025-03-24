@@ -20,7 +20,7 @@ export function useSocket() {
       withCredentials: true,
       transports: ['polling', 'websocket'],
       reconnection: true,
-      reconnectionAttempts: Infinity,
+      reconnectionAttempts: 20,
       reconnectionDelay: 1000,
     })
   }

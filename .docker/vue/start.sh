@@ -37,6 +37,5 @@ else
   echo "Local environment detected. Skipping environment variable replacement."
 fi
 
-
 echo "Starting Nginx"
 nginx -g 'daemon off;'
