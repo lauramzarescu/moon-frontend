@@ -1,6 +1,8 @@
 <template>
   <ProviderHeader />
-  <DataTable :data="clusters" :columns="clusterColumns" :options="statuses" :row-action="rowAction"
+  <DataTable :data="clusters" :columns="clusterColumns"
+             :options="{'status': statuses}"
+             :row-action="rowAction"
              :config="config" />
 </template>
 
@@ -45,7 +47,7 @@ const rowAction: DataTableRowActionProps<TData> = {
     router.push({ path: '/aws/services' })
 
     // set filter
-    setFilter('name', row.name)
+    setFilter('clusterName', row.name)
   },
 }
 </script>

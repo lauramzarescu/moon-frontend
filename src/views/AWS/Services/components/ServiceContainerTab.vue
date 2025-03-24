@@ -111,10 +111,10 @@
                             </TableCell>
                             <TableCell class="group">
                               <div class="flex items-center gap-2">
-                                                                <span
-                                                                  class="font-mono bg-muted px-2 py-1 rounded text-sm">{{
-                                                                    env.value
-                                                                  }}</span>
+                                <span
+                                  class="font-mono bg-muted px-2 py-1 rounded text-sm">{{
+                                    env.value
+                                  }}</span>
                                 <button
                                   @click="copyToClipboard(env.value)"
                                   class="invisible group-hover:visible hover:text-primary transition-colors"
@@ -146,10 +146,10 @@
                             </TableCell>
                             <TableCell class="group">
                               <div class="flex items-center gap-2">
-                                                                <span
-                                                                  class="font-mono bg-muted px-2 py-1 rounded text-sm">{{
-                                                                    secret.value
-                                                                  }}</span>
+                                <span
+                                  class="font-mono bg-muted px-2 py-1 rounded text-sm">{{
+                                    secret.value
+                                  }}</span>
                                 <button
                                   @click="copyToClipboard(secret.value)"
                                   class="invisible group-hover:visible hover:text-primary transition-colors"

@@ -131,11 +131,14 @@ export const columns: ColumnDef<Service>[] = [
   },
   {
     accessorKey: 'lastDeploymentStatus',
+    accessorFn: (row) => {
+      const deployment = (row as unknown as ServiceInterface).deployments[0]
+      return deployment ? deployment.rolloutState : 'N/A'
+    },
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Last Deployment Status' }),
     cell: ({ row }) => {
       const deployment = (row.original as unknown as ServiceInterface).deployments[0]
       if (!deployment) return h('div', { class: 'w-10' }, 'N/A')
-
       const status = lastDeploymentStatuses.find((status) => status.value === deployment.rolloutState)
 
       if (!status) return null
@@ -150,6 +153,12 @@ export const columns: ColumnDef<Service>[] = [
           status.label,
         ),
       ])
+    },
+    filterFn: (row, id, filterValues) => {
+      const deployment = (row.original as unknown as ServiceInterface).deployments[0]
+      if (!deployment) return false
+
+      return filterValues.includes(deployment.rolloutState)
     },
   },
 ]

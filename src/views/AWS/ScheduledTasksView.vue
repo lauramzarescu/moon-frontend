@@ -3,7 +3,7 @@
   <DataTable
     :data="scheduledTasks as TData[]"
     :columns="scheduledTasksColumns as ColumnDef<TData, any>[]"
-    :options="statuses as unknown as DataTableOptionsProps[]"
+    :options="{'status': statuses}"
     :config="config"
     :row-action="rowAction"
     :initial-filters="initialFilters"
@@ -28,7 +28,6 @@ import { storeToRefs } from 'pinia'
 import DataTable from '@/components/ui/custom-table/DataTable.vue'
 import type {
   DataTableConfig,
-  DataTableOptionsProps,
   DataTableRowActionProps,
 } from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
 import { useFilterStore } from '@/stores/filterStore.ts'

@@ -18,15 +18,14 @@ import { Separator } from '@/components/ui/separator'
 import { cn } from '@//utils'
 
 import { CheckIcon, PlusCircledIcon } from '@radix-icons/vue'
+import type {
+  DataTableOptionsProps,
+} from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
 
 interface DataTableFacetedFilter {
   column?: Column<TData, any>
   title?: string
-  options: {
-    label: string
-    value: string
-    icon?: Component
-  }[]
+  options: DataTableOptionsProps[]
 }
 
 const props = defineProps<DataTableFacetedFilter>()
@@ -108,8 +107,8 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
                 v-if="facets?.get(option.value)"
                 class="ml-auto flex h-4 w-4 items-center justify-center font-mono text-xs"
               >
-                                {{ facets.get(option.value) }}
-                            </span>
+                {{ facets.get(option.value) }}
+              </span>
             </CommandItem>
           </CommandGroup>
 
