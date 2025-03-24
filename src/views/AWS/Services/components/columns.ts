@@ -38,7 +38,7 @@ export const columns: ColumnDef<Service>[] = [
     filterFn: (row, id, filterValues) => {
       const userInfoString = [
         (row.original as unknown as ServiceInterface).name,
-        (row.original as unknown as ServiceInterface).clusterName,
+        // (row.original as unknown as ServiceInterface).clusterName,
       ]
         .filter(Boolean)
         .join(' ')
