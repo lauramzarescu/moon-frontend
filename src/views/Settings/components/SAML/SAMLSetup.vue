@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { SamlConfigService } from '@/services/saml-config.service.ts'
 import { usePermissions } from '@/composables/usePermissions.ts'
 import { PermissionEnum } from '@/enums/user/user.enum.ts'
@@ -8,6 +8,7 @@ import { handleError } from '@/utils/errorHandler.ts'
 import { Button } from '@/components/ui/button'
 import type { SamlConfigResponseInterface } from '@/types/response/saml-config.interface.ts'
 import type { SamlConfigInput } from '@/views/Settings/components/SAML/schema.ts'
+import { useAuthStore } from '@/stores/authStore.ts'
 
 import SAMLToggleSection from './SAMLToggleSection.vue'
 import SAMLConfigurationForm from './SAMLConfigurationForm.vue'
@@ -27,6 +28,7 @@ import { resetVerificationCode } from '@/utils/twoFactorUtils.ts'
 
 const { hasPermission } = usePermissions()
 const samlService = new SamlConfigService()
+const authStore = useAuthStore()
 
 const samlEnabled = ref(false)
 const samlConfig = ref<SamlConfigInput | null>(null)
@@ -38,6 +40,9 @@ const showStepper = ref(false)
 const showVerificationDialog = ref(false)
 const verificationCode = ref(['', '', '', '', '', ''])
 const isVerificationLoading = ref(false)
+
+// Check if 2FA is enabled for the user
+const is2FAEnabled = computed(() => authStore.user?.twoFactorVerified || false)
 
 const formData = ref<SamlConfigInput>({
   id: '',
@@ -91,8 +96,22 @@ const handleRequestDisable = () => {
 
 const confirmDisableSaml = async () => {
   showConfirmDialog.value = false
-  // After confirmation, show 2FA verification
-  showVerificationDialog.value = true
+
+  try {
+    if (is2FAEnabled.value) {
+      // If 2FA is enabled, show verification dialog
+      showVerificationDialog.value = true
+    } else {
+      // If 2FA is not enabled, proceed with regular deletion
+      await deleteSAMLConfig()
+    }
+  } catch (error) {
+    handleError(error, {
+      title: 'Error Disabling SAML Configuration',
+      action: 'disabling',
+      entity: 'SAML configuration',
+    })
+  }
 }
 
 const confirmWithTwoFactor = async () => {
@@ -104,7 +123,7 @@ const confirmWithTwoFactor = async () => {
     const code = verificationCode.value.join('')
     await samlService.deleteWithConfirm(samlConfig.value.id, code)
 
-    await loadSAMLConfig()
+    await loadSAMLConfig() // This will update samlConfig and samlEnabled
 
     toast({
       title: 'SAML Configuration Deleted',
