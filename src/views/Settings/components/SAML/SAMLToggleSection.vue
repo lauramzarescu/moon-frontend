@@ -2,7 +2,7 @@
 import { Switch } from '@/components/ui/switch'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
-defineProps({
+const props = defineProps({
   samlEnabled: {
     type: Boolean,
     required: true,
@@ -13,7 +13,18 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['update:enabled'])
+const emit = defineEmits(['update:enabled', 'request-disable'])
+
+// Handle toggle change
+const handleToggleChange = (newValue: boolean) => {
+  if (!newValue && props.samlEnabled) {
+    // When turning off SAML, emit event to show confirmation dialog
+    emit('request-disable')
+    return
+  }
+
+  emit('update:enabled', newValue)
+}
 </script>
 
 <template>
@@ -26,8 +37,8 @@ const emit = defineEmits(['update:enabled'])
         </p>
       </div>
       <Switch
-        :enabled="samlEnabled"
-        @update:checked="emit('update:enabled', $event)"
+        :checked="samlEnabled"
+        @update:checked="handleToggleChange"
         :disabled="!hasPermission"
       />
     </div>

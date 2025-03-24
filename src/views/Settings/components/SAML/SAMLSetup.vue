@@ -13,6 +13,17 @@ import SAMLToggleSection from './SAMLToggleSection.vue'
 import SAMLConfigurationForm from './SAMLConfigurationForm.vue'
 import SAMLConfigurationStepper from './SAMLConfigurationStepper.vue'
 import SAMLConfirmDialog from './SAMLConfirmDialog.vue'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import VerificationCodeInput
+  from '@/components/ui/verification-code-input/VerificationCodeInput.vue'
+import { resetVerificationCode } from '@/utils/twoFactorUtils.ts'
 
 const { hasPermission } = usePermissions()
 const samlService = new SamlConfigService()
@@ -22,6 +33,11 @@ const samlConfig = ref<SamlConfigInput | null>(null)
 const isEditing = ref(false)
 const showConfirmDialog = ref(false)
 const showStepper = ref(false)
+
+// 2FA verification state
+const showVerificationDialog = ref(false)
+const verificationCode = ref(['', '', '', '', '', ''])
+const isVerificationLoading = ref(false)
 
 const formData = ref<SamlConfigInput>({
   id: '',
@@ -50,24 +66,70 @@ const loadSAMLConfig = async () => {
 
       formData.value = { ...samlConfig.value }
       samlEnabled.value = true
+    } else {
+      samlConfig.value = null
+      samlEnabled.value = false
     }
   } catch (error) {
     console.error('Error loading SAML configuration:', error)
+    samlConfig.value = null
+    samlEnabled.value = false
   }
 }
 
 const handleSamlToggle = (value: boolean) => {
-  if (!value && samlConfig.value) {
-    showConfirmDialog.value = true
-  } else {
+  if (value) {
     samlEnabled.value = value
+  }
+}
+
+const handleRequestDisable = () => {
+  if (samlConfig.value) {
+    showConfirmDialog.value = true
   }
 }
 
 const confirmDisableSaml = async () => {
   showConfirmDialog.value = false
-  await deleteSAMLConfig()
-  samlEnabled.value = false
+  // After confirmation, show 2FA verification
+  showVerificationDialog.value = true
+}
+
+const confirmWithTwoFactor = async () => {
+  if (verificationCode.value.join('').length !== 6 || !samlConfig.value?.id) return
+
+  isVerificationLoading.value = true
+
+  try {
+    const code = verificationCode.value.join('')
+    await samlService.deleteWithConfirm(samlConfig.value.id, code)
+
+    await loadSAMLConfig()
+
+    toast({
+      title: 'SAML Configuration Deleted',
+      description: 'Your SAML configuration has been successfully deleted.',
+      variant: 'success',
+    })
+
+    closeVerificationDialog()
+  } catch (error) {
+    resetVerificationCode(verificationCode.value, 'saml-2fa')
+
+    handleError(error, {
+      title: 'Error Deleting SAML Configuration',
+      action: 'deleting',
+      entity: 'SAML configuration',
+    })
+  } finally {
+    isVerificationLoading.value = false
+  }
+}
+
+const closeVerificationDialog = () => {
+  showVerificationDialog.value = false
+  resetVerificationCode(verificationCode.value, 'saml-2fa')
+  isVerificationLoading.value = false
 }
 
 const deleteSAMLConfig = async () => {
@@ -83,8 +145,6 @@ const deleteSAMLConfig = async () => {
 
     await samlService.delete(`${samlService.resource}/${samlConfig.value?.id}`)
     await loadSAMLConfig()
-    samlConfig.value = null
-    samlEnabled.value = false
 
     toast({
       title: 'SAML Configuration Deleted',
@@ -112,6 +172,7 @@ onMounted(() => {
       :saml-enabled="samlEnabled"
       :has-permission="hasPermission(PermissionEnum.SAML_CONFIGURATION_CREATE)"
       @update:enabled="handleSamlToggle"
+      @request-disable="handleRequestDisable"
     />
 
     <!-- Confirmation Dialog -->
@@ -119,6 +180,47 @@ onMounted(() => {
       v-model:open="showConfirmDialog"
       @confirm="confirmDisableSaml"
     />
+
+    <!-- 2FA Verification Dialog -->
+    <Dialog v-model:open="showVerificationDialog"
+            @update:open="(val) => !val && closeVerificationDialog()">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Two-Factor Authentication Required</DialogTitle>
+          <DialogDescription>
+            For security reasons, please enter the current 6-digit code from your authenticator app
+            to disable SAML authentication.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div class="py-6">
+          <VerificationCodeInput
+            v-model:code="verificationCode"
+            prefix="saml-2fa"
+            :disabled="isVerificationLoading"
+          />
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            @click="closeVerificationDialog"
+            :disabled="isVerificationLoading"
+          >
+            Cancel
+          </Button>
+
+          <Button
+            @click="confirmWithTwoFactor"
+            :disabled="isVerificationLoading || verificationCode.join('').length !== 6"
+          >
+            <span v-if="isVerificationLoading">Verifying...</span>
+            <span v-else>Disable SAML</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
     <div v-if="samlEnabled" class="mt-8">
       <SAMLConfigurationForm
         v-if="samlConfig"

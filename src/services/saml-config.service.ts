@@ -2,13 +2,18 @@ import { ApiService } from '@/services/generic.service.ts'
 import type { SamlConfigInput } from '@/views/Settings/components/SAML/schema.ts'
 
 export class SamlConfigService extends ApiService {
-    public resource = '/saml-config'
+  public resource = '/saml-config'
 
-    async create(config: SamlConfigInput) {
-        return this.post<SamlConfigInput, any>(this.resource, config)
-    }
+  async create(config: SamlConfigInput) {
+    return this.post<SamlConfigInput, any>(this.resource, config)
+  }
 
-    async update(id: string, config: SamlConfigInput) {
-        return this.put<SamlConfigInput, any>(`${this.resource}/${id}`, config)
-    }
+  async update(id: string, config: SamlConfigInput) {
+    return this.put<SamlConfigInput, any>(`${this.resource}/${id}`, config)
+  }
+
+  async deleteWithConfirm(id: string, code: string): Promise<any> {
+    return this.post(`${this.resource}/2fa/${id}`, { code })
+  }
+
 }
