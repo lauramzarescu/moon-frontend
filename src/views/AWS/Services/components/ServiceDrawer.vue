@@ -1,11 +1,14 @@
 <template>
-  <Drawer v-model:open="isOpen">
-    <DrawerContent class="h-[calc(100%-theme(spacing.20))]">
+  <Drawer :autofocus="true" v-model:open="isOpen" @update:open="handleOpenChange">
+    <DrawerContent class="h-[calc(100%-theme(spacing.20))]" tabindex="-1">
       <DrawerHeader class="border-b">
         <DrawerTitle class="flex items-center gap-3">
           <GearIcon class="h-6 w-6 text-primary" />
           <span class="font-bold text-xl">{{ props.row.name }}</span>
         </DrawerTitle>
+        <DrawerDescription class="sr-only">
+          Configuration for {{ props.row.name }} service
+        </DrawerDescription>
       </DrawerHeader>
 
       <div class="flex h-[calc(100%-80px)]">
@@ -42,10 +45,16 @@
 </template>
 
 <script setup lang="ts" generic="TData extends ServiceInterface">
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { GearIcon } from '@radix-icons/vue'
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import ServiceOverviewTab from '@/views/AWS/Services/components/ServiceOverviewTab.vue'
 import ServiceContainerTab from '@/views/AWS/Services/components/ServiceContainerTab.vue'
 
@@ -61,4 +70,20 @@ const isOpen = computed({
   get: () => props.isOpen,
   set: (value) => emit('update:isOpen', value),
 })
+
+watch(isOpen, (newValue) => {
+  if (newValue) {
+    // When opening, we can let the drawer handle focus
+    // But we need to make sure the trigger is blurred
+    document.activeElement instanceof HTMLElement && document.activeElement.blur()
+  }
+})
+
+const handleOpenChange = (open: boolean) => {
+  if (open) {
+    // Ensure no element has focus when drawer opens
+    document.activeElement instanceof HTMLElement && document.activeElement.blur()
+  }
+  isOpen.value = open
+}
 </script>

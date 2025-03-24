@@ -165,8 +165,8 @@ onBeforeRouteLeave(() => {
     />
 
     <template v-if="props.rowAction?.template">
-      <!-- For the moment we allow only Drawer component to be passed -->
       <component
+        tabindex="-1"
         :isOpen="isOpen"
         :is="props.rowAction.template"
         :row="selectedRow"

@@ -1,5 +1,5 @@
 <template>
-  <Card class="overflow-hidden border-none">
+  <Card class="overflow-hidden border-none" :inert="isDialogOpen">
     <div class="flex">
       <div class="w-2 h-full bg-primary"></div>
       <div class="flex-1">
@@ -51,6 +51,17 @@
               <div class="grid grid-cols-12 gap-4">
                 <CustomWidget class="col-span-6" title="Image" :value="container.image ?? 'N/A'"
                               :icon="ImageIcon">
+                  <template #icon>
+                    <UpdateServiceImageDialog
+                      :current-image="container.image"
+                      :container-name="container.name"
+                      :cluster-name="props.row.clusterName"
+                      :service-name="props.row.name"
+                      @image-updated="$emit('refresh')"
+                      @dialog-open="handleDialogToggle(true)"
+                      @dialog-close="handleDialogToggle(false)"
+                    />
+                  </template>
                 </CustomWidget>
 
                 <CustomWidget class="col-span-3" title="Memory" :value="container.memory ?? 'N/A'"
@@ -197,12 +208,23 @@ import {
   SettingsIcon,
 } from 'lucide-vue-next'
 import CustomWidget from '@/components/ui/custom-widget/CustomWidget.vue'
+import UpdateServiceImageDialog from './UpdateServiceImageDialog.vue'
+import { ref } from 'vue'
 
 const { toast } = useToast()
 const props = defineProps<{
   row: TData
   isOpen?: boolean
 }>()
+
+const emit = defineEmits<{
+  (e: 'refresh'): void
+}>()
+const isDialogOpen = ref(false)
+
+const handleDialogToggle = (isOpen: boolean) => {
+  isDialogOpen.value = isOpen
+}
 
 const copyToClipboard = async (text: string) => {
   try {

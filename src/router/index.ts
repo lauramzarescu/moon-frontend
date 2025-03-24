@@ -94,7 +94,6 @@ router.beforeEach((to, from, next) => {
 
   // If token is expired, remove it
   if (token && isTokenExpired) {
-    console.log('test token expired')
     Cookies.remove('token')
   }
 

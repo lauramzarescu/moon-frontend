@@ -1,6 +1,6 @@
 <template>
   <!-- Combined Task Definition and Service Metrics -->
-  <Card class="mb-4 overflow-hidden border-none">
+  <Card class="mb-4 overflow-hidden border-none" :inert="isDialogOpen">
     <div class="flex">
       <div class="w-2 h-full bg-primary"></div>
       <div class="flex-1">
@@ -65,21 +65,16 @@
               <template #icon>
                 <div class="flex items-center gap-2">
                   <UpdateDesiredCountDialog
+                    inert
+                    autofocus
                     :current-count="props.row?.desiredCount"
                     :service-arn="props.row?.taskDefinition.arn"
                     :cluster-name="props.row?.clusterName"
                     :service-name="props.row?.name"
                     @count-updated="handleCountUpdated"
-                  >
-                    <Button variant="outline" size="sm" class="h-8 gap-2 group">
-                      <span class="font-medium">Update Count</span>
-                      <div
-                        class="p-1 rounded-md bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                        <PencilIcon class="h-3.5 w-3.5 text-primary" />
-                      </div>
-                    </Button>
-                  </UpdateDesiredCountDialog>
-                  <ServerIcon class="w-3.5 h-3.5" />
+                    @dialog-close="handleDialogToggle(false)"
+                    @dialog-open="handleDialogToggle(true)"
+                  />
                 </div>
               </template>
             </CustomWidget>
@@ -171,7 +166,7 @@ import {
 import UpdateDesiredCountDialog from './UpdateDesiredCountDialog.vue'
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts'
 import { Badge } from '@/components/ui/badge'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import CustomWidget from '@/components/ui/custom-widget/CustomWidget.vue'
@@ -180,6 +175,12 @@ const props = defineProps<{
   row: TData
   isOpen?: boolean
 }>()
+
+const isDialogOpen = ref(false)
+
+const handleDialogToggle = (isOpen: boolean) => {
+  isDialogOpen.value = isOpen
+}
 
 const latestDeployment = computed(() => {
   return props.row?.deployments?.[0] ?? null

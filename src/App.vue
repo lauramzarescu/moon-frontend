@@ -69,7 +69,7 @@ const isLoginPage = computed(() => route.path === '/login')
 </script>
 
 <template>
-  <main vaul-drawer-wrapper class="h-screen w-screen bg-background overflow-hidden">
+  <main vaul-drawer-wrapper autofocus class="h-screen w-screen bg-background overflow-hidden">
     <!-- Login page without layout -->
     <router-view v-if="isLoginPage"></router-view>
 
