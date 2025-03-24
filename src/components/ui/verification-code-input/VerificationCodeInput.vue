@@ -41,7 +41,6 @@ const handleKeyDown = (index: number, event: KeyboardEvent) => {
 
 <template>
   <div class="space-y-2">
-    <p class="text-sm font-medium">Enter the 6-digit verification code from your app</p>
     <div class="flex justify-center space-x-2">
       <template v-for="(digit, index) in code" :key="index">
         <Input

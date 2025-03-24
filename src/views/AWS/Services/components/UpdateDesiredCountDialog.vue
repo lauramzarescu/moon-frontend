@@ -1,9 +1,9 @@
 <template>
   <Dialog v-model:open="isDialogOpen">
     <DialogTrigger asChild>
-      <Button @click="emit('dialog-open')" variant="outline" size="sm" class="h-7 px-2 gap-1">
+      <Button @click="emit('dialog-open')" variant="secondary" size="sm" class="h-7 px-2 gap-1">
         <Edit2Icon class="h-3.5 w-3.5" />
-        <span class="text-xs">Update</span>
+        <span class="text-xs">Update count</span>
       </Button>
     </DialogTrigger>
     <DialogContent class="sm:max-w-[425px]">

@@ -85,7 +85,7 @@ const confirmDisable2FA = async () => {
 
       <div class="space-y-6">
         <div class="text-sm text-center">
-          <p class="font-medium mb-2">Verification Required</p>
+          <p class="font-medium mb-2 mt-4">Verification Required</p>
           <p class="text-muted-foreground">
             For security reasons, please enter the current 6-digit code from your authenticator app
             to disable 2FA.

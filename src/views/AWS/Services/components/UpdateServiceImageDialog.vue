@@ -1,11 +1,11 @@
 <template>
   <Button
-    variant="outline"
+    variant="secondary"
     size="sm"
     class="h-7 px-2 gap-1"
     @click="isDialogOpen = true; emit('dialog-open')"
   >
-    <RefreshCwIcon class="h-3.5 w-3.5" />
+    <Edit2Icon class="h-3.5 w-3.5" />
     <span class="text-xs">Update Image</span>
   </Button>
 
@@ -76,7 +76,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Loader2Icon, RefreshCwIcon } from 'lucide-vue-next'
+import { Edit2Icon, Loader2Icon } from 'lucide-vue-next'
 import { AwsService } from '@/services/aws.service.ts'
 import { serviceUpdateImageSchema } from '../components/schema.ts'
 

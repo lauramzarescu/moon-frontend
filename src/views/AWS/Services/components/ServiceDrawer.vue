@@ -1,11 +1,22 @@
-<template>
-  <Drawer :autofocus="true" v-model:open="isOpen" @update:open="handleOpenChange">
-    <DrawerContent class="h-[calc(100%-theme(spacing.20))]" tabindex="-1">
+<template :inert="showRestartDialog">
+  <Drawer :autofocus="true" v-model:open="isOpen">
+    <DrawerContent class="h-[calc(100%-theme(spacing.20))]">
       <DrawerHeader class="border-b">
         <DrawerTitle class="flex items-center gap-3">
           <GearIcon class="h-6 w-6 text-primary" />
           <span class="font-bold text-xl">{{ props.row.name }}</span>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            class="h-7 px-2 gap-1"
+            @click="showRestartDialog = true"
+          >
+            <RefreshCwIcon class="h-3.5 w-3.5" />
+            <span class="text-xs">Restart</span>
+          </Button>
         </DrawerTitle>
+
         <DrawerDescription class="sr-only">
           Configuration for {{ props.row.name }} service
         </DrawerDescription>
@@ -42,6 +53,17 @@
       </div>
     </DrawerContent>
   </Drawer>
+
+  <!-- Restart Service Confirmation Dialog -->
+  <RestartServiceDialog
+    v-if="props.row"
+    :is-open="showRestartDialog"
+    :service-name="props.row.name"
+    :cluster-name="props.row.clusterName"
+    @dialog-close="handleDialogToggle(false)"
+    @dialog-open="handleDialogToggle(true)"
+    @confirm="handleRestartService"
+  />
 </template>
 
 <script setup lang="ts" generic="TData extends ServiceInterface">
@@ -54,36 +76,37 @@ import {
 } from '@/components/ui/drawer'
 import { GearIcon } from '@radix-icons/vue'
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts'
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import ServiceOverviewTab from '@/views/AWS/Services/components/ServiceOverviewTab.vue'
 import ServiceContainerTab from '@/views/AWS/Services/components/ServiceContainerTab.vue'
+import { Button } from '@/components/ui/button'
+import { RefreshCwIcon } from 'lucide-vue-next'
+import { AwsService } from '@/services/aws.service.ts'
+import RestartServiceDialog from '@/views/AWS/Services/components/RestartServiceDialog.vue'
 
 const activeSection = ref('containers')
+const showRestartDialog = ref(false)
 const props = defineProps<{
   row: TData
   isOpen?: boolean
 }>()
-
-const emit = defineEmits(['update:isOpen'])
+const awsService = new AwsService()
+const emit = defineEmits(['update:isOpen', 'dialog-open', 'dialog-close'])
 
 const isOpen = computed({
   get: () => props.isOpen,
   set: (value) => emit('update:isOpen', value),
 })
 
-watch(isOpen, (newValue) => {
-  if (newValue) {
-    // When opening, we can let the drawer handle focus
-    // But we need to make sure the trigger is blurred
-    document.activeElement instanceof HTMLElement && document.activeElement.blur()
-  }
-})
+const handleDialogToggle = (isOpen: boolean) => {
+  showRestartDialog.value = isOpen
+}
 
-const handleOpenChange = (open: boolean) => {
-  if (open) {
-    // Ensure no element has focus when drawer opens
-    document.activeElement instanceof HTMLElement && document.activeElement.blur()
-  }
-  isOpen.value = open
+const handleRestartService = async (data: { serviceName: string, clusterName: string }) => {
+  await awsService.restartService({
+    serviceName: data.serviceName,
+    clusterName: data.clusterName,
+  })
+  emit('dialog-close')
 }
 </script>
