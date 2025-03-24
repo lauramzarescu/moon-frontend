@@ -15,7 +15,7 @@ export const samlConfigSchema = z.object({
     })
     .min(1, 'Private key cannot be empty')
     .regex(
-      /^-----BEGIN PRIVATE KEY-----\n([A-Za-z0-9+/]{64}\n)*([A-Za-z0-9+/]{1,63}[=]{0,2})?\n-----END PRIVATE KEY-----$/,
+      /^-----BEGIN( RSA| EC| DSA| OPENSSH)? PRIVATE KEY-----(\r?\n|\r)[\s\S]+(\r?\n|\r)-----END( RSA| EC| DSA| OPENSSH)? PRIVATE KEY-----$/,
       'Invalid private key format - must be a valid PEM format',
     ),
   x509Certificate: z
@@ -79,7 +79,7 @@ export const createPartialUpdateSchema = (changedFields: Record<string, boolean>
         })
         .min(1, 'Private key cannot be empty')
         .regex(
-          /^-----BEGIN PRIVATE KEY-----\n([A-Za-z0-9+/]{64}\n)*([A-Za-z0-9+/]{1,63}[=]{0,2})?\n-----END PRIVATE KEY-----$/,
+          /^-----BEGIN( RSA| EC| DSA| OPENSSH)? PRIVATE KEY-----(\r?\n|\r)[\s\S]+(\r?\n|\r)-----END( RSA| EC| DSA| OPENSSH)? PRIVATE KEY-----$/,
           'Invalid private key format - must be a valid PEM format',
         ),
     })

@@ -57,6 +57,10 @@ export const columns: ColumnDef<Service>[] = [
     },
     enableSorting: true,
     enableHiding: true,
+    filterFn: (row, id, filterValues) => {
+      const value = row.getValue(id)
+      return filterValues.includes(value)
+    },
   },
   {
     accessorKey: 'status',
