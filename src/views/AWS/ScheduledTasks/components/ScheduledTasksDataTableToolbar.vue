@@ -37,6 +37,12 @@ const isFiltered = computed(() => props.table.getState().columnFilters.length > 
         title="Status"
         :options="options['status']"
       />
+      <DataTableFacetedFilter
+        v-if="table.getColumn('clusterName')"
+        :column="table.getColumn('clusterName')"
+        title="Cluster Name"
+        :options="options['clusterName']"
+      />
       <Button v-if="isFiltered" variant="ghost" class="h-8 px-2 lg:px-3"
               @click="table.resetColumnFilters()">
         Reset

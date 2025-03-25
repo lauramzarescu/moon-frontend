@@ -8,6 +8,7 @@ export interface ScheduledTaskInterface {
     readableCron?: string
     nextRun?: string
     nextRuns?: string[]
+    clusterName: string
 }
 
-export type ScheduledTaskEventInterface = Pick<ScheduledTaskInterface, 'readableCron' | 'nextRuns'>
+export type ScheduledTaskEventInterface = Pick<ScheduledTaskInterface, 'readableCron' | 'nextRuns' | 'cron'>

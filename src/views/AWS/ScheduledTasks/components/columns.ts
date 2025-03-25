@@ -41,6 +41,23 @@ export const columns: ColumnDef<ScheduledTask>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: 'clusterName',
+    header: ({ column }) =>
+      h(DataTableColumnHeader, {
+        column,
+        title: 'Cluster Name',
+      }),
+    cell: ({ row }) => {
+      return h('div', { class: 'w-40 py-2' }, row.getValue('clusterName'))
+    },
+    filterFn: (row, id, filterValues) => {
+      const value = row.getValue(id)
+      return filterValues.includes(value)
+    },
+    enableSorting: true,
+    enableHiding: false,
+  },
+  {
     accessorKey: 'status',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {

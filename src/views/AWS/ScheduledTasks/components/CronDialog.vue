@@ -78,12 +78,12 @@ import {
 import { CalendarIcon, ClockIcon } from 'lucide-vue-next'
 import moment from 'moment'
 import type {
-  ScheduledTaskInterface,
+  ScheduledTaskEventInterface,
 } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts'
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean
-  row: TData & ScheduledTaskInterface
+  row: ScheduledTaskEventInterface
 }>()
 
 defineEmits<{

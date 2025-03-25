@@ -3,12 +3,12 @@
   <DataTable
     :data="scheduledTasks as TData[]"
     :columns="scheduledTasksColumns as ColumnDef<TData, any>[]"
-    :options="{'status': statuses}"
+    :options="{'status': statuses, 'clusterName': uniqueClusterNames}"
     :config="config"
     :row-action="rowAction"
     :initial-filters="initialFilters"
   />
-  <CronDialog v-model:isOpen="showCronDialog" :detail="selectedCronExpression" />
+  <CronDialog v-model:isOpen="showCronDialog" :row="selectedCronExpression"/>
 </template>
 
 <style>
@@ -31,7 +31,7 @@ import type {
   DataTableRowActionProps,
 } from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
 import { useFilterStore } from '@/stores/filterStore.ts'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { ColumnDef, ColumnFiltersState } from '@tanstack/vue-table'
 import { onBeforeRouteLeave } from 'vue-router'
 import ScheduledTasksDataTableToolbar
@@ -55,6 +55,19 @@ const selectedCronExpression = ref<ScheduledTaskEventInterface>({})
 const rowAction: DataTableRowActionProps<TData> = {
   template: CronDialog,
 }
+
+const uniqueClusterNames = computed(() => {
+  const clusters = scheduledTasks.value.map((scheduledTask: ScheduledTaskInterface) => ({
+    id: scheduledTask.clusterName,
+    label: scheduledTask.clusterName,
+    value: scheduledTask.clusterName,
+  }))
+
+  // Filter out duplicates based on value property
+  return Array.from(
+    new Map(clusters.map(item => [item.value, item])).values(),
+  )
+})
 
 const handleCronDialog = (event: CustomEvent) => {
   selectedCronExpression.value = event.detail as ScheduledTaskEventInterface
