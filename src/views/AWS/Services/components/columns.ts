@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { lastDeploymentStatuses, statuses } from '@/views/AWS/Services/data/data.ts'
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts'
 import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue'
+import { AlertTriangle } from 'lucide-vue-next'
 
 export const columns: ColumnDef<Service>[] = [
   {
@@ -31,7 +32,18 @@ export const columns: ColumnDef<Service>[] = [
     accessorKey: 'name',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Name' }),
     cell: ({ row }) => {
-      return h('div', { class: 'w-25 py-2' }, row.getValue('name'))
+      const service = row.original as unknown as ServiceInterface
+      const isStuck = service.deploymentStatus?.isStuck === true
+
+      return h('div', {
+        class: `w-25 py-2 flex items-center ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, [
+        // Add warning icon for stuck deployments
+        isStuck && h(AlertTriangle, {
+          class: 'h-4 w-4 mr-1.5 text-yellow-600 dark:text-yellow-400 flex-shrink-0',
+        }),
+        row.getValue('name'),
+      ])
     },
     enableSorting: true,
     enableHiding: false,
@@ -53,7 +65,12 @@ export const columns: ColumnDef<Service>[] = [
     accessorKey: 'clusterName',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Cluster' }),
     cell: ({ row }) => {
-      return h('div', { class: 'w-15' }, row.getValue('clusterName'))
+      const service = row.original as unknown as ServiceInterface
+      const isStuck = service.deploymentStatus?.isStuck === true
+
+      return h('div', {
+        class: `w-15 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, row.getValue('clusterName'))
     },
     enableSorting: true,
     enableHiding: true,
@@ -76,7 +93,7 @@ export const columns: ColumnDef<Service>[] = [
           'span',
           {
             class: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-          ${status.color || 'bg-gray-100 text-gray-800'}`,
+            ${status.color || 'bg-gray-100 text-gray-800'}`,
           },
           status.label,
         ),
@@ -86,53 +103,68 @@ export const columns: ColumnDef<Service>[] = [
       return value?.includes(row.getValue(id))
     },
   },
-  // {
-  //   accessorKey: 'cpuUsage',
-  //   header: ({ column }) => h(DataTableColumnHeader, { column, title: 'CPU Usage' }),
-  //   cell: ({ row }) => {
-  //     const cpuValue = (row.original as unknown as ServiceInterface).container.cpu
-  //     const barColor = cpuValue > 75 ? 'bg-red-500' : cpuValue > 50 ? 'bg-yellow-500' : 'bg-blue-500'
-  //     const textColor = cpuValue > 75 ? 'text-red-600' : cpuValue > 50 ? 'text-yellow-600' : 'text-gray-600'
-  //
-  //     return h('div', { class: 'w-24 flex items-center gap-2' }, [
-  //       h('div', { class: 'flex-1 h-2 bg-gray-200 rounded-full overflow-hidden' }, [
-  //         h('div', {
-  //           class: `h-full ${barColor} rounded-full`,
-  //           style: `width: ${cpuValue}%`,
-  //         }),
-  //       ]),
-  //       h('span', { class: `text-sm ${textColor}` }, `${cpuValue}%`),
-  //     ])
-  //   },
-  // },
   {
     accessorKey: 'image',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Image' }),
-    cell: ({ row }) => h('div', { class: 'w-35' }, (row.original as unknown as ServiceInterface).containers[0].image),
+    cell: ({ row }) => {
+      const service = row.original as unknown as ServiceInterface
+      const isStuck = service.deploymentStatus?.isStuck === true
+
+      return h('div', {
+        class: `w-35 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, service.containers[0].image)
+    },
   },
   {
     accessorKey: 'taskRevision',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Task R.' }),
-    cell: ({ row }) =>
-      h('div', { class: 'w-10 flex items-center gap-1' }, [
-        (row.original as unknown as ServiceInterface).taskDefinition?.revision,
+    cell: ({ row }) => {
+      const service = row.original as unknown as ServiceInterface
+      const isStuck = service.deploymentStatus?.isStuck === true
+
+      return h('div', {
+        class: `w-10 flex items-center gap-1 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, [
+        service.taskDefinition?.revision,
         h('i', { class: 'text-sm' }),
-      ]),
+      ])
+    },
   },
   {
     accessorKey: 'runningCount',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Running' }),
-    cell: ({ row }) => h('div', { class: 'w-2' }, row.getValue('runningCount')),
+    cell: ({ row }) => {
+      const service = row.original as unknown as ServiceInterface
+      const isStuck = service.deploymentStatus?.isStuck === true
+
+      return h('div', {
+        class: `w-2 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, row.getValue('runningCount'))
+    },
   },
   {
     accessorKey: 'pendingCount',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Pending' }),
-    cell: ({ row }) => h('div', { class: 'w-2' }, row.getValue('pendingCount')),
+    cell: ({ row }) => {
+      const service = row.original as unknown as ServiceInterface
+      const isStuck = service.deploymentStatus?.isStuck === true
+
+      return h('div', {
+        class: `w-2 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, row.getValue('pendingCount'))
+    },
   },
   {
     accessorKey: 'desiredCount',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Desired' }),
-    cell: ({ row }) => h('div', { class: 'w-2' }, row.getValue('desiredCount')),
+    cell: ({ row }) => {
+      const service = row.original as unknown as ServiceInterface
+      const isStuck = service.deploymentStatus?.isStuck === true
+
+      return h('div', {
+        class: `w-2 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, row.getValue('desiredCount'))
+    },
   },
   {
     accessorKey: 'lastDeploymentStatus',
@@ -153,7 +185,7 @@ export const columns: ColumnDef<Service>[] = [
           'span',
           {
             class: `inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-          ${status.color || 'bg-gray-100 text-gray-800'}`,
+            ${status.color || 'bg-gray-100 text-gray-800'}`,
           },
           status.label,
         ),
