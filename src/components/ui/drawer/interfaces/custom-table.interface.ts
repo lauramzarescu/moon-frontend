@@ -1,12 +1,15 @@
-import type { ColumnDef, ColumnFiltersState } from '@tanstack/vue-table'
+import type { ColumnDef, SortingState } from '@tanstack/vue-table'
 import type { Component } from 'vue'
+import type { TableKey } from '@/stores/filterStore.ts'
 
 export interface DataTableProps<TData> {
   columns: ColumnDef<TData, any>[]
   data: TData[]
   options: DataTableOptionsArray
-  initialFilters?: ColumnFiltersState
   config: DataTableConfig
+
+  tableName: TableKey
+  defaultSorting?: SortingState
 
   /**
    * This action will be triggered when the user clicks on a row.

@@ -76,7 +76,7 @@ const isLoginPage = computed(() => route.path === '/login')
     <!-- Main layout with sidebar for other routes -->
     <div v-else id="app" class="flex h-full">
       <Sidebar class="h-screen w-64 left-0" />
-      <div class="flex-1 flex-col space-y-6 p-6 overflow-auto">
+      <div class="flex-1 flex-col space-y-3 p-6 overflow-auto">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-2xl font-bold tracking-tight capitalize">

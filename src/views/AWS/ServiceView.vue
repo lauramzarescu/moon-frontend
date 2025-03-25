@@ -10,7 +10,8 @@
     }"
     :row-action="rowAction"
     :config="config"
-    :initial-filters="initialFilters"
+    :table-name="TABLE_KEYS.SERVICES"
+    :default-sorting="defaultSorting"
   />
 </template>
 
@@ -34,23 +35,22 @@ import type {
   DataTableRowActionProps,
 } from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
 import ClusterDrawer from '@/views/AWS/Services/components/ServiceDrawer.vue'
-import { useFilterStore } from '@/stores/filterStore.ts'
-import { computed, ref, watch } from 'vue'
-import type { ColumnFiltersState } from '@tanstack/vue-table'
+import { TABLE_KEYS } from '@/stores/filterStore.ts'
+import { computed } from 'vue'
+import type { SortingState } from '@tanstack/vue-table'
 import ServiceDataTableToolbar from '@/views/AWS/Services/components/ServiceDataTableToolbar.vue'
 import { onBeforeRouteLeave } from 'vue-router'
 import ProviderHeader from '@/components/ui/provider-header/ProviderHeader.vue'
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts'
 
 const { services } = storeToRefs(useDataStore())
-const initialFilters = ref<ColumnFiltersState>([])
-
+const defaultSorting: SortingState = [{
+  id: 'clusterName',
+  desc: false,
+}]
 const rowAction: DataTableRowActionProps<TData> = {
   template: ClusterDrawer,
 }
-
-const { filters, clearFilters } = useFilterStore()
-
 const config: DataTableConfig = {
   toolbarComponent: ServiceDataTableToolbar,
 }
@@ -68,20 +68,7 @@ const uniqueClusterNames = computed(() => {
   )
 })
 
-watch(
-  filters,
-  (_filters) => {
-    if (_filters.length > 0) {
-      initialFilters.value = _filters.map((filter) => ({
-        id: filter.id,
-        value: [filter.value],
-      }))
-    }
-  },
-  { immediate: true },
-)
-
 onBeforeRouteLeave(() => {
-  clearFilters()
+  // clearFilters()
 })
 </script>

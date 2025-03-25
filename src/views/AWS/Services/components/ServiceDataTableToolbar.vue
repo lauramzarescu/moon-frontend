@@ -10,6 +10,7 @@ import DataTableViewOptions from '@/components/ui/custom-table/DataTableViewOpti
 import type {
   DataTableOptionsArray,
 } from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
+import { TABLE_KEYS, useFilterStore } from '@/stores/filterStore.ts'
 
 interface DataTableToolbarProps {
   table: Table<TData>
@@ -17,9 +18,21 @@ interface DataTableToolbarProps {
   options: DataTableOptionsArray
 }
 
+const filterStore = useFilterStore()
+const { clearFilters, setFilter } = filterStore
 const props = defineProps<DataTableToolbarProps>()
 
 const isFiltered = computed(() => props.table.getState().columnFilters.length > 0)
+
+const handleFilterChange = (columnId: string, value: any) => {
+  props.table.getColumn(columnId)?.setFilterValue(value)
+
+  if (value === undefined || value === '' || (Array.isArray(value) && value.length === 0)) {
+    filterStore.removeFilter(TABLE_KEYS.SERVICES, columnId)
+  } else {
+    filterStore.setFilter(TABLE_KEYS.SERVICES, columnId, value)
+  }
+}
 </script>
 
 <template>
@@ -29,28 +42,31 @@ const isFiltered = computed(() => props.table.getState().columnFilters.length > 
         placeholder="Filter services..."
         :model-value="(table.getColumn('name')?.getFilterValue() as string) ?? ''"
         class="h-8 w-[150px] lg:w-[250px]"
-        @input="table.getColumn('name')?.setFilterValue($event.target.value)"
+        @input="handleFilterChange('name', $event.target.value)"
       />
       <DataTableFacetedFilter
         v-if="table.getColumn('clusterName')"
         :column="table.getColumn('clusterName')"
+        :table-name="TABLE_KEYS.SERVICES"
         title="Cluster Name"
         :options="options['clusterName']"
       />
       <DataTableFacetedFilter
         v-if="table.getColumn('status')"
         :column="table.getColumn('status')"
+        :table-name="TABLE_KEYS.SERVICES"
         title="Status"
         :options="options['status']"
       />
       <DataTableFacetedFilter
         v-if="table.getColumn('lastDeploymentStatus')"
         :column="table.getColumn('lastDeploymentStatus')"
+        :table-name="TABLE_KEYS.SERVICES"
         title="Last Deployment Status"
         :options="options['lastDeploymentStatus']"
       />
       <Button v-if="isFiltered" variant="ghost" class="h-8 px-2 lg:px-3"
-              @click="table.resetColumnFilters()">
+              @click="table.resetColumnFilters(); clearFilters(TABLE_KEYS.SERVICES)">
         Reset
         <Cross2Icon class="ml-2 h-4 w-4" />
       </Button>

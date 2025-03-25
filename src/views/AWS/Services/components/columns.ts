@@ -57,9 +57,10 @@ export const columns: ColumnDef<Service>[] = [
     },
     enableSorting: true,
     enableHiding: true,
-    filterFn: (row, id, filterValues) => {
-      const value = row.getValue(id)
-      return filterValues.includes(value)
+    sortingFn: 'alphanumeric',
+    sortDescFirst: true,
+    filterFn: (row, id, value) => {
+      return value?.includes(row.getValue(id))
     },
   },
   {
@@ -82,7 +83,7 @@ export const columns: ColumnDef<Service>[] = [
       ])
     },
     filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
+      return value?.includes(row.getValue(id))
     },
   },
   // {
@@ -162,7 +163,7 @@ export const columns: ColumnDef<Service>[] = [
       const deployment = (row.original as unknown as ServiceInterface).deployments[0]
       if (!deployment) return false
 
-      return filterValues.includes(deployment.rolloutState)
+      return filterValues?.includes(deployment.rolloutState)
     },
   },
 ]

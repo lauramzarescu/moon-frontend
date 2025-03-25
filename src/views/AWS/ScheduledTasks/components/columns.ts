@@ -45,14 +45,13 @@ export const columns: ColumnDef<ScheduledTask>[] = [
     header: ({ column }) =>
       h(DataTableColumnHeader, {
         column,
-        title: 'Cluster Name',
+        title: 'Cluster',
       }),
     cell: ({ row }) => {
       return h('div', { class: 'w-40 py-2' }, row.getValue('clusterName'))
     },
-    filterFn: (row, id, filterValues) => {
-      const value = row.getValue(id)
-      return filterValues.includes(value)
+    filterFn: (row, id, value) => {
+      return value?.includes(row.getValue(id))
     },
     enableSorting: true,
     enableHiding: false,
@@ -77,7 +76,7 @@ export const columns: ColumnDef<ScheduledTask>[] = [
       ])
     },
     filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
+      return value?.includes(row.getValue(id))
     },
   },
   {

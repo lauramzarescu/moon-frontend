@@ -6,9 +6,10 @@
     :options="{'status': statuses, 'clusterName': uniqueClusterNames}"
     :config="config"
     :row-action="rowAction"
-    :initial-filters="initialFilters"
+    :table-name="TABLE_KEYS.SCHEDULED_TASKS"
+    :default-sorting="defaultSorting"
   />
-  <CronDialog v-model:isOpen="showCronDialog" :row="selectedCronExpression"/>
+  <CronDialog v-model:isOpen="showCronDialog" :row="selectedCronExpression" />
 </template>
 
 <style>
@@ -30,9 +31,9 @@ import type {
   DataTableConfig,
   DataTableRowActionProps,
 } from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
-import { useFilterStore } from '@/stores/filterStore.ts'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import type { ColumnDef, ColumnFiltersState } from '@tanstack/vue-table'
+import { TABLE_KEYS } from '@/stores/filterStore.ts'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import type { ColumnDef, SortingState } from '@tanstack/vue-table'
 import { onBeforeRouteLeave } from 'vue-router'
 import ScheduledTasksDataTableToolbar
   from '@/views/AWS/ScheduledTasks/components/ScheduledTasksDataTableToolbar.vue'
@@ -45,13 +46,12 @@ import CronDialog from '@/views/AWS/ScheduledTasks/components/CronDialog.vue'
 import ProviderHeader from '@/components/ui/provider-header/ProviderHeader.vue'
 
 const { scheduledTasks } = storeToRefs(useDataStore())
-const initialFilters = ref<ColumnFiltersState>([])
-
-const { filters, clearFilters } = useFilterStore()
-
 const showCronDialog = ref(false)
 const selectedCronExpression = ref<ScheduledTaskEventInterface>({})
-
+const defaultSorting: SortingState = [{
+  id: 'clusterName',
+  desc: false,
+}]
 const rowAction: DataTableRowActionProps<TData> = {
   template: CronDialog,
 }
@@ -63,7 +63,6 @@ const uniqueClusterNames = computed(() => {
     value: scheduledTask.clusterName,
   }))
 
-  // Filter out duplicates based on value property
   return Array.from(
     new Map(clusters.map(item => [item.value, item])).values(),
   )
@@ -86,20 +85,7 @@ const config: DataTableConfig = {
   toolbarComponent: ScheduledTasksDataTableToolbar,
 }
 
-watch(
-  filters,
-  (_filters) => {
-    if (_filters.length > 0) {
-      initialFilters.value = _filters.map((filter) => ({
-        id: filter.id,
-        value: [filter.value],
-      }))
-    }
-  },
-  { immediate: true },
-)
-
 onBeforeRouteLeave(() => {
-  clearFilters()
+  // clearFilters()
 })
 </script>

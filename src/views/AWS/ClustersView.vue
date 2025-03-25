@@ -3,7 +3,10 @@
   <DataTable :data="clusters" :columns="clusterColumns"
              :options="{'status': statuses}"
              :row-action="rowAction"
-             :config="config" />
+             :config="config"
+             :table-name="TABLE_KEYS.CLUSTERS"
+             :default-sorting="defaultSorting"
+  />
 </template>
 
 <style>
@@ -28,26 +31,30 @@ import type {
 } from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
 import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts'
 import { useRouter } from 'vue-router'
-import { useFilterStore } from '@/stores/filterStore.ts'
+import { TABLE_KEYS, useFilterStore } from '@/stores/filterStore.ts'
 import ClusterDataTableToolbar from '@/views/AWS/Clusters/components/ClusterDataTableToolbar.vue'
 import ProviderHeader from '@/components/ui/provider-header/ProviderHeader.vue'
+import type { SortingState } from '@tanstack/vue-table'
 
 const router = useRouter()
 const { setFilter } = useFilterStore()
-
 const { clusters } = storeToRefs(useDataStore())
+const defaultSorting: SortingState = [{
+  id: 'name',
+  desc: false,
+}]
 
 const config: DataTableConfig = {
   toolbarComponent: ClusterDataTableToolbar,
 }
+
 
 const rowAction: DataTableRowActionProps<TData> = {
   onClick: (row: ClusterInterface) => {
     // redirect to Services page with the cluster ID without reloading the page
     router.push({ path: '/aws/services' })
 
-    // set filter
-    setFilter('clusterName', row.name)
+    setFilter(TABLE_KEYS.SERVICES, 'clusterName', [row.name])
   },
 }
 </script>

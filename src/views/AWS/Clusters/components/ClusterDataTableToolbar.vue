@@ -10,6 +10,7 @@ import DataTableViewOptions from '@/components/ui/custom-table/DataTableViewOpti
 import type {
   DataTableOptionsArray,
 } from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
+import { TABLE_KEYS, useFilterStore } from '@/stores/filterStore.ts'
 
 interface DataTableToolbarProps {
   table: Table<TData>
@@ -17,8 +18,8 @@ interface DataTableToolbarProps {
   options: DataTableOptionsArray
 }
 
+const { clearFilters } = useFilterStore()
 const props = defineProps<DataTableToolbarProps>()
-
 const isFiltered = computed(() => props.table.getState().columnFilters.length > 0)
 </script>
 
@@ -34,11 +35,12 @@ const isFiltered = computed(() => props.table.getState().columnFilters.length > 
       <DataTableFacetedFilter
         v-if="table.getColumn('status')"
         :column="table.getColumn('status')"
+        :table-name="TABLE_KEYS.CLUSTERS"
         title="Status"
         :options="options['status']"
       />
       <Button v-if="isFiltered" variant="ghost" class="h-8 px-2 lg:px-3"
-              @click="table.resetColumnFilters()">
+              @click="table.resetColumnFilters(); clearFilters(TABLE_KEYS.CLUSTERS)">
         Reset
         <Cross2Icon class="ml-2 h-4 w-4" />
       </Button>

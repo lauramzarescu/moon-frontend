@@ -20,22 +20,25 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { valueUpdater } from '@/utils'
-import { ref } from 'vue'
+import { onBeforeMount, ref } from 'vue'
 import DataTablePagination from './DataTablePagination.vue'
 import type { DataTableProps } from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
 import { onBeforeRouteLeave } from 'vue-router'
 import DataTableToolbar from '@/components/ui/custom-table/DataTableToolbar.vue'
 import { useColumnSettingsStore } from '@/stores/columnsSettingsStore.ts'
 import type { PaginationParams } from '@/types/pagination/pagination.interface.ts'
+import { useFilterStore } from '@/stores/filterStore.ts'
 
 const props = defineProps<
   DataTableProps<TData> & {
   totalRows?: number
 }
 >()
+
+const { tableFilters } = useFilterStore()
 const { hiddenColumns, hideColumn } = useColumnSettingsStore()
-const sorting = ref<SortingState>([])
-const columnFilters = ref<ColumnFiltersState>(props.initialFilters || [])
+const sorting = ref<SortingState>(props.defaultSorting || [])
+const columnFilters = ref<ColumnFiltersState>([])
 const columnVisibility = ref<VisibilityState>(hiddenColumns || {})
 const rowSelection = ref({})
 const isOpen = ref(false)
@@ -64,6 +67,14 @@ const table = useVueTable({
   },
   get columns() {
     return props.columns
+  },
+  initialState: {
+    sorting: [
+      {
+        id: 'name', // Replace with your actual column id
+        desc: true, // false for ascending, true for descending
+      },
+    ],
   },
   state: {
     get sorting() {
@@ -112,6 +123,16 @@ const handleRowClick = (row: TData) => {
     return
   }
 }
+
+
+onBeforeMount(() => {
+  if (
+    tableFilters[props.tableName]
+    && tableFilters[props.tableName].length > 0
+  ) {
+    columnFilters.value = tableFilters[props.tableName]
+  }
+})
 
 onBeforeRouteLeave(() => {
   columnFilters.value = []

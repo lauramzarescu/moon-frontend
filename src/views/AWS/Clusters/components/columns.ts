@@ -55,7 +55,7 @@ export const columns: ColumnDef<Cluster>[] = [
       ])
     },
     filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
+      return value?.includes(row.getValue(id))
     },
   },
   {

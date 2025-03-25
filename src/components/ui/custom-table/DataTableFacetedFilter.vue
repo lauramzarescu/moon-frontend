@@ -21,13 +21,16 @@ import { CheckIcon, PlusCircledIcon } from '@radix-icons/vue'
 import type {
   DataTableOptionsProps,
 } from '@/components/ui/drawer/interfaces/custom-table.interface.ts'
+import { type TableKey, useFilterStore } from '@/stores/filterStore.ts'
 
 interface DataTableFacetedFilter {
   column?: Column<TData, any>
   title?: string
   options: DataTableOptionsProps[]
+  tableName: TableKey
 }
 
+const { setFilter, removeFilter } = useFilterStore()
 const props = defineProps<DataTableFacetedFilter>()
 const facets = computed(() => props.column?.getFacetedUniqueValues())
 const selectedValues = computed(() => new Set(props.column?.getFilterValue() as string[]))
@@ -85,6 +88,7 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
                                     }
                                     const filterValues = Array.from(selectedValues)
                                     column?.setFilterValue(filterValues.length ? filterValues : undefined)
+                                    setFilter(tableName, column?.id || '', filterValues)
                                 }
                             "
             >
@@ -118,7 +122,7 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
               <CommandItem
                 value="clear-filters"
                 class="justify-center text-center"
-                @select="column?.setFilterValue(undefined)"
+                @select="column?.setFilterValue(undefined); removeFilter(tableName, column?.id || '')"
               >
                 Clear filters
               </CommandItem>
