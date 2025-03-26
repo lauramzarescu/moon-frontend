@@ -38,7 +38,6 @@ export const columns: ColumnDef<Service>[] = [
       return h('div', {
         class: `w-25 py-2 flex items-center ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
       }, [
-        // Add warning icon for stuck deployments
         isStuck && h(AlertTriangle, {
           class: 'h-4 w-4 mr-1.5 text-yellow-600 dark:text-yellow-400 flex-shrink-0',
         }),

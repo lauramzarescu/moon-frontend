@@ -5,6 +5,22 @@ import { h } from 'vue'
 import { statuses } from '../data/data.ts'
 import { Checkbox } from '@/components/ui/checkbox'
 import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue'
+import { AlertTriangle } from 'lucide-vue-next'
+import { useDataStore } from '@/stores/dataStore'
+
+const getClusterStuckInfo = (clusterName: string) => {
+  const dataStore = useDataStore()
+
+  const stuckServices = dataStore.services.filter(service =>
+    service.clusterName === clusterName &&
+    service.deploymentStatus?.isStuck === true,
+  )
+
+  return {
+    hasStuckDeployments: stuckServices.length > 0,
+    stuckServicesCount: stuckServices.length,
+  }
+}
 
 export const columns: ColumnDef<Cluster>[] = [
   {
@@ -30,7 +46,18 @@ export const columns: ColumnDef<Cluster>[] = [
     accessorKey: 'name',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Name' }),
     cell: ({ row }) => {
-      return h('div', { class: 'w-20 py-2' }, row.getValue('name'))
+      const clusterName = row.getValue('name')
+      const { hasStuckDeployments, stuckServicesCount } = getClusterStuckInfo(clusterName as string)
+
+      return h('div', {
+        class: `w-30 py-2 flex items-center ${hasStuckDeployments ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, [
+        hasStuckDeployments && h(AlertTriangle, {
+          class: 'h-4 w-4 mr-1.5 text-yellow-600 dark:text-yellow-400 flex-shrink-0',
+          title: `${stuckServicesCount} stuck deployment${stuckServicesCount > 1 ? 's' : ''}`,
+        }),
+        clusterName,
+      ])
     },
     enableSorting: true,
     enableHiding: false,
@@ -61,45 +88,55 @@ export const columns: ColumnDef<Cluster>[] = [
   {
     accessorKey: 'runningTasks',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Running Tasks' }),
-    cell: ({ row }) => h('div', { class: 'w-10' }, row.getValue('runningTasks')),
+    cell: ({ row }) => {
+      const clusterName = row.getValue('name')
+      const { hasStuckDeployments } = getClusterStuckInfo(clusterName as string)
+
+      return h('div', {
+        class: `w-10 ${hasStuckDeployments ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, row.getValue('runningTasks'))
+    },
   },
   {
     accessorKey: 'pendingTasks',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Pending Tasks' }),
-    cell: ({ row }) => h('div', { class: 'w-10' }, row.getValue('pendingTasks')),
+    cell: ({ row }) => {
+      const clusterName = row.getValue('name')
+      const { hasStuckDeployments } = getClusterStuckInfo(clusterName as string)
+
+      return h('div', {
+        class: `w-10 ${hasStuckDeployments ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, row.getValue('pendingTasks'))
+    },
   },
   {
     accessorKey: 'registeredContainerInstances',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Running Instances' }),
-    cell: ({ row }) => h('div', { class: 'w-10' }, `${row.getValue('registeredContainerInstances')} EC2`),
+    cell: ({ row }) => {
+      const clusterName = row.getValue('name')
+      const { hasStuckDeployments } = getClusterStuckInfo(clusterName as string)
+
+      return h('div', {
+        class: `w-15 ${hasStuckDeployments ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, `${row.getValue('registeredContainerInstances')} EC2`)
+    },
   },
   {
     accessorKey: 'servicesCount',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Services' }),
-    cell: ({ row }) => h('div', { class: 'w-10' }, row.getValue('servicesCount')),
+    cell: ({ row }) => {
+      const clusterName = row.getValue('name')
+      const { hasStuckDeployments, stuckServicesCount } = getClusterStuckInfo(clusterName as string)
+
+      return h('div', {
+        class: `w-10 flex items-center ${hasStuckDeployments ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+      }, [
+        row.getValue('servicesCount'),
+        hasStuckDeployments && h('span', {
+          class: 'ml-1.5 text-xs text-yellow-600 dark:text-yellow-400',
+          title: `${stuckServicesCount} stuck deployment${stuckServicesCount > 1 ? 's' : ''}`,
+        }, `(${stuckServicesCount})`),
+      ])
+    },
   },
-  // {
-  //   accessorKey: 'priority',
-  //   header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Priority' }),
-  //   cell: ({ row }) => {
-  //     const priority = priorities.find(
-  //       priority => priority.value === row.getValue('priority'),
-  //     )
-  //
-  //     if (!priority)
-  //       return null
-  //
-  //     return h('div', { class: 'flex items-center' }, [
-  //       priority.icon && h(priority.icon, { class: 'mr-2 h-4 w-4 text-muted-foreground' }),
-  //       h('span', {}, priority.label),
-  //     ])
-  //   },
-  //   filterFn: (row, id, value) => {
-  //     return value.includes(row.getValue(id))
-  //   },
-  // },
-  // {
-  //     id: 'actions',
-  //     cell: ({ row }) => h(DataTableRowActions, { row }),
-  // },
 ]
