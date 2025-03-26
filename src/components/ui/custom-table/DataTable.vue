@@ -35,14 +35,22 @@ const props = defineProps<
 }
 >()
 
-const { tableFilters } = useFilterStore()
+const { tableFilters, tableSorting, tablePagination, setSorting, setPagination } = useFilterStore()
 const { hiddenColumns, hideColumn } = useColumnSettingsStore()
-const sorting = ref<SortingState>(props.defaultSorting || [])
+const sorting = ref<SortingState>(
+  tableSorting[props.tableName]?.length > 0
+    ? tableSorting[props.tableName]
+    : props.defaultSorting || [],
+)
 const columnFilters = ref<ColumnFiltersState>([])
 const columnVisibility = ref<VisibilityState>(hiddenColumns || {})
 const rowSelection = ref({})
 const isOpen = ref(false)
 const selectedRow = ref<TData | null>(null)
+const pagination = ref({
+  pageIndex: tablePagination[props.tableName]?.pageIndex || 0,
+  pageSize: tablePagination[props.tableName]?.pageSize || 10,
+})
 
 const emit = defineEmits<{
   paginationChange: [params: PaginationParams]
@@ -69,12 +77,8 @@ const table = useVueTable({
     return props.columns
   },
   initialState: {
-    sorting: [
-      {
-        id: 'name', // Replace with your actual column id
-        desc: true, // false for ascending, true for descending
-      },
-    ],
+    sorting: sorting.value,
+    pagination: pagination.value,
   },
   state: {
     get sorting() {
@@ -89,15 +93,25 @@ const table = useVueTable({
     get rowSelection() {
       return rowSelection.value
     },
+    get pagination() {
+      return pagination.value
+    },
   },
   enableRowSelection: true,
-  onSortingChange: (updaterOrValue) => valueUpdater(updaterOrValue, sorting),
+  onSortingChange: (updaterOrValue) => {
+    valueUpdater(updaterOrValue, sorting)
+    setSorting(props.tableName, sorting.value)
+  },
   onColumnFiltersChange: (updaterOrValue) => valueUpdater(updaterOrValue, columnFilters),
   onColumnVisibilityChange: (updaterOrValue) => {
     valueUpdater(updaterOrValue, columnVisibility)
     hideColumn(columnVisibility.value)
   },
   onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
+  onPaginationChange: (updaterOrValue) => {
+    valueUpdater(updaterOrValue, pagination)
+    setPagination(props.tableName, pagination.value.pageIndex, pagination.value.pageSize)
+  },
   getCoreRowModel: getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
   getPaginationRowModel: getPaginationRowModel(),

@@ -49,7 +49,7 @@ const { scheduledTasks } = storeToRefs(useDataStore())
 const showCronDialog = ref(false)
 const selectedCronExpression = ref<ScheduledTaskEventInterface>({})
 const defaultSorting: SortingState = [{
-  id: 'clusterName',
+  id: 'nextRun',
   desc: false,
 }]
 const rowAction: DataTableRowActionProps<TData> = {
