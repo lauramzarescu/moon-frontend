@@ -1,5 +1,6 @@
 import { ApiService } from '@/services/generic.service.ts'
 import type {
+  UserCreateInput,
   UserDetailsResponseInput,
   UserInput,
 } from '@/views/Settings/components/Team/schema.ts'
@@ -112,5 +113,9 @@ export class UserService extends ApiService {
    */
   async disable2FA(code: string): Promise<any> {
     return this.post(`${this.resource}/2fa/disable`, { code })
+  }
+
+  async create(data: UserCreateInput): Promise<UserDetailsResponseInput> {
+    return this.post(`${this.resource}`, data)
   }
 }

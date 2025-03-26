@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast'
 import { UserService } from '@/services/user.service.ts'
-import { useAuthStore } from '@/stores/authStore.ts'
 import {
   Dialog,
   DialogContent,
@@ -34,7 +33,6 @@ const emit = defineEmits(['update:open', 'setup-complete'])
 
 // Initialize services and stores
 const userService = new UserService()
-const authStore = useAuthStore()
 
 const verificationCode = ref(['', '', '', '', '', ''])
 const localIsLoading = ref(false)
@@ -102,6 +100,7 @@ const verify2FACode = async () => {
           v-model:code="verificationCode"
           prefix="2fa-code"
           :disabled="isLoading || localIsLoading"
+          @submit="verify2FACode"
         />
       </div>
 

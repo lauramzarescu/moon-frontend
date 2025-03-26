@@ -20,7 +20,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['update:code'])
+const emit = defineEmits(['update:code', 'submit'])
 
 const updateCode = (index: number, value: string) => {
   const newCode = [...props.code]
@@ -34,6 +34,14 @@ const handleInput = (index: number, event: Event) => {
 }
 
 const handleKeyDown = (index: number, event: KeyboardEvent) => {
+  if (event.key === 'Enter') {
+    const isCodeComplete = props.code.every(digit => digit !== '')
+    if (isCodeComplete) {
+      emit('submit')
+      return
+    }
+  }
+
   handleVerificationCodeKeyDown(index, event, props.code, props.prefix)
   emit('update:code', [...props.code])
 }

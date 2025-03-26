@@ -30,7 +30,7 @@ export const useDataStore = defineStore(
       })
 
       socket.on('interval-updated', (interval: number) => {
-        refreshInterval.value = interval / 1000
+        refreshInterval.value = interval
       })
     }
 

@@ -40,15 +40,6 @@ watch(() => [props.twoFactorEnabled, props.twoFactorVerified], ([enabled, verifi
 })
 
 const generate2FAQR = async () => {
-  // if (!authStore.user?.id) {
-  //   toast({
-  //     title: 'Authentication Error',
-  //     description: 'User ID not found. Please log in again.',
-  //     variant: 'destructive',
-  //   })
-  //   return
-  // }
-
   isLoading.value = true
   try {
     const response = await userService.setup2FA()

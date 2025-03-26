@@ -3,7 +3,6 @@ import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { toast } from '@/components/ui/toast'
 import { UserService } from '@/services/user.service.ts'
-import { useAuthStore } from '@/stores/authStore.ts'
 import {
   Dialog,
   DialogContent,
@@ -24,23 +23,12 @@ const props = defineProps({
 
 const emit = defineEmits(['update:open', 'disable-complete'])
 
-// Initialize services and stores
 const userService = new UserService()
-const authStore = useAuthStore()
 
 const disableVerificationCode = ref(['', '', '', '', '', ''])
 const isDisableLoading = ref(false)
 
 const confirmDisable2FA = async () => {
-  // if (!authStore.user?.id) {
-  //   toast({
-  //     title: 'Authentication Error',
-  //     description: 'User ID not found. Please log in again.',
-  //     variant: 'destructive',
-  //   })
-  //   return
-  // }
-
   const code = disableVerificationCode.value.join('')
   if (code.length !== 6) {
     toast({
@@ -96,6 +84,7 @@ const confirmDisable2FA = async () => {
           v-model:code="disableVerificationCode"
           prefix="disable-2fa-code"
           :disabled="isDisableLoading"
+          @submit="confirmDisable2FA"
         />
       </div>
 

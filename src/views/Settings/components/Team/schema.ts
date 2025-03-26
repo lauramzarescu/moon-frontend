@@ -31,9 +31,14 @@ export const userDetailsResponseSchema = userSchema
 
 export const userCreateSchema = userSchema
   .omit({
-    lastLogin: true,
+    id: true,
+    loginType: true,
     nameID: true,
+    nameIDFormat: true,
+    lastLogin: true,
     sessionIndex: true,
+    twoFactorSecret: true,
+    twoFactorVerified: true,
   })
   .partial({
     organizationId: true,
@@ -41,6 +46,7 @@ export const userCreateSchema = userSchema
 
 export const userUpdateSchema = userCreateSchema
 export type UserInput = z.infer<typeof userSchema>
+export type UserCreateInput = z.infer<typeof userCreateSchema>
 export type UserDetailsResponseInput = z.infer<typeof userDetailsResponseSchema>
 
 /** ================================ */
@@ -62,3 +68,26 @@ export const accessControlCreateSchema = accessControlSchema.omit({
 
 export type AccessControlInput = z.infer<typeof accessControlSchema>
 export type AccessControlCreateInput = z.infer<typeof accessControlCreateSchema>
+
+/** ================================ */
+/** ===== Form validation schemas === */
+/** ================================ */
+
+export const createUserFormSchema = z
+  .object({
+    username: z.string().min(3, 'Username must be at least 3 characters'),
+    email: z.string().email('Invalid email address'),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+      .regex(/[0-9]/, 'Password must contain at least one number'),
+    confirmPassword: z.string(),
+    role: z.string().min(1, 'Role is required'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords don\'t match',
+    path: ['confirmPassword'],
+  })
+
+export type CreateUserFormInput = z.infer<typeof createUserFormSchema>

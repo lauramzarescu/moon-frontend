@@ -158,6 +158,7 @@ const handleSAMLLogin = async () => {
         v-model:code="verificationCode"
         prefix="login-2fa"
         :disabled="isLoading"
+        @submit="verifyTwoFactorCode"
       />
 
       <div class="flex space-x-2 mt-4">

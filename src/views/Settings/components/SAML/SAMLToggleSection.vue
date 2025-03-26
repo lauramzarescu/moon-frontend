@@ -15,10 +15,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:enabled', 'request-disable'])
 
-// Handle toggle change
 const handleToggleChange = (newValue: boolean) => {
   if (!newValue && props.samlEnabled) {
-    // When turning off SAML, emit event to show confirmation dialog
     emit('request-disable')
     return
   }
