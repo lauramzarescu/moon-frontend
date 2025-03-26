@@ -48,7 +48,7 @@ const rowSelection = ref({})
 const isOpen = ref(false)
 const selectedRow = ref<TData | null>(null)
 const pagination = ref({
-  pageIndex: tablePagination[props.tableName]?.pageIndex || 0,
+  pageIndex: 0, // always start from page 1
   pageSize: tablePagination[props.tableName]?.pageSize || 10,
 })
 
