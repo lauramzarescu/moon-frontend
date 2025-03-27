@@ -21,11 +21,14 @@ export const useDataStore = defineStore(
     const refreshIsDynamic = ref<boolean>(false)
 
     const initializeData = () => {
-      if (socket.connected) {
+      // Remove any existing listeners to prevent duplicates
+      socket.off('connect')
+      socket.off('clusters-update')
+      socket.off('interval-updated')
+
+      socket.on('connect', () => {
         setRefreshInterval(refreshInterval.value)
-      } else {
-        setTimeout(() => setRefreshInterval(refreshInterval.value), 3000)
-      }
+      })
 
       socket.on('clusters-update', (receivedData: ClusterResponseInterface) => {
         processData(receivedData)
@@ -34,11 +37,12 @@ export const useDataStore = defineStore(
       socket.on('interval-updated', (interval: number) => {
         refreshInterval.value = interval
       })
-    }
 
-    // Ensure socket is connected
-    if (!socket.connected) {
-      socket.connect()
+      if (!socket.connected) {
+        socket.connect()
+      } else {
+        setRefreshInterval(refreshInterval.value)
+      }
     }
 
     const manualRefresh = async () => {
