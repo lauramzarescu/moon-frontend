@@ -101,7 +101,7 @@
                         </TableHeader>
                         <TableBody>
                           <TableRow
-                            v-for="env in container.environmentVariables.environment"
+                            v-for="env in sortedEnvironmentVariables(container)"
                             :key="env.name"
                             class="hover:bg-muted/10"
                           >
@@ -136,7 +136,7 @@
                             </TableCell>
                           </TableRow>
                           <TableRow
-                            v-for="secret in container.environmentVariables.secrets"
+                            v-for="secret in sortedSecrets(container)"
                             :key="secret.name"
                             class="hover:bg-muted/10"
                           >
@@ -185,7 +185,10 @@
 </template>
 
 <script setup lang="ts" generic="TData extends ServiceInterface">
-import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts'
+import type {
+  ContainerInterface,
+  ServiceInterface,
+} from '@/views/AWS/Services/types/service.interface.ts'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -224,6 +227,18 @@ const isDialogOpen = ref(false)
 
 const handleDialogToggle = (isOpen: boolean) => {
   isDialogOpen.value = isOpen
+}
+
+const sortedEnvironmentVariables = (container: ContainerInterface) => {
+  return [...container.environmentVariables.environment].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  )
+}
+
+const sortedSecrets = (container: any) => {
+  return [...container.environmentVariables.secrets].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  )
 }
 
 const copyToClipboard = async (text: string) => {
