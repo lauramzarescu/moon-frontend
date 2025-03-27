@@ -21,9 +21,11 @@ export const useDataStore = defineStore(
     const refreshIsDynamic = ref<boolean>(false)
 
     const initializeData = () => {
-      socket.on('connect', () => {
-        setTimeout(() => setRefreshInterval(refreshInterval.value), 2000)
-      })
+      if (socket.connected) {
+        setRefreshInterval(refreshInterval.value)
+      } else {
+        setTimeout(() => setRefreshInterval(refreshInterval.value), 3000)
+      }
 
       socket.on('clusters-update', (receivedData: ClusterResponseInterface) => {
         processData(receivedData)
