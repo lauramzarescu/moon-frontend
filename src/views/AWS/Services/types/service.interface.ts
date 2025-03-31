@@ -1,4 +1,5 @@
 import type { DeploymentRolloutState, TaskDefinitionStatus } from 'aws-sdk/clients/ecs'
+import type { InstanceStateName } from 'aws-sdk/clients/ec2'
 
 export interface ServiceInterface {
   name: string
@@ -55,10 +56,12 @@ export interface DeploymentInterface {
 }
 
 export interface InstanceInterface {
-  id: string
-  type: string
-  state: string
-  publicIp: string
-  privateIp: string
-  services?: ServiceInterface[]
+  id: string;
+  type: string;
+  state: InstanceStateName;
+  name: string;
+  publicIp: string;
+  primaryPrivateIp: string;
+  privateIpAddresses: string[];
+  services?: ServiceInterface[];
 }

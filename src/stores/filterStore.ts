@@ -4,6 +4,7 @@ import type { ColumnFiltersState, SortingState } from '@tanstack/vue-table'
 
 // Define constants for table keys
 export const TABLE_KEYS = {
+  INVENTORY: 'inventory',
   CLUSTERS: 'clusters',
   SERVICES: 'services',
   SCHEDULED_TASKS: 'scheduledTasks',
@@ -22,6 +23,7 @@ export interface TableSettings {
 
 export const useFilterStore = defineStore('filters', () => {
     const tableFilters = ref<Record<TableKey, ColumnFiltersState>>({
+      [TABLE_KEYS.INVENTORY]: [],
       [TABLE_KEYS.CLUSTERS]: [],
       [TABLE_KEYS.SERVICES]: [],
       [TABLE_KEYS.SCHEDULED_TASKS]: [],
@@ -29,12 +31,14 @@ export const useFilterStore = defineStore('filters', () => {
 
     // Add new refs for sorting and pagination
     const tableSorting = ref<Record<TableKey, SortingState>>({
+      [TABLE_KEYS.INVENTORY]: [],
       [TABLE_KEYS.CLUSTERS]: [],
       [TABLE_KEYS.SERVICES]: [],
       [TABLE_KEYS.SCHEDULED_TASKS]: [],
     })
 
     const tablePagination = ref<Record<TableKey, { pageIndex: number; pageSize: number }>>({
+      [TABLE_KEYS.INVENTORY]: { pageIndex: 0, pageSize: 10 },
       [TABLE_KEYS.CLUSTERS]: { pageIndex: 0, pageSize: 10 },
       [TABLE_KEYS.SERVICES]: { pageIndex: 0, pageSize: 10 },
       [TABLE_KEYS.SCHEDULED_TASKS]: { pageIndex: 0, pageSize: 10 },
@@ -77,6 +81,7 @@ export const useFilterStore = defineStore('filters', () => {
 
     const clearAllFilters = () => {
       tableFilters.value = {
+        [TABLE_KEYS.INVENTORY]: [],
         [TABLE_KEYS.CLUSTERS]: [],
         [TABLE_KEYS.SERVICES]: [],
         [TABLE_KEYS.SCHEDULED_TASKS]: [],

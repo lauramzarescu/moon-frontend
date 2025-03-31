@@ -63,6 +63,14 @@ export const columns: ColumnDef<Cluster>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: 'privateIp',
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Private IP' }),
+    cell: ({ row }) => {
+      const privateIp = row.getValue('privateIp')
+      return h('div', { class: 'w-[80px] py-2' }, privateIp)
+    },
+  },
+  {
     accessorKey: 'status',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Status' }),
     cell: ({ row }) => {
