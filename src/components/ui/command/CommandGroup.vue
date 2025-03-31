@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import type { ComboboxGroupProps } from 'radix-vue'
-import type { HTMLAttributes } from 'vue'
-import { cn } from '@/utils'
-import { ComboboxGroup, ComboboxLabel } from 'radix-vue'
-import { computed } from 'vue'
+import type { ComboboxGroupProps } from 'radix-vue';
+import type { HTMLAttributes } from 'vue';
+import { cn } from '@/utils';
+import { ComboboxGroup, ComboboxLabel } from 'radix-vue';
+import { computed } from 'vue';
 
 const props = defineProps<
     ComboboxGroupProps & {
-        class?: HTMLAttributes['class']
-        heading?: string
+        class?: HTMLAttributes['class'];
+        heading?: string;
     }
->()
+>();
 
 const delegatedProps = computed(() => {
-    const { class: _, ...delegated } = props
+    const { class: _, ...delegated } = props;
 
-    return delegated
-})
+    return delegated;
+});
 </script>
 
 <template>

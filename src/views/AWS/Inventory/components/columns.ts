@@ -1,11 +1,11 @@
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { Instance } from '../data/schema.ts'
+import type { ColumnDef } from '@tanstack/vue-table';
+import type { Instance } from '../data/schema.ts';
 
-import { h } from 'vue'
-import { statuses } from '../data/data.ts'
-import { Checkbox } from '@/components/ui/checkbox'
-import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue'
-import { Server } from 'lucide-vue-next'
+import { h } from 'vue';
+import { statuses } from '../data/data.ts';
+import { Checkbox } from '@/components/ui/checkbox';
+import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue';
+import { Server } from 'lucide-vue-next';
 
 export const columns: ColumnDef<Instance>[] = [
     {
@@ -31,9 +31,9 @@ export const columns: ColumnDef<Instance>[] = [
         accessorKey: 'name',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Name' }),
         cell: ({ row }) => {
-            const instanceName = row.getValue('name')
-            const services = row.original.services || []
-            const hasServices = services.length > 0
+            const instanceName = row.getValue('name');
+            const services = row.original.services || [];
+            const hasServices = services.length > 0;
 
             return h(
                 'div',
@@ -46,7 +46,7 @@ export const columns: ColumnDef<Instance>[] = [
                     }),
                     instanceName,
                 ],
-            )
+            );
         },
         enableSorting: true,
         enableHiding: false,
@@ -55,25 +55,25 @@ export const columns: ColumnDef<Instance>[] = [
         accessorKey: 'id',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Instance ID' }),
         cell: ({ row }) => {
-            const instanceId = row.getValue('id')
-            return h('div', { class: 'w-40 py-2' }, instanceId)
+            const instanceId = row.getValue('id');
+            return h('div', { class: 'w-40 py-2' }, instanceId);
         },
     },
     {
         accessorKey: 'type',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Type' }),
         cell: ({ row }) => {
-            const instanceType = row.getValue('type')
-            return h('div', { class: 'w-[100px] py-2' }, instanceType)
+            const instanceType = row.getValue('type');
+            return h('div', { class: 'w-[100px] py-2' }, instanceType);
         },
     },
     {
         accessorKey: 'state',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'State' }),
         cell: ({ row }) => {
-            const state = statuses.find((status) => status.value === row.getValue('state'))
+            const state = statuses.find((status) => status.value === row.getValue('state'));
 
-            if (!state) return null
+            if (!state) return null;
 
             return h('div', { class: 'flex w-[100px] items-center' }, [
                 h(
@@ -84,26 +84,26 @@ export const columns: ColumnDef<Instance>[] = [
                     },
                     state.label,
                 ),
-            ])
+            ]);
         },
         filterFn: (row, id, value) => {
-            return value?.includes(row.getValue(id))
+            return value?.includes(row.getValue(id));
         },
     },
     {
         accessorKey: 'publicIp',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Public IP' }),
         cell: ({ row }) => {
-            const publicIp = row.getValue('publicIp')
-            return h('div', { class: 'w-[120px] py-2' }, publicIp)
+            const publicIp = row.getValue('publicIp');
+            return h('div', { class: 'w-[120px] py-2' }, publicIp);
         },
     },
     {
         accessorKey: 'primaryPrivateIp',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Private IP' }),
         cell: ({ row }) => {
-            const privateIp = row.getValue('primaryPrivateIp')
-            return h('div', { class: 'w-[120px] py-2' }, privateIp)
+            const privateIp = row.getValue('primaryPrivateIp');
+            return h('div', { class: 'w-[120px] py-2' }, privateIp);
         },
     },
-]
+];

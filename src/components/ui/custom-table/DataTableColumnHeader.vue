@@ -1,29 +1,29 @@
 <script setup lang="ts" generic="TData">
-import type { Column } from '@tanstack/vue-table'
-import { Button } from '@/components/ui/button'
+import type { Column } from '@tanstack/vue-table';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { cn } from '@//utils'
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@//utils';
 
-import { ArrowDownIcon, ArrowUpIcon, CaretSortIcon, EyeNoneIcon } from '@radix-icons/vue'
+import { ArrowDownIcon, ArrowUpIcon, CaretSortIcon, EyeNoneIcon } from '@radix-icons/vue';
 
 interface DataTableColumnHeaderProps {
-    column: Column<TData, any>
-    title: string
+    column: Column<TData, any>;
+    title: string;
 }
 
-defineProps<DataTableColumnHeaderProps>()
+defineProps<DataTableColumnHeaderProps>();
 </script>
 
 <script lang="ts">
 export default {
     inheritAttrs: false,
-}
+};
 </script>
 
 <template>

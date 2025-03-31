@@ -6,11 +6,11 @@ export enum SidebarSection {
 }
 
 export interface SidebarItem {
-    path: string
-    name: string
-    icon: string
-    section: SidebarSection
-    active?: boolean
+    path: string;
+    name: string;
+    icon: string;
+    section: SidebarSection;
+    active?: boolean;
 }
 
 export const sidebarConfig: SidebarItem[] = [
@@ -70,4 +70,4 @@ export const sidebarConfig: SidebarItem[] = [
     //   name: 'SAML Setup',
     //   icon: '<circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /><path d="M8.5 3.5 A 1 1 0 0 1 15.5 3.5" />',
     // },
-]
+];

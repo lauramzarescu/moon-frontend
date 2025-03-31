@@ -33,13 +33,13 @@
 </template>
 
 <script setup lang="ts">
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { Component } from 'vue'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Component } from 'vue';
 
 defineProps<{
-    title: string
-    value: string | number
-    description?: string
-    icon?: Component
-}>()
+    title: string;
+    value: string | number;
+    description?: string;
+    icon?: Component;
+}>();
 </script>

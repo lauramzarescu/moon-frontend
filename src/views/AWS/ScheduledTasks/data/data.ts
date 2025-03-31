@@ -1,5 +1,5 @@
-import { h } from 'vue'
-import { CircleIcon, CrossCircledIcon } from '@radix-icons/vue'
+import { h } from 'vue';
+import { CircleIcon, CrossCircledIcon } from '@radix-icons/vue';
 
 export const statuses = [
     {
@@ -16,4 +16,4 @@ export const statuses = [
         icon: h(CrossCircledIcon),
         color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100',
     },
-]
+];

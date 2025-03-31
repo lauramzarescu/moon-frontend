@@ -1,21 +1,21 @@
 <script setup lang="ts" generic="TData">
-import type { Table } from '@tanstack/vue-table'
-import { Input } from '@/components/ui/input'
+import type { Table } from '@tanstack/vue-table';
+import { Input } from '@/components/ui/input';
 
 interface DataTableToolbarProps {
-    table: Table<TData>
-    inputPlaceholder: string
+    table: Table<TData>;
+    inputPlaceholder: string;
     options: {
-        label: string
-        value: string
-        icon: any
-    }[]
+        label: string;
+        value: string;
+        icon: any;
+    }[];
 }
 
 defineProps<{
-    table: Table<any>
-    options?: DataTableToolbarProps
-}>()
+    table: Table<any>;
+    options?: DataTableToolbarProps;
+}>();
 </script>
 
 <template>

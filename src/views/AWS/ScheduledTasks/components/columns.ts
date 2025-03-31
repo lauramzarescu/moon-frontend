@@ -1,11 +1,11 @@
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { ScheduledTask } from '../data/schema.ts'
+import type { ColumnDef } from '@tanstack/vue-table';
+import type { ScheduledTask } from '../data/schema.ts';
 
-import { h } from 'vue'
-import { statuses } from '../data/data.ts'
-import { Checkbox } from '@/components/ui/checkbox'
-import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue'
-import moment from 'moment'
+import { h } from 'vue';
+import { statuses } from '../data/data.ts';
+import { Checkbox } from '@/components/ui/checkbox';
+import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue';
+import moment from 'moment';
 
 export const columns: ColumnDef<ScheduledTask>[] = [
     {
@@ -35,7 +35,7 @@ export const columns: ColumnDef<ScheduledTask>[] = [
                 title: 'Name',
             }),
         cell: ({ row }) => {
-            return h('div', { class: 'w-40 py-2' }, row.getValue('name'))
+            return h('div', { class: 'w-40 py-2' }, row.getValue('name'));
         },
         enableSorting: true,
         enableHiding: false,
@@ -48,10 +48,10 @@ export const columns: ColumnDef<ScheduledTask>[] = [
                 title: 'Cluster',
             }),
         cell: ({ row }) => {
-            return h('div', { class: 'w-40 py-2' }, row.getValue('clusterName'))
+            return h('div', { class: 'w-40 py-2' }, row.getValue('clusterName'));
         },
         filterFn: (row, id, value) => {
-            return value?.includes(row.getValue(id))
+            return value?.includes(row.getValue(id));
         },
         enableSorting: true,
         enableHiding: false,
@@ -60,9 +60,9 @@ export const columns: ColumnDef<ScheduledTask>[] = [
         accessorKey: 'status',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Status' }),
         cell: ({ row }) => {
-            const status = statuses.find((status) => status.value === row.getValue('status'))
+            const status = statuses.find((status) => status.value === row.getValue('status'));
 
-            if (!status) return null
+            if (!status) return null;
 
             return h('div', { class: 'flex w-[100px] items-center' }, [
                 h(
@@ -73,24 +73,24 @@ export const columns: ColumnDef<ScheduledTask>[] = [
                     },
                     status.label,
                 ),
-            ])
+            ]);
         },
         filterFn: (row, id, value) => {
-            return value?.includes(row.getValue(id))
+            return value?.includes(row.getValue(id));
         },
     },
     {
         accessorKey: 'nextRun',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Next Run' }),
         cell: ({ row }) => {
-            const nextRun = row.getValue('nextRun')
+            const nextRun = row.getValue('nextRun');
             return h(
                 'div',
                 {
                     class: 'w-30 rounded px-2 py-1 transition-colors duration-200 cursor-pointer',
                 },
                 nextRun ? moment.utc(nextRun).format('DD MMM YYYY, HH:mm ') : 'N/A',
-            )
+            );
         },
     },
     {
@@ -114,4 +114,4 @@ export const columns: ColumnDef<ScheduledTask>[] = [
     //   id: 'actions',
     //   cell: ({ row }) => h(DataTableRowActions, { row }),
     // },
-]
+];

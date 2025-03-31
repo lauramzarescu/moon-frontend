@@ -1,4 +1,4 @@
-import { InstanceStateName } from './schema'
+import { InstanceStateName } from './schema';
 
 export const statuses = [
     {
@@ -37,4 +37,4 @@ export const statuses = [
         label: 'Terminated',
         color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100',
     },
-]
+];

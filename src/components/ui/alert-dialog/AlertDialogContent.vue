@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import type { AlertDialogContentEmits, AlertDialogContentProps } from 'radix-vue'
-import type { HTMLAttributes } from 'vue'
-import { cn } from '@/utils'
-import { AlertDialogContent, AlertDialogOverlay, AlertDialogPortal, useForwardPropsEmits } from 'radix-vue'
-import { computed } from 'vue'
+import type { AlertDialogContentEmits, AlertDialogContentProps } from 'radix-vue';
+import type { HTMLAttributes } from 'vue';
+import { cn } from '@/utils';
+import { AlertDialogContent, AlertDialogOverlay, AlertDialogPortal, useForwardPropsEmits } from 'radix-vue';
+import { computed } from 'vue';
 
-const props = defineProps<AlertDialogContentProps & { class?: HTMLAttributes['class'] }>()
-const emits = defineEmits<AlertDialogContentEmits>()
+const props = defineProps<AlertDialogContentProps & { class?: HTMLAttributes['class'] }>();
+const emits = defineEmits<AlertDialogContentEmits>();
 
 const delegatedProps = computed(() => {
-    const { class: _, ...delegated } = props
+    const { class: _, ...delegated } = props;
 
-    return delegated
-})
+    return delegated;
+});
 
-const forwarded = useForwardPropsEmits(delegatedProps, emits)
+const forwarded = useForwardPropsEmits(delegatedProps, emits);
 </script>
 
 <template>

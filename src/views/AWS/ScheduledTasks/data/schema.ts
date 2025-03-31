@@ -1,5 +1,5 @@
-import { z } from 'zod'
-import { serviceSchema } from '@/views/AWS/Services/data/schema.ts'
+import { z } from 'zod';
+import { serviceSchema } from '@/views/AWS/Services/data/schema.ts';
 
 export const scheduledTaskSchema = z.object({
     name: z.string(),
@@ -10,6 +10,6 @@ export const scheduledTaskSchema = z.object({
     arn: z.string(),
     service: serviceSchema,
     nextRun: z.string().optional(),
-})
+});
 
-export type ScheduledTask = z.infer<typeof scheduledTaskSchema>
+export type ScheduledTask = z.infer<typeof scheduledTaskSchema>;

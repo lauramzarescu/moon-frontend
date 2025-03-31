@@ -1,5 +1,5 @@
-import { createPersistedState } from 'pinia-plugin-persistedstate'
-import Cookies from 'js-cookie'
+import { createPersistedState } from 'pinia-plugin-persistedstate';
+import Cookies from 'js-cookie';
 
 export const piniaPersistedState = createPersistedState({
     storage: {
@@ -7,4 +7,4 @@ export const piniaPersistedState = createPersistedState({
         setItem: (key: string, value: string) => Cookies.set(key, value, { expires: 7 }), // Expires in 7 days
         removeItem: (key: string) => Cookies.remove(key),
     } as Storage,
-})
+});

@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 // Define the enum for EC2 instance states
 export enum InstanceStateName {
@@ -20,6 +20,6 @@ export const inventorySchema = z.object({
     primaryPrivateIp: z.string(),
     privateIpAddresses: z.array(z.string()),
     services: z.array(z.any()).optional(),
-})
+});
 
-export type Instance = z.infer<typeof inventorySchema>
+export type Instance = z.infer<typeof inventorySchema>;

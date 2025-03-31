@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 export const samlConfigSchema = z.object({
     id: z.string().optional(),
@@ -30,12 +30,12 @@ export const samlConfigSchema = z.object({
             invalid_type_error: 'Entity ID must be a string',
         })
         .min(1, 'Entity ID cannot be empty'),
-})
+});
 
 export const createPartialUpdateSchema = (changedFields: Record<string, boolean>) => {
     let schema = z.object({
         id: z.string().optional(),
-    })
+    });
 
     if (changedFields.metadataUrl) {
         schema = schema.extend({
@@ -45,7 +45,7 @@ export const createPartialUpdateSchema = (changedFields: Record<string, boolean>
                     invalid_type_error: 'Metadata URL must be a string',
                 })
                 .url('Must be a valid URL'),
-        })
+        });
     }
 
     if (changedFields.entityId) {
@@ -56,7 +56,7 @@ export const createPartialUpdateSchema = (changedFields: Record<string, boolean>
                     invalid_type_error: 'Entity ID must be a string',
                 })
                 .min(1, 'Entity ID cannot be empty'),
-        })
+        });
     }
 
     if (changedFields.x509Certificate) {
@@ -67,7 +67,7 @@ export const createPartialUpdateSchema = (changedFields: Record<string, boolean>
                     invalid_type_error: 'X.509 Certificate must be a string',
                 })
                 .min(1, 'X.509 Certificate cannot be empty'),
-        })
+        });
     }
 
     if (changedFields.privateKey) {
@@ -82,10 +82,10 @@ export const createPartialUpdateSchema = (changedFields: Record<string, boolean>
                     /^-----BEGIN( RSA| EC| DSA| OPENSSH)? PRIVATE KEY-----(\r?\n|\r)[\s\S]+(\r?\n|\r)-----END( RSA| EC| DSA| OPENSSH)? PRIVATE KEY-----$/,
                     'Invalid private key format - must be a valid PEM format',
                 ),
-        })
+        });
     }
 
-    return schema
-}
+    return schema;
+};
 
-export type SamlConfigInput = z.infer<typeof samlConfigSchema>
+export type SamlConfigInput = z.infer<typeof samlConfigSchema>;

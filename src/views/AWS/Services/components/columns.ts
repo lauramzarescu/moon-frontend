@@ -1,12 +1,12 @@
-import type { ColumnDef } from '@tanstack/vue-table'
-import type { Service } from '../data/schema.ts'
+import type { ColumnDef } from '@tanstack/vue-table';
+import type { Service } from '../data/schema.ts';
 
-import { h } from 'vue'
-import { Checkbox } from '@/components/ui/checkbox'
-import { lastDeploymentStatuses, statuses } from '@/views/AWS/Services/data/data.ts'
-import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts'
-import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue'
-import { AlertTriangle } from 'lucide-vue-next'
+import { h } from 'vue';
+import { Checkbox } from '@/components/ui/checkbox';
+import { lastDeploymentStatuses, statuses } from '@/views/AWS/Services/data/data.ts';
+import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
+import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue';
+import { AlertTriangle } from 'lucide-vue-next';
 
 export const columns: ColumnDef<Service>[] = [
     {
@@ -32,8 +32,8 @@ export const columns: ColumnDef<Service>[] = [
         accessorKey: 'name',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Name' }),
         cell: ({ row }) => {
-            const service = row.original as unknown as ServiceInterface
-            const isStuck = service.deploymentStatus?.isStuck === true
+            const service = row.original as unknown as ServiceInterface;
+            const isStuck = service.deploymentStatus?.isStuck === true;
 
             return h(
                 'div',
@@ -47,7 +47,7 @@ export const columns: ColumnDef<Service>[] = [
                         }),
                     row.getValue('name'),
                 ],
-            )
+            );
         },
         enableSorting: true,
         enableHiding: false,
@@ -57,20 +57,20 @@ export const columns: ColumnDef<Service>[] = [
                 // (row.original as unknown as ServiceInterface).clusterName,
             ]
                 .filter(Boolean)
-                .join(' ')
+                .join(' ');
 
-            const searchTerms = Array.isArray(filterValues) ? filterValues : [filterValues]
+            const searchTerms = Array.isArray(filterValues) ? filterValues : [filterValues];
 
             // Check if any of the search terms are included in the userInfoString
-            return searchTerms.some((term) => userInfoString.includes(term.toLowerCase()))
+            return searchTerms.some((term) => userInfoString.includes(term.toLowerCase()));
         },
     },
     {
         accessorKey: 'clusterName',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Cluster' }),
         cell: ({ row }) => {
-            const service = row.original as unknown as ServiceInterface
-            const isStuck = service.deploymentStatus?.isStuck === true
+            const service = row.original as unknown as ServiceInterface;
+            const isStuck = service.deploymentStatus?.isStuck === true;
 
             return h(
                 'div',
@@ -78,23 +78,23 @@ export const columns: ColumnDef<Service>[] = [
                     class: `w-15 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
                 },
                 row.getValue('clusterName'),
-            )
+            );
         },
         enableSorting: true,
         enableHiding: true,
         sortingFn: 'alphanumeric',
         sortDescFirst: true,
         filterFn: (row, id, value) => {
-            return value?.includes(row.getValue(id))
+            return value?.includes(row.getValue(id));
         },
     },
     {
         accessorKey: 'status',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Status' }),
         cell: ({ row }) => {
-            const status = statuses.find((status) => status.value === row.getValue('status'))
+            const status = statuses.find((status) => status.value === row.getValue('status'));
 
-            if (!status) return null
+            if (!status) return null;
 
             return h('div', { class: 'w-10 flex w-[100px] items-center' }, [
                 h(
@@ -105,18 +105,18 @@ export const columns: ColumnDef<Service>[] = [
                     },
                     status.label,
                 ),
-            ])
+            ]);
         },
         filterFn: (row, id, value) => {
-            return value?.includes(row.getValue(id))
+            return value?.includes(row.getValue(id));
         },
     },
     {
         accessorKey: 'image',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Image' }),
         cell: ({ row }) => {
-            const service = row.original as unknown as ServiceInterface
-            const isStuck = service.deploymentStatus?.isStuck === true
+            const service = row.original as unknown as ServiceInterface;
+            const isStuck = service.deploymentStatus?.isStuck === true;
 
             return h(
                 'div',
@@ -124,15 +124,15 @@ export const columns: ColumnDef<Service>[] = [
                     class: `w-35 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
                 },
                 service.containers[0].image,
-            )
+            );
         },
     },
     {
         accessorKey: 'taskRevision',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Task R.' }),
         cell: ({ row }) => {
-            const service = row.original as unknown as ServiceInterface
-            const isStuck = service.deploymentStatus?.isStuck === true
+            const service = row.original as unknown as ServiceInterface;
+            const isStuck = service.deploymentStatus?.isStuck === true;
 
             return h(
                 'div',
@@ -140,15 +140,15 @@ export const columns: ColumnDef<Service>[] = [
                     class: `w-10 flex items-center gap-1 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
                 },
                 [service.taskDefinition?.revision, h('i', { class: 'text-sm' })],
-            )
+            );
         },
     },
     {
         accessorKey: 'runningCount',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Running' }),
         cell: ({ row }) => {
-            const service = row.original as unknown as ServiceInterface
-            const isStuck = service.deploymentStatus?.isStuck === true
+            const service = row.original as unknown as ServiceInterface;
+            const isStuck = service.deploymentStatus?.isStuck === true;
 
             return h(
                 'div',
@@ -156,15 +156,15 @@ export const columns: ColumnDef<Service>[] = [
                     class: `w-2 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
                 },
                 row.getValue('runningCount'),
-            )
+            );
         },
     },
     {
         accessorKey: 'pendingCount',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Pending' }),
         cell: ({ row }) => {
-            const service = row.original as unknown as ServiceInterface
-            const isStuck = service.deploymentStatus?.isStuck === true
+            const service = row.original as unknown as ServiceInterface;
+            const isStuck = service.deploymentStatus?.isStuck === true;
 
             return h(
                 'div',
@@ -172,15 +172,15 @@ export const columns: ColumnDef<Service>[] = [
                     class: `w-2 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
                 },
                 row.getValue('pendingCount'),
-            )
+            );
         },
     },
     {
         accessorKey: 'desiredCount',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Desired' }),
         cell: ({ row }) => {
-            const service = row.original as unknown as ServiceInterface
-            const isStuck = service.deploymentStatus?.isStuck === true
+            const service = row.original as unknown as ServiceInterface;
+            const isStuck = service.deploymentStatus?.isStuck === true;
 
             return h(
                 'div',
@@ -188,22 +188,22 @@ export const columns: ColumnDef<Service>[] = [
                     class: `w-2 ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
                 },
                 row.getValue('desiredCount'),
-            )
+            );
         },
     },
     {
         accessorKey: 'lastDeploymentStatus',
         accessorFn: (row) => {
-            const deployment = (row as unknown as ServiceInterface).deployments[0]
-            return deployment ? deployment.rolloutState : 'N/A'
+            const deployment = (row as unknown as ServiceInterface).deployments[0];
+            return deployment ? deployment.rolloutState : 'N/A';
         },
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Last Deployment Status' }),
         cell: ({ row }) => {
-            const deployment = (row.original as unknown as ServiceInterface).deployments[0]
-            if (!deployment) return h('div', { class: 'w-10' }, 'N/A')
-            const status = lastDeploymentStatuses.find((status) => status.value === deployment.rolloutState)
+            const deployment = (row.original as unknown as ServiceInterface).deployments[0];
+            if (!deployment) return h('div', { class: 'w-10' }, 'N/A');
+            const status = lastDeploymentStatuses.find((status) => status.value === deployment.rolloutState);
 
-            if (!status) return null
+            if (!status) return null;
 
             return h('div', { class: 'flex w-[100px] items-center' }, [
                 h(
@@ -214,13 +214,13 @@ export const columns: ColumnDef<Service>[] = [
                     },
                     status.label,
                 ),
-            ])
+            ]);
         },
         filterFn: (row, id, filterValues) => {
-            const deployment = (row.original as unknown as ServiceInterface).deployments[0]
-            if (!deployment) return false
+            const deployment = (row.original as unknown as ServiceInterface).deployments[0];
+            if (!deployment) return false;
 
-            return filterValues?.includes(deployment.rolloutState)
+            return filterValues?.includes(deployment.rolloutState);
         },
     },
-]
+];

@@ -1,5 +1,5 @@
-import { LoginType } from '@/enums/user/user.enum.ts'
-import { BuildingIcon, KeyRoundIcon } from 'lucide-vue-next'
+import { LoginType } from '@/enums/user/user.enum.ts';
+import { BuildingIcon, KeyRoundIcon } from 'lucide-vue-next';
 
 export const loginTypes = [
     {
@@ -14,4 +14,4 @@ export const loginTypes = [
         color: 'bg-blue-200 text-blue-800',
         icon: KeyRoundIcon,
     },
-]
+];

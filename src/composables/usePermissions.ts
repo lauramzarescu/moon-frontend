@@ -1,14 +1,14 @@
-import { PermissionEnum } from '@/enums/user/user.enum'
-import { useAuthStore } from '@/stores/authStore'
+import { PermissionEnum } from '@/enums/user/user.enum';
+import { useAuthStore } from '@/stores/authStore';
 
 export function usePermissions() {
-    const authStore = useAuthStore()
+    const authStore = useAuthStore();
 
     const hasPermission = (permission: PermissionEnum): boolean => {
-        return authStore.userPermissions.includes(permission)
-    }
+        return authStore.userPermissions.includes(permission);
+    };
 
     return {
         hasPermission,
-    }
+    };
 }

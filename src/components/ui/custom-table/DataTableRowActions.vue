@@ -1,28 +1,28 @@
 <script setup lang="ts" generic="TData">
-import type { Row } from '@tanstack/vue-table'
-import { Button } from '@/components/ui/button'
+import type { Row } from '@tanstack/vue-table';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuShortcut,
     DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 
-import { DotsHorizontalIcon } from '@radix-icons/vue'
+import { DotsHorizontalIcon } from '@radix-icons/vue';
 
 interface DataTableRowActionsProps {
-    row: Row<TData>
+    row: Row<TData>;
     actions: {
-        onClick: (row: Row<TData>) => void
-        redirectTo?: string
-        enable: boolean
-        trigger: string
-        shortcut: string
-    }[]
+        onClick: (row: Row<TData>) => void;
+        redirectTo?: string;
+        enable: boolean;
+        trigger: string;
+        shortcut: string;
+    }[];
 }
 
-defineProps<DataTableRowActionsProps>()
+defineProps<DataTableRowActionsProps>();
 </script>
 
 <template>

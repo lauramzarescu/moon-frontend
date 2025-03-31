@@ -1,6 +1,6 @@
-import { z } from 'zod'
-import { serviceSchema } from '@/views/AWS/Services/data/schema.ts'
-import { scheduledTaskSchema } from '@/views/AWS/ScheduledTasks/data/schema.ts'
+import { z } from 'zod';
+import { serviceSchema } from '@/views/AWS/Services/data/schema.ts';
+import { scheduledTaskSchema } from '@/views/AWS/ScheduledTasks/data/schema.ts';
 
 export const clusterSchema = z.object({
     name: z.string(),
@@ -11,6 +11,6 @@ export const clusterSchema = z.object({
     servicesCount: z.number(),
     services: serviceSchema,
     scheduledTasks: z.array(scheduledTaskSchema),
-})
+});
 
-export type Cluster = z.infer<typeof clusterSchema>
+export type Cluster = z.infer<typeof clusterSchema>;

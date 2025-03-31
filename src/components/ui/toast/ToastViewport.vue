@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import type { ToastViewportProps } from 'radix-vue'
-import type { HTMLAttributes } from 'vue'
-import { cn } from '@/utils'
-import { ToastViewport } from 'radix-vue'
-import { computed } from 'vue'
+import type { ToastViewportProps } from 'radix-vue';
+import type { HTMLAttributes } from 'vue';
+import { cn } from '@/utils';
+import { ToastViewport } from 'radix-vue';
+import { computed } from 'vue';
 
-const props = defineProps<ToastViewportProps & { class?: HTMLAttributes['class'] }>()
+const props = defineProps<ToastViewportProps & { class?: HTMLAttributes['class'] }>();
 
 const delegatedProps = computed(() => {
-    const { class: _, ...delegated } = props
+    const { class: _, ...delegated } = props;
 
-    return delegated
-})
+    return delegated;
+});
 </script>
 
 <template>

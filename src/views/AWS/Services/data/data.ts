@@ -1,5 +1,5 @@
-import { h } from 'vue'
-import { CircleIcon, CrossCircledIcon, StopwatchIcon } from '@radix-icons/vue'
+import { h } from 'vue';
+import { CircleIcon, CrossCircledIcon, StopwatchIcon } from '@radix-icons/vue';
 
 export const statuses = [
     {
@@ -16,7 +16,7 @@ export const statuses = [
         icon: h(CrossCircledIcon),
         color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100',
     },
-]
+];
 
 export const lastDeploymentStatuses = [
     {
@@ -40,4 +40,4 @@ export const lastDeploymentStatuses = [
         icon: h(StopwatchIcon),
         color: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100',
     },
-]
+];

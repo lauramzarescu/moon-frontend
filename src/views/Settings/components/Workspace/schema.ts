@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 export enum ServiceType {
     aws = 'aws',
@@ -12,6 +12,6 @@ export const servicesConfigSchema = z.object({
     config: z.any(),
     organizationId: z.string().optional(),
     canEdit: z.boolean().optional(),
-})
+});
 
-export type ServicesConfigInput = z.infer<typeof servicesConfigSchema>
+export type ServicesConfigInput = z.infer<typeof servicesConfigSchema>;

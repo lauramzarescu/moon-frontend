@@ -14,7 +14,7 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
-    "fix-style": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\""
+    "fix-style": "prettier --write \"src/**/*.{ts,tsx,js,jsx,vue}\""
   },
   "dependencies": {
     "@aws-sdk/types": "^3.734.0",

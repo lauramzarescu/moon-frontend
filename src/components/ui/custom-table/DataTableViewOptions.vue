@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="TData">
-import type { Table } from '@tanstack/vue-table'
-import { Button } from '@/components/ui/button'
+import type { Table } from '@tanstack/vue-table';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -8,20 +8,20 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 
-import { computed } from 'vue'
-import { MixerHorizontalIcon } from '@radix-icons/vue'
+import { computed } from 'vue';
+import { MixerHorizontalIcon } from '@radix-icons/vue';
 
 interface DataTableViewOptionsProps {
-    table: Table<TData>
+    table: Table<TData>;
 }
 
-const props = defineProps<DataTableViewOptionsProps>()
+const props = defineProps<DataTableViewOptionsProps>();
 
 const columns = computed(() =>
     props.table.getAllColumns().filter((column) => typeof column.accessorFn !== 'undefined' && column.getCanHide()),
-)
+);
 </script>
 
 <template>

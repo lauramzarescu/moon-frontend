@@ -1,17 +1,17 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import ClustersView from '@/views/AWS/ClustersView.vue'
-import ServiceView from '@/views/AWS/ServiceView.vue'
-import ScheduledTasksView from '@/views/AWS/ScheduledTasksView.vue'
-import SAMLSetup from '@/views/Settings/components/SAML/SAMLSetup.vue'
-import AccountView from '@/views/Settings/AccountView.vue'
-import ProfileView from '@/views/Settings/ProfileView.vue'
-import SettingsView from '@/views/Settings/SettingsView.vue'
-import LoginView from '@/views/Login/LoginView.vue'
-import Cookies from 'js-cookie'
-import { AuthService } from '@/services/auth.service.ts'
-import InventoryView from '@/views/AWS/InventoryView.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import ClustersView from '@/views/AWS/ClustersView.vue';
+import ServiceView from '@/views/AWS/ServiceView.vue';
+import ScheduledTasksView from '@/views/AWS/ScheduledTasksView.vue';
+import SAMLSetup from '@/views/Settings/components/SAML/SAMLSetup.vue';
+import AccountView from '@/views/Settings/AccountView.vue';
+import ProfileView from '@/views/Settings/ProfileView.vue';
+import SettingsView from '@/views/Settings/SettingsView.vue';
+import LoginView from '@/views/Login/LoginView.vue';
+import Cookies from 'js-cookie';
+import { AuthService } from '@/services/auth.service.ts';
+import InventoryView from '@/views/AWS/InventoryView.vue';
 
-const authService = new AuthService()
+const authService = new AuthService();
 
 const router = createRouter({
     history: createWebHistory(),
@@ -92,27 +92,27 @@ const router = createRouter({
             },
         },
     ],
-})
+});
 
 router.beforeEach((to, from, next) => {
-    document.title = to.meta.title ? `${to.meta.title} - Moon` : 'Moon'
+    document.title = to.meta.title ? `${to.meta.title} - Moon` : 'Moon';
 
-    const token = Cookies.get('token')
-    const isTokenExpired = authService.isTokenExpired(token || '')
-    const isAuthenticated = !!token && !isTokenExpired
+    const token = Cookies.get('token');
+    const isTokenExpired = authService.isTokenExpired(token || '');
+    const isAuthenticated = !!token && !isTokenExpired;
 
     // If token is expired, remove it
     if (token && isTokenExpired) {
-        Cookies.remove('token')
+        Cookies.remove('token');
     }
 
     if (to.path === '/login' && isAuthenticated) {
-        next('/')
+        next('/');
     } else if (to.path !== '/login' && !isAuthenticated) {
-        next('/login')
+        next('/login');
     } else {
-        next()
+        next();
     }
-})
+});
 
-export default router
+export default router;

@@ -1,4 +1,4 @@
-import { h } from 'vue'
+import { h } from 'vue';
 import {
     ArrowDownIcon,
     ArrowRightIcon,
@@ -7,7 +7,7 @@ import {
     CrossCircledIcon,
     QuestionMarkCircledIcon,
     StopwatchIcon,
-} from '@radix-icons/vue'
+} from '@radix-icons/vue';
 
 export const labels = [
     {
@@ -22,7 +22,7 @@ export const labels = [
         value: 'documentation',
         label: 'Documentation',
     },
-]
+];
 
 export const statuses = [
     {
@@ -60,7 +60,7 @@ export const statuses = [
         icon: h(QuestionMarkCircledIcon),
         color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100',
     },
-]
+];
 
 export const priorities = [
     {
@@ -78,4 +78,4 @@ export const priorities = [
         label: 'High',
         icon: h(ArrowUpIcon),
     },
-]
+];

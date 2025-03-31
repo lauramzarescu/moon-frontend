@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 export const serviceSchema = z.object({
     services: z.array(
@@ -47,6 +47,6 @@ export const serviceSchema = z.object({
             ),
         }),
     ),
-})
+});
 
-export type Service = z.infer<typeof serviceSchema>
+export type Service = z.infer<typeof serviceSchema>;
