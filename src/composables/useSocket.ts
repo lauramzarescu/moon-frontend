@@ -1,20 +1,14 @@
-import { io, Socket } from 'socket.io-client'
-import { ref } from 'vue'
-import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts'
-import type {
-  DeploymentInterface,
-  ServiceInterface,
-  TaskDefinitionInterface,
-} from '@/views/AWS/Services/types/service.interface.ts'
-import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts'
-import { config } from '../../app.config.ts'
-import type {
-  ScheduledTaskInterface,
-} from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts'
+import { io, Socket } from 'socket.io-client';
+import { ref } from 'vue';
+import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts';
+import type { DeploymentInterface, ServiceInterface, TaskDefinitionInterface } from '@/views/AWS/Services/types/service.interface.ts';
+import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts';
+import { config } from '../../app.config.ts';
+import type { ScheduledTaskInterface } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts';
 
 let socket: Socket | null = null;
 
-xport function useSocket() {
+export function useSocket() {
     if (!socket) {
         socket = io(config.SOCKET_URL, {
             withCredentials: true,
