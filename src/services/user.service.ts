@@ -7,8 +7,8 @@ import type {
 import type { PaginatedResult, PaginationParams } from '@/types/pagination/pagination.interface.ts'
 import type {
   TwoFactorSetupResponse,
-  TwoFactorStatus,
-} from '@/views/Settings/components/Account/schema.ts'
+  TwoFactorStatus
+} from, '@/views/Settings/components/Account/schema.ts'
 
 export class UserService extends ApiService {
   public resource = '/users'
@@ -99,12 +99,15 @@ export class UserService extends ApiService {
       headers['Authorization'] = `Bearer ${sessionToken}`
     }
 
-    return this.post(`${this.resource}/2fa/verify-session`, { code }, {
-      headers,
-      credentials: 'include',
-    })
+    return this.post(
+      `${this.resource}/2fa/verify-session`,
+      { code },
+      {
+        headers,
+        credentials: 'include',
+      },
+    )
   }
-
 
   /**
    * Disable 2FA for a user

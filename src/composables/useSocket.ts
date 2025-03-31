@@ -7,10 +7,10 @@ import type {
   TaskDefinitionInterface,
 } from '@/views/AWS/Services/types/service.interface.ts'
 import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts'
-import type {
-  ScheduledTaskInterface,
-} from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts'
 import { config } from '../../app.config.ts'
+import type {
+  ScheduledTaskInterface
+} from, '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts'
 
 let socket: Socket | null = null
 

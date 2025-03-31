@@ -7,10 +7,10 @@ import type {
   ServiceInterface,
 } from '@/views/AWS/Services/types/service.interface.ts'
 import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts'
-import type {
-  ScheduledTaskInterface,
-} from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts'
 import * as LZString from 'lz-string'
+import type {
+  ScheduledTaskInterface
+} fr,om '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts'
 
 export const useDataStore = defineStore(
   'data',
