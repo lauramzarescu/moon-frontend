@@ -9,63 +9,63 @@ import type {
 import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts'
 import { config } from '../../app.config.ts'
 import type {
-  ScheduledTaskInterface
-} from, '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts'
+  ScheduledTaskInterface,
+} from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts'
 
-let socket: Socket | null = null
+let socket: Socket | null = null;
 
-export function useSocket() {
-  if (!socket) {
-    socket = io(config.SOCKET_URL, {
-      withCredentials: true,
-      transports: ['polling', 'websocket'],
-      reconnection: true,
-      reconnectionAttempts: 20,
-      reconnectionDelay: 1000,
-    })
-  }
+xport function useSocket() {
+    if (!socket) {
+        socket = io(config.SOCKET_URL, {
+            withCredentials: true,
+            transports: ['polling', 'websocket'],
+            reconnection: true,
+            reconnectionAttempts: 20,
+            reconnectionDelay: 1000,
+        });
+    }
 
-  const data = ref<ClusterResponseInterface | null>(null)
+    const data = ref<ClusterResponseInterface | null>(null);
 
-  const processClusters = (_clusters: ClusterInterface[]) => {
-    const clusters = ref<ClusterInterface[]>([])
-    const services = ref<ServiceInterface[]>([])
-    const scheduledTasks = ref<ScheduledTaskInterface[]>([])
-    const deployments = ref<DeploymentInterface[]>([])
-    const taskDefinitions = ref<TaskDefinitionInterface[]>([])
+    const processClusters = (_clusters: ClusterInterface[]) => {
+        const clusters = ref<ClusterInterface[]>([]);
+        const services = ref<ServiceInterface[]>([]);
+        const scheduledTasks = ref<ScheduledTaskInterface[]>([]);
+        const deployments = ref<DeploymentInterface[]>([]);
+        const taskDefinitions = ref<TaskDefinitionInterface[]>([]);
 
-    for (const cluster of _clusters) {
-      clusters.value.push(cluster)
-      scheduledTasks.value.push(...cluster.scheduledTasks)
+        for (const cluster of _clusters) {
+            clusters.value.push(cluster);
+            scheduledTasks.value.push(...cluster.scheduledTasks);
 
-      for (const service of cluster.services) {
-        services.value.push(service)
+            for (const service of cluster.services) {
+                services.value.push(service);
 
-        for (const deployment of service.deployments) {
-          deployments.value.push(deployment)
+                for (const deployment of service.deployments) {
+                    deployments.value.push(deployment);
+                }
+
+                taskDefinitions.value.push(service.taskDefinition);
+            }
         }
 
-        taskDefinitions.value.push(service.taskDefinition)
-      }
-    }
+        return {
+            clusters: clusters.value,
+            services: services.value,
+            scheduledTasks: scheduledTasks.value,
+            deployments: deployments.value,
+            taskDefinitions: taskDefinitions.value,
+        };
+    };
+
+    const setRefreshInterval = (intervalTime: number) => {
+        socket?.emit('set-interval', intervalTime);
+    };
 
     return {
-      clusters: clusters.value,
-      services: services.value,
-      scheduledTasks: scheduledTasks.value,
-      deployments: deployments.value,
-      taskDefinitions: taskDefinitions.value,
-    }
-  }
-
-  const setRefreshInterval = (intervalTime: number) => {
-    socket?.emit('set-interval', intervalTime)
-  }
-
-  return {
-    socket,
-    data,
-    processClusters,
-    setRefreshInterval,
-  }
+        socket,
+        data,
+        processClusters,
+        setRefreshInterval,
+    };
 }
