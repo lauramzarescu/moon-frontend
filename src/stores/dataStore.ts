@@ -2,7 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useSocket } from '@/composables/useSocket.ts'
 import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts'
-import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts'
+import type {
+  InstanceInterface,
+  ServiceInterface,
+} from '@/views/AWS/Services/types/service.interface.ts'
 import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts'
 import type {
   ScheduledTaskInterface,
@@ -13,6 +16,7 @@ export const useDataStore = defineStore(
   'data',
   () => {
     const { socket, processClusters, setRefreshInterval } = useSocket()
+    const instances = ref<InstanceInterface[]>([])
     const services = ref<ServiceInterface[]>([])
     const clusters = ref<ClusterInterface[]>([])
     const scheduledTasks = ref<ScheduledTaskInterface[]>([])
@@ -53,6 +57,7 @@ export const useDataStore = defineStore(
       const processedData = processClusters(receivedData.clusters.clusters)
 
       if (processedData) {
+        instances.value = receivedData.ec2Instances.instances
         services.value = processedData.services
         clusters.value = processedData.clusters
         scheduledTasks.value = processedData.scheduledTasks
@@ -61,6 +66,7 @@ export const useDataStore = defineStore(
     }
 
     return {
+      instances,
       services,
       clusters,
       scheduledTasks,

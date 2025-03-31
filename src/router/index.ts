@@ -9,6 +9,7 @@ import SettingsView from '@/views/Settings/SettingsView.vue'
 import LoginView from '@/views/Login/LoginView.vue'
 import Cookies from 'js-cookie'
 import { AuthService } from '@/services/auth.service.ts'
+import InventoryView from '@/views/AWS/InventoryView.vue'
 
 const authService = new AuthService()
 
@@ -28,6 +29,14 @@ const router = createRouter({
       component: LoginView,
       meta: {
         title: 'Login',
+      },
+    },
+    {
+      path: '/aws/inventory',
+      name: 'inventory',
+      component: InventoryView,
+      meta: {
+        title: 'AWS Inventory',
       },
     },
     {
