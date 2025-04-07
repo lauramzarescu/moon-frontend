@@ -2,12 +2,10 @@
 import { ref, watch } from 'vue';
 import {
     type ActionDefinition,
-    actionDefinitionSchema,
     type ActionType,
     actionTypeLabels,
     actionTypeSchema,
-    addInboundRuleConfigSchema,
-    sendNotificationConfigSchema,
+    baseActionDefinitionSchema,
     type TriggerType,
     triggerTypeLabels,
     triggerTypeSchema,
@@ -20,10 +18,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
+import { getActionConfig } from '@/views/Settings/components/Actions/action-config.helper.ts';
 
 const emit = defineEmits<{ (e: 'action-created', action: ActionDefinition): void }>();
 
-const formBaseSchema = actionDefinitionSchema.pick({
+const formBaseSchema = baseActionDefinitionSchema.pick({
+    config: true,
     name: true,
     triggerType: true,
     actionType: true,
@@ -50,25 +50,11 @@ const currentConfigSchema = ref<z.ZodObject<unknown> | null>(null);
 watch(
     () => formValues.actionType,
     (newActionType) => {
-        if (newActionType === actionTypeSchema.enum.add_inbound_rule) {
-            currentConfigSchema.value = addInboundRuleConfigSchema; // Use imported schema
-            // Initialize config fields for this type if they don't exist
-            if (!formValues.config || Object.keys(formValues.config).length === 0) {
-                setFieldValue('config', {
-                    securityGroupId: '',
-                    protocol: '',
-                    portRange: '',
-                    descriptionTemplate: '',
-                });
-            }
-        } else if (newActionType === actionTypeSchema.enum.send_notification) {
-            currentConfigSchema.value = sendNotificationConfigSchema; // Use imported schema
-            if (!formValues.config || Object.keys(formValues.config).length === 0) {
-                setFieldValue('config', { channel: '', recipient: '', messageTemplate: '' });
-            }
-        } else {
-            currentConfigSchema.value = null;
-            setFieldValue('config', {});
+        const { schema, defaultValues } = getActionConfig(newActionType);
+        currentConfigSchema.value = schema;
+
+        if (!formValues.config || Object.keys(formValues.config).length === 0) {
+            setFieldValue('config', defaultValues);
         }
     },
     { immediate: true },
@@ -87,7 +73,7 @@ const onSubmit = handleSubmit(async (values) => {
             console.error('Config validation failed:', configResult.error.flatten().fieldErrors);
             configResult.error.errors.forEach((err) => {
                 const fieldName = `config.${err.path.join('.')}`;
-                setFieldError(fieldName as unknown, err.message);
+                setFieldError(fieldName, err.message);
             });
             alert('Configuration details are invalid. Please check the fields.');
             return;
@@ -98,7 +84,7 @@ const onSubmit = handleSubmit(async (values) => {
     }
 
     const newActionData = {
-        id: `action-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        id: crypto.randomUUID(),
         name: values.name,
         actionType: values.actionType!,
         triggerType: values.triggerType!,
@@ -106,10 +92,9 @@ const onSubmit = handleSubmit(async (values) => {
         enabled: true,
     };
 
-    const finalValidation = actionDefinitionSchema.safeParse(newActionData);
+    const finalValidation = baseActionDefinitionSchema.safeParse(newActionData);
     if (!finalValidation.success) {
         console.error('Final object validation failed:', finalValidation.error.flatten());
-        alert('Internal error constructing action.');
         return;
     }
 
@@ -222,7 +207,32 @@ const actionTypes = actionTypeSchema.enum;
                             </FormItem>
                         </FormField>
                     </div>
-                    <div v-if="formValues.actionType === actionTypes.send_notification" class="space-y-4">
+
+                    <div v-if="formValues.actionType === actionTypes.send_email_notification" class="space-y-4">
+                        <FormField name="config.email" v-slot="{ field }">
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl><Input v-bind="field" placeholder="admin@example.com" /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        </FormField>
+                        <FormField name="config.subject" v-slot="{ field }">
+                            <FormItem>
+                                <FormLabel>Subject</FormLabel>
+                                <FormControl><Input v-bind="field" placeholder="Service alert" /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        </FormField>
+                        <FormField name="config.body" v-slot="{ field }">
+                            <FormItem>
+                                <FormLabel>Body</FormLabel>
+                                <FormControl><Input v-bind="field" placeholder="User {userId} logged in." /> </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        </FormField>
+                    </div>
+
+                    <div v-if="formValues.actionType === actionTypes.send_slack_notification" class="space-y-4">
                         <FormField name="config.channel" v-slot="{ field }">
                             <FormItem>
                                 <FormLabel>Channel / Type</FormLabel>

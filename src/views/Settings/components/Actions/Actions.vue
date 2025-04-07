@@ -3,50 +3,96 @@
 import FormsLayout from '@/views/Settings/layout/FormsLayout.vue';
 import ActionBuilder from './ActionBuilder.vue';
 import ActionList from './ActionList.vue';
-import { ref } from 'vue';
-import type { ActionDefinition } from './schema';
+import { onMounted, ref } from 'vue';
+import { type ActionDefinition } from './schema';
+import { ActionService } from '@/services/action.service.ts';
+import { toast } from '@/components/ui/toast';
 
-const configuredActions = ref<ActionDefinition[]>([
-    {
-        id: 'action-1',
-        name: 'Allow SSH DEV',
-        actionType: 'add_inbound_rule',
-        triggerType: 'user_login',
-        config: { securityGroupId: 'sg-123', protocol: 'tcp', portRange: '22' },
-        enabled: true,
-    },
-]);
+const actionService = new ActionService();
 
-// Handler for when a new action is created by the builder
-const handleActionCreated = (newAction: ActionDefinition) => {
-    // TODO: Add logic to save the new action (e.g., API call)
-    console.log('New Action Created:', newAction);
-    configuredActions.value.push(newAction);
-};
+const configuredActions = ref<ActionDefinition[]>([]);
 
-// Handler for updating action status
-const handleUpdateActionStatus = (actionId: string, newStatus: boolean) => {
-    // TODO: Add logic to save the status change (e.g., API call)
-    const actionIndex = configuredActions.value.findIndex((a) => a.id === actionId);
-    if (actionIndex !== -1) {
-        configuredActions.value[actionIndex].enabled = newStatus;
-        console.log(`Action ${actionId} status updated to: ${newStatus}`);
+const handleActionCreated = async (newAction: ActionDefinition) => {
+    try {
+        await actionService.create(newAction);
+        configuredActions.value.push(newAction);
+
+        toast({
+            title: 'Action created',
+            description: 'The action has been successfully created.',
+            variant: 'success',
+        });
+    } catch (error) {
+        console.log('Error creating action:', error);
+        toast({
+            title: 'Error creating action',
+            description: 'There was an error creating your action. Please try again.',
+            variant: 'destructive',
+        });
     }
 };
 
-// Handler for deleting an action
-const handleDeleteAction = (actionId: string) => {
-    // TODO: Add logic to delete the action (e.g., API call)
-    console.log('Deleting action:', actionId);
-    configuredActions.value = configuredActions.value.filter((a) => a.id !== actionId);
+const handleUpdateActionStatus = async (actionId: string, newStatus: boolean) => {
+    try {
+        const actionIndex = configuredActions.value.findIndex((a) => a.id === actionId);
+        if (actionIndex !== -1) {
+            configuredActions.value[actionIndex].enabled = newStatus;
+
+            await actionService.updateOne(actionId, configuredActions.value[actionIndex]);
+
+            toast({
+                title: 'Action status updated',
+                description: `The action has been successfully ${newStatus ? 'enabled' : 'disabled'}.`,
+                variant: 'success',
+            });
+
+            console.log(`Action ${actionId} status updated to: ${newStatus}`);
+        }
+    } catch (error) {
+        console.log('Error updating action status:', error);
+        toast({
+            title: 'Error updating action status',
+            description: 'There was an error updating the action status. Please try again.',
+            variant: 'destructive',
+        });
+    }
 };
 
-// Handler for editing an action (load into builder?)
-const handleEditAction = (action: ActionDefinition) => {
-    // TODO: Implement editing logic (e.g., populate builder form)
-    console.log('Editing action:', action);
-    alert('Editing not implemented yet.');
+const handleDeleteAction = async (actionId: string) => {
+    try {
+        configuredActions.value = configuredActions.value.filter((a) => a.id !== actionId);
+        await actionService.deleteOne(actionId);
+    } catch (error) {
+        console.log('Error deleting action:', error);
+        toast({
+            title: 'Error deleting action',
+            description: 'There was an error deleting the action. Please try again.',
+            variant: 'destructive',
+        });
+    }
 };
+
+const handleEditAction = async (action: ActionDefinition) => {
+    try {
+        await actionService.updateOne(action.id, action);
+        toast({
+            title: 'Action updated',
+            description: 'The action has been successfully updated.',
+            variant: 'success',
+        });
+    } catch (error) {
+        console.log('Error updating action status:', error);
+        toast({
+            title: 'Error updating action status',
+            description: 'There was an error updating the action status. Please try again.',
+            variant: 'destructive',
+        });
+    }
+};
+
+onMounted(async () => {
+    configuredActions.value = await actionService.getAll();
+});
 </script>
 
 <template>
