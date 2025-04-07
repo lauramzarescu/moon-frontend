@@ -10,6 +10,7 @@ import LoginView from '@/views/Login/LoginView.vue';
 import Cookies from 'js-cookie';
 import { AuthService } from '@/services/auth.service.ts';
 import InventoryView from '@/views/AWS/InventoryView.vue';
+import ActionView from '@/views/Settings/ActionView.vue';
 
 const authService = new AuthService();
 
@@ -82,6 +83,13 @@ const router = createRouter({
             component: ProfileView,
             meta: {
                 title: 'Profile',
+            },
+        },
+        {
+            path: '/settings/actions',
+            component: ActionView,
+            meta: {
+                title: 'Actions',
             },
         },
         {
