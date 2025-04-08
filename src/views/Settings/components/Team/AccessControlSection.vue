@@ -12,11 +12,13 @@
             />
         </div>
 
-        <Alert variant="info" class="mt-4" v-if="!restrictedAccess">
-            <AlertDescription class="flex items-center gap-2">
-                <Info class="h-4 w-4" />
-                Anyone from your organization can access this application
-            </AlertDescription>
+        <Alert variant="info" class="mt-4 bg-blue-50 dark:bg-blue-950/30" v-if="!restrictedAccess">
+            <div class="flex items-center gap-2">
+                <InfoIcon class="h-4 w-4" />
+                <AlertDescription class="text-muted-foreground">
+                    Anyone from your organization can access this application.
+                </AlertDescription>
+            </div>
         </Alert>
 
         <div v-if="restrictedAccess" class="mt-4 space-y-4">
@@ -64,7 +66,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Info } from 'lucide-vue-next';
+import { InfoIcon } from 'lucide-vue-next';
 import { type AccessControlInput } from '@/views/Settings/components/Team/schema.ts';
 import { AccessControlService } from '@/services/access-control.service.ts';
 import { usePermissions } from '@/composables/usePermissions.ts';

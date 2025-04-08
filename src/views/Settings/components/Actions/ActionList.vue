@@ -1,27 +1,19 @@
 <script setup lang="ts">
-import {
-    type ActionDefinition,
-    ActionTypeEnum,
-    actionTypeLabels,
-    type AddInboundRuleConfig,
-    type SendEmailNotificationConfig,
-    type SendSlackNotificationConfig,
-    triggerTypeLabels,
-} from './schema';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+import { computed, ref } from 'vue';
+import { type ActionDefinition } from './schema';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2 } from 'lucide-vue-next';
-import { Separator } from '@/components/ui/separator';
-import { usePermissions } from '@/composables/usePermissions.ts';
-import { PermissionEnum } from '@/enums/user/user.enum.ts';
+import { AlertCircle, Search } from 'lucide-vue-net';
+import ActionFilter from './ActionFilter.ve';
+import ActionCard from './ActionCard.ve';
+import ActionDeleteDialog from './ActionDeleteDialog.ve';
+import ActionEditForm from './ActionEditForm.ve';
 
 interface Props {
     actions: ActionDefinition[];
+    loading?: boolean;
 }
 
-const { hasPermission } = usePermissions();
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
@@ -30,127 +22,141 @@ const emit = defineEmits<{
     (e: 'edit-action', action: ActionDefinition): void;
 }>();
 
+const searchQuery = ref('');
+const selectedFilter = ref<string | null>(null);
+const actionToDelete = ref<string | null>(null);
+const isDeleteDialogOpen = ref(false);
+const editingActionId = ref<string | null>(null);
+
+const filteredActions = computed(() => {
+    let result = props.actions;
+
+    // Apply search filter
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase();
+        result = result.filter(
+            (action) =>
+                action.name.toLowerCase().includes(query) ||
+                action.triggerType.toLowerCase().includes(query) ||
+                action.actionType.toLowerCase().includes(query),
+        );
+    }
+
+    // Apply type filter
+    if (selectedFilter.value) {
+        result = result.filter((action) => action.actionType === selectedFilter.value);
+    }
+
+    return result;
+});
+
+const handleFilterChange = (query: string, filter: string | null) => {
+    searchQuery.value = query;
+    selectedFilter.value = filter;
+};
+
 const handleStatusChange = (actionId: string, newStatus: boolean) => {
     emit('update-action-status', actionId, newStatus);
 };
 
-const handleDelete = (actionId: string) => {
-    emit('delete-action', actionId);
+const confirmDelete = (actionId: string) => {
+    actionToDelete.value = actionId;
+    isDeleteDialogOpen.value = true;
 };
 
-const handleEdit = (action: ActionDefinition) => {
-    emit('edit-action', action);
-};
-
-const getConfigEntries = (action: ActionDefinition): { key: string; value: string }[] => {
-    const config = action.config;
-    switch (action.actionType) {
-        case ActionTypeEnum.add_inbound_rule:
-            const ruleConfig = config as AddInboundRuleConfig;
-            return [
-                { key: 'Security Group', value: ruleConfig.securityGroupId },
-                { key: 'Protocol', value: ruleConfig.protocol },
-                { key: 'Port/Range', value: ruleConfig.portRange },
-                { key: 'Description', value: ruleConfig.descriptionTemplate || 'Default' },
-            ];
-        case ActionTypeEnum.send_slack_notification:
-            const notifyConfig = config as SendSlackNotificationConfig;
-            return [
-                { key: 'Channel', value: notifyConfig.channel },
-                { key: 'Recipient', value: notifyConfig.recipient },
-                { key: 'Message', value: notifyConfig.messageTemplate },
-            ];
-        case 'send_email_notification':
-            const emailConfig = config as SendEmailNotificationConfig;
-            return [
-                { key: 'Recipient', value: emailConfig.email },
-                { key: 'Subject', value: emailConfig.subject },
-                { key: 'Body', value: emailConfig.body },
-            ];
-        default:
-            return Object.entries(config).map(([key, value]) => ({
-                key: key,
-                value: value as string,
-            }));
+const handleDelete = () => {
+    if (actionToDelete.value) {
+        emit('delete-action', actionToDelete.value);
+        actionToDelete.value = null;
+        isDeleteDialogOpen.value = false;
     }
+};
+
+const startEditing = (action: ActionDefinition) => {
+    editingActionId.value = action.id;
+};
+
+const cancelEditing = () => {
+    editingActionId.value = null;
+};
+
+const saveEdit = (updatedAction: ActionDefinition) => {
+    emit('edit-action', updatedAction);
+    editingActionId.value = null;
 };
 </script>
 
 <template>
-    <div>
-        <h3 class="text-lg font-medium mb-4">Defined Actions</h3>
-        <p v-if="props.actions.length === 0" class="text-sm text-muted-foreground text-center py-8">
-            No actions defined yet. Create one using the builder above.
-        </p>
-        <div v-else class="space-y-4">
-            <Card v-for="action in props.actions" :key="action.id">
-                <CardHeader class="pb-4">
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <CardTitle class="text-lg mb-1">{{ action.name }}</CardTitle>
-                            <div class="flex items-center gap-2 text-muted-foreground">
-                                <span
-                                    >Trigger:
-                                    <Badge variant="outline" class="px-2 py-0.5">{{
-                                        triggerTypeLabels[action.triggerType] || action.triggerType
-                                    }}</Badge></span
-                                >
-                                <span
-                                    >Action:
-                                    <Badge variant="secondary" class="px-2 py-0.5">{{
-                                        actionTypeLabels[action.actionType] || action.actionType
-                                    }}</Badge></span
-                                >
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-2 flex-shrink-0">
-                            <Switch
-                                :checked="action.enabled"
-                                @update:checked="(newStatus: boolean) => handleStatusChange(action.id, newStatus)"
-                                :id="`switch-${action.id}`"
-                                :disabled="!hasPermission(PermissionEnum.ACTIONS_WRITE)"
-                            />
-                            <label
-                                :for="`switch-${action.id}`"
-                                class="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                            >
-                                {{ action.enabled ? 'Enabled' : 'Disabled' }}
-                            </label>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent class="pt-0 pb-4">
-                    <Separator class="my-3" />
-                    <h4 class="uppercase text-muted-foreground font-semibold mb-2">Configuration Details</h4>
-                    <dl class="space-y-1">
-                        <div v-for="detail in getConfigEntries(action)" :key="detail.key" class="flex justify-between">
-                            <dt class="text-muted-foreground">{{ detail.key }}:</dt>
-                            <dd class="font-mono text-right break-all">{{ detail.value }}</dd>
-                        </div>
-                    </dl>
-                </CardContent>
-                <CardFooter class="flex justify-end gap-2 pt-4 border-t">
-                    <Button
-                        :disabled="!hasPermission(PermissionEnum.ACTIONS_WRITE)"
-                        variant="outline"
-                        size="sm"
-                        @click="handleEdit(action)"
-                    >
-                        <Pencil class="h-4 w-4 mr-2" />
-                        Edit
-                    </Button>
-                    <Button
-                        :disabled="!hasPermission(PermissionEnum.ACTIONS_DELETE)"
-                        variant="outline"
-                        size="sm"
-                        class="text-destructive hover:text-destructive"
-                        @click="handleDelete(action.id)"
-                    >
-                        <Trash2 class="h-4 w-4 mr-2" />
-                        Delete
-                    </Button>
-                </CardFooter>
-            </Card>
+    <div class="space-y-6 w-full">
+        <ActionFilter @filter-change="handleFilterChange" />
+
+        <!-- Loading state -->
+        <div v-if="loading" class="flex justify-center py-12">
+            <div class="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
         </div>
+
+        <!-- Empty state -->
+        <Card v-else-if="props.actions.length === 0" class="bg-muted/20 border-dashed w-full">
+            <CardContent class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="rounded-full bg-muted p-3 mb-4">
+                    <AlertCircle class="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 class="text-lg font-medium mb-2">No actions defined</h3>
+                <p class="text-muted-foreground max-w-md">
+                    No actions have been defined yet. Create one using the builder above to automate responses to system events.
+                </p>
+            </CardContent>
+        </Card>
+
+        <!-- No results state -->
+        <Card v-else-if="filteredActions.length === 0" class="bg-muted/20 border-dashed w-full">
+            <CardContent class="flex flex-col items-center justify-center py-12 text-center">
+                <div class="rounded-full bg-muted p-3 mb-4">
+                    <Search class="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 class="text-lg font-medium mb-2">No matching actions</h3>
+                <p class="text-muted-foreground max-w-md">
+                    No actions match your current filters. Try adjusting your search criteria or clear filters.
+                </p>
+                <Button variant="outline" size="sm" @click="handleFilterChange('', null)" class="mt-4"> Clear filters </Button>
+            </CardContent>
+        </Card>
+
+        <!-- Action list -->
+        <div v-else class="grid gap-4 w-full">
+            <!-- Regular view mode -->
+            <template v-for="action in filteredActions" :key="action.id">
+                <!-- Edit mode -->
+                <ActionEditForm v-if="editingActionId === action.id" :action="action" @save="saveEdit" @cancel="cancelEditing" />
+
+                <!-- View mode -->
+                <ActionCard v-else :action="action" @update-status="handleStatusChange" @delete="confirmDelete" @edit="startEditing" />
+            </template>
+        </div>
+
+        <!-- Pagination placeholder - can be implemented if needed -->
+        <div v-if="filteredActions.length > 10" class="flex items-center justify-center space-x-2 py-4">
+            <Button variant="outline" size="sm" disabled>Previous</Button>
+            <Button variant="outline" size="sm" class="bg-primary text-primary-foreground">1</Button>
+            <Button variant="outline" size="sm">2</Button>
+            <Button variant="outline" size="sm">3</Button>
+            <Button variant="outline" size="sm">Next</Button>
+        </div>
+
+        <!-- Delete confirmation dialog -->
+        <ActionDeleteDialog v-model:open="isDeleteDialogOpen" @confirm="handleDelete" />
     </div>
 </template>
+
+<style scoped>
+.action-card-enter-active,
+.action-card-leave-active {
+    transition: all 0.3s ease;
+}
+
+.action-card-enter-from,
+.action-card-leave-to {
+    opacity: 0;
+    transform: translateY(20px);
+}
+</style>
