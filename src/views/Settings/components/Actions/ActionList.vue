@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import {
     type ActionDefinition,
+    ActionTypeEnum,
     actionTypeLabels,
     type AddInboundRuleConfig,
-    type SendNotificationConfig,
+    type SendEmailNotificationConfig,
+    type SendSlackNotificationConfig,
     triggerTypeLabels,
 } from './schema';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,11 +14,14 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash2 } from 'lucide-vue-next';
 import { Separator } from '@/components/ui/separator';
+import { usePermissions } from '@/composables/usePermissions.ts';
+import { PermissionEnum } from '@/enums/user/user.enum.ts';
 
 interface Props {
     actions: ActionDefinition[];
 }
 
+const { hasPermission } = usePermissions();
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
@@ -40,7 +45,7 @@ const handleEdit = (action: ActionDefinition) => {
 const getConfigEntries = (action: ActionDefinition): { key: string; value: string }[] => {
     const config = action.config;
     switch (action.actionType) {
-        case 'add_inbound_rule':
+        case ActionTypeEnum.add_inbound_rule:
             const ruleConfig = config as AddInboundRuleConfig;
             return [
                 { key: 'Security Group', value: ruleConfig.securityGroupId },
@@ -48,17 +53,24 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                 { key: 'Port/Range', value: ruleConfig.portRange },
                 { key: 'Description', value: ruleConfig.descriptionTemplate || 'Default' },
             ];
-        case 'send_notification':
-            const notifyConfig = config as SendNotificationConfig;
+        case ActionTypeEnum.send_slack_notification:
+            const notifyConfig = config as SendSlackNotificationConfig;
             return [
                 { key: 'Channel', value: notifyConfig.channel },
                 { key: 'Recipient', value: notifyConfig.recipient },
                 { key: 'Message', value: notifyConfig.messageTemplate },
             ];
+        case 'send_email_notification':
+            const emailConfig = config as SendEmailNotificationConfig;
+            return [
+                { key: 'Recipient', value: emailConfig.email },
+                { key: 'Subject', value: emailConfig.subject },
+                { key: 'Body', value: emailConfig.body },
+            ];
         default:
             return Object.entries(config).map(([key, value]) => ({
                 key: key,
-                value: typeof value === 'string' ? value : JSON.stringify(value),
+                value: value as string,
             }));
     }
 };
@@ -96,6 +108,7 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                                 :checked="action.enabled"
                                 @update:checked="(newStatus: boolean) => handleStatusChange(action.id, newStatus)"
                                 :id="`switch-${action.id}`"
+                                :disabled="!hasPermission(PermissionEnum.ACTIONS_WRITE)"
                             />
                             <label
                                 :for="`switch-${action.id}`"
@@ -117,11 +130,22 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                     </dl>
                 </CardContent>
                 <CardFooter class="flex justify-end gap-2 pt-4 border-t">
-                    <Button variant="outline" size="sm" @click="handleEdit(action)">
+                    <Button
+                        :disabled="!hasPermission(PermissionEnum.ACTIONS_WRITE)"
+                        variant="outline"
+                        size="sm"
+                        @click="handleEdit(action)"
+                    >
                         <Pencil class="h-4 w-4 mr-2" />
                         Edit
                     </Button>
-                    <Button variant="outline" size="sm" class="text-destructive hover:text-destructive" @click="handleDelete(action.id)">
+                    <Button
+                        :disabled="!hasPermission(PermissionEnum.ACTIONS_DELETE)"
+                        variant="outline"
+                        size="sm"
+                        class="text-destructive hover:text-destructive"
+                        @click="handleDelete(action.id)"
+                    >
                         <Trash2 class="h-4 w-4 mr-2" />
                         Delete
                     </Button>

@@ -31,7 +31,7 @@ export const sendSlackNotificationConfigSchema = z.object({
     recipient: z.string().min(1, 'Recipient is required'),
     messageTemplate: z.string().min(1, 'Message Template is required'),
 });
-export type SendNotificationConfig = z.infer<typeof sendSlackNotificationConfigSchema>;
+export type SendSlackNotificationConfig = z.infer<typeof sendSlackNotificationConfigSchema>;
 
 export const sendEmailNotificationConfigSchema = z.object({
     email: z.string().email('Invalid email address'),

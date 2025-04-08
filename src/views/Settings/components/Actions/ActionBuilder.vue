@@ -19,7 +19,11 @@ import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 import { getActionConfig } from '@/views/Settings/components/Actions/action-config.helper.ts';
+import { toast } from '@/components/ui/toast';
+import { PermissionEnum } from '@/enums/user/user.enum.ts';
+import { usePermissions } from '@/composables/usePermissions.ts';
 
+const { hasPermission } = usePermissions();
 const emit = defineEmits<{ (e: 'action-created', action: ActionDefinition): void }>();
 
 const formBaseSchema = baseActionDefinitionSchema.pick({
@@ -62,9 +66,14 @@ watch(
 
 const onSubmit = handleSubmit(async (values) => {
     let validatedConfig: Record<string, unknown> | null = null;
+
     if (currentConfigSchema.value) {
         if (!values.config || Object.keys(values.config).length === 0) {
-            alert('Configuration details are missing for the selected action type.');
+            toast({
+                title: 'Configuration Error',
+                description: 'Please fill in the configuration details for the selected action type.',
+                variant: 'destructive',
+            });
             return;
         }
 
@@ -75,7 +84,11 @@ const onSubmit = handleSubmit(async (values) => {
                 const fieldName = `config.${err.path.join('.')}`;
                 setFieldError(fieldName, err.message);
             });
-            alert('Configuration details are invalid. Please check the fields.');
+            toast({
+                title: 'Configuration Error',
+                description: 'Configuration details are invalid. Please check the fields.',
+                variant: 'destructive',
+            });
             return;
         }
         validatedConfig = configResult.data;
@@ -94,7 +107,11 @@ const onSubmit = handleSubmit(async (values) => {
 
     const finalValidation = baseActionDefinitionSchema.safeParse(newActionData);
     if (!finalValidation.success) {
-        console.error('Final object validation failed:', finalValidation.error.flatten());
+        toast({
+            title: 'Configuration Error',
+            description: 'Configuration details are invalid. Please check the fields.',
+            variant: 'destructive',
+        });
         return;
     }
 
@@ -258,7 +275,9 @@ const actionTypes = actionTypeSchema.enum;
                 </div>
             </CardContent>
             <CardFooter>
-                <Button type="submit" :disabled="!formValues.actionType"> Create Action</Button>
+                <Button type="submit" :disabled="!formValues.actionType || !hasPermission(PermissionEnum.ACTIONS_CREATE)">
+                    Create Action
+                </Button>
             </CardFooter>
         </form>
     </Card>
