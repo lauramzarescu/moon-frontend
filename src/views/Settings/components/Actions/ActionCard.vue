@@ -97,12 +97,12 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                         <CardDescription class="flex flex-wrap items-center gap-x-4 gap-y-2">
                             <span class="flex items-center gap-1.5">
                                 <Badge variant="outline" class="px-2 py-0.5">
-                                    {{ triggerTypeLabels[action.triggerType as any] || action.triggerType }}
+                                    {{ triggerTypeLabels[action.triggerType] || action.triggerType }}
                                 </Badge>
                             </span>
                             <span class="flex items-center gap-1.5">
                                 <Badge variant="secondary" class="px-2 py-0.5">
-                                    {{ actionTypeLabels[action.actionType as any] || action.actionType }}
+                                    {{ actionTypeLabels[action.actionType] || action.actionType }}
                                 </Badge>
                             </span>
                         </CardDescription>

@@ -19,12 +19,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
+import type { ZodRawShape } from 'zod';
 import * as z from 'zod';
 import { getActionConfig } from '@/views/Settings/components/Actions/action-config.helper.ts';
 import { toast } from '@/components/ui/toast';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
 import { usePermissions } from '@/composables/usePermissions.ts';
-import { X } from 'lucide-vue-nex';
+import { X } from 'lucide-vue-next';
 
 const { hasPermission } = usePermissions();
 const emit = defineEmits<{
@@ -55,8 +56,8 @@ const {
     },
 });
 
-const currentConfigSchema = ref<z.ZodObject<unknown> | null>(null);
-const isSubmitting = ref(false;
+const currentConfigSchema = ref<z.ZodObject<ZodRawShape> | null>(null);
+const isSubmitting = ref(false);
 
 watch(
     () => formValues.actionType,
@@ -91,7 +92,7 @@ const onSubmit = handleSubmit(async (values) => {
             if (!configResult.success) {
                 console.error('Config validation failed:', configResult.error.flatten().fieldErrors);
                 configResult.error.errors.forEach((err) => {
-                    const fieldName = `config.${err.path.join('.')}`;
+                    const fieldName = `config.${err.path.join('.')}` as keyof typeof values;
                     setFieldError(fieldName, err.message);
                 });
                 toast({

@@ -3,11 +3,11 @@ import { computed, ref } from 'vue';
 import { type ActionDefinition } from './schema';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Search } from 'lucide-vue-net';
-import ActionFilter from './ActionFilter.ve';
-import ActionCard from './ActionCard.ve';
-import ActionDeleteDialog from './ActionDeleteDialog.ve';
-import ActionEditForm from './ActionEditForm.ve';
+import { AlertCircle, Search } from 'lucide-vue-next';
+import ActionFilter from './ActionFilter.vue';
+import ActionCard from './ActionCard.vue';
+import ActionDeleteDialog from './ActionDeleteDialog.vue';
+import ActionEditForm from './ActionEditForm.vue';
 
 interface Props {
     actions: ActionDefinition[];

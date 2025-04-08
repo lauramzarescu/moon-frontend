@@ -11,8 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const actionService = new ActionService();
 const configuredActions = ref<ActionDefinition[]>([]);
-const isLoading = ref(rue);
-const showActionBuilder = ref(flse);
+const isLoading = ref(true);
+const showActionBuilder = ref(false);
 
 const handleActionCreated = async (newAction: ActionDefinition) => {
     try {
