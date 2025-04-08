@@ -1,7 +1,13 @@
 <template>
     <Dialog v-model:open="isDialogOpen">
         <DialogTrigger asChild>
-            <Button @click="emit('dialog-open')" variant="secondary" size="sm" class="h-7 px-2 gap-1">
+            <Button
+                :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
+                @click="emit('dialog-open')"
+                variant="secondary"
+                size="sm"
+                class="h-7 px-2 gap-1"
+            >
                 <Edit2Icon class="h-3.5 w-3.5" />
                 <span class="text-xs">Update count</span>
             </Button>
@@ -68,7 +74,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Edit2Icon, Loader2Icon, MinusIcon, PlusIcon } from 'lucide-vue-next';
 import { AwsService } from '@/services/aws.service.ts';
+import { usePermissions } from '@/composables/usePermissions.ts';
+import { PermissionEnum } from '@/enums/user/user.enum.ts';
 
+const { hasPermission } = usePermissions();
 const props = defineProps<{
     currentCount: number;
     serviceArn: string;
