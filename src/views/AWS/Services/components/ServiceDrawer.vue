@@ -6,7 +6,13 @@
                     <GearIcon class="h-6 w-6 text-primary" />
                     <span class="font-bold text-xl">{{ props.row.name }}</span>
 
-                    <Button variant="secondary" size="sm" class="h-7 px-2 gap-1" @click="showRestartDialog = true">
+                    <Button
+                        :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
+                        variant="secondary"
+                        size="sm"
+                        class="h-7 px-2 gap-1"
+                        @click="showRestartDialog = true"
+                    >
                         <RefreshCwIcon class="h-3.5 w-3.5" />
                         <span class="text-xs">Restart</span>
                     </Button>
@@ -69,7 +75,10 @@ import { Button } from '@/components/ui/button';
 import { RefreshCwIcon } from 'lucide-vue-next';
 import { AwsService } from '@/services/aws.service.ts';
 import RestartServiceDialog from '@/views/AWS/Services/components/RestartServiceDialog.vue';
+import { usePermissions } from '@/composables/usePermissions.ts';
+import { PermissionEnum } from '@/enums/user/user.enum.ts';
 
+const { hasPermission } = usePermissions();
 const activeSection = ref('containers');
 const showRestartDialog = ref(false);
 const props = defineProps<{
