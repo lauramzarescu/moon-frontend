@@ -4,6 +4,8 @@ import {
     ActionTypeEnum,
     actionTypeLabels,
     type AddInboundRuleConfig,
+    type RemoveAllInboundRulesConfig,
+    type RemoveInboundRuleConfig,
     type SendEmailNotificationConfig,
     type SendSlackNotificationConfig,
     triggerTypeLabels,
@@ -35,6 +37,10 @@ const getActionIcon = (actionType: string) => {
     switch (actionType) {
         case ActionTypeEnum.add_inbound_rule:
             return Shield;
+        case ActionTypeEnum.remove_all_inbound_rules:
+            return Shield;
+        case ActionTypeEnum.remove_inbound_rule:
+            return Shield;
         case ActionTypeEnum.send_email_notification:
             return Mail;
         case ActionTypeEnum.send_slack_notification:
@@ -55,6 +61,21 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                 { key: 'Port/Range', value: ruleConfig.portRange },
                 { key: 'Description', value: ruleConfig.descriptionTemplate || 'Default' },
             ];
+
+        case ActionTypeEnum.remove_inbound_rule:
+            const removeRule = config as RemoveInboundRuleConfig;
+            return [
+                { key: 'Security Group', value: removeRule.securityGroupId },
+                { key: 'IP', value: removeRule.ip || '0.0.0.0' },
+                { key: 'Protocol', value: removeRule.protocol },
+                { key: 'Port/Range', value: removeRule.portRange },
+                { key: 'Scheduler', value: removeRule.schedulerConfig?.customCronExpression || 'Default' },
+            ];
+
+        case ActionTypeEnum.remove_all_inbound_rules:
+            const removeAllRules = config as RemoveAllInboundRulesConfig;
+            return [{ key: 'Security Group', value: removeAllRules.securityGroupId }];
+
         case ActionTypeEnum.send_slack_notification:
             const notifyConfig = config as SendSlackNotificationConfig;
             return [
@@ -62,6 +83,7 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                 { key: 'Recipient', value: notifyConfig.recipient },
                 { key: 'Message', value: notifyConfig.messageTemplate },
             ];
+
         case ActionTypeEnum.send_email_notification:
             const emailConfig = config as SendEmailNotificationConfig;
             return [
@@ -69,6 +91,7 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                 { key: 'Subject', value: emailConfig.subject },
                 { key: 'Body', value: emailConfig.body },
             ];
+
         default:
             return Object.entries(config).map(([key, value]) => ({
                 key: key,

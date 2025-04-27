@@ -7,6 +7,7 @@ import {
     actionTypeSchema,
     baseActionDefinitionSchema,
     type TriggerType,
+    TriggerTypeEnum,
     triggerTypeLabels,
     triggerTypeSchema,
 } from './schema';
@@ -15,7 +16,6 @@ import { Input } from '@/components/ui/input';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
@@ -26,6 +26,7 @@ import { toast } from '@/components/ui/toast';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import { X } from 'lucide-vue-next';
+import { ConfigurationFactory } from '@/views/Settings/components/Actions/configurations';
 
 const { hasPermission } = usePermissions();
 const emit = defineEmits<{
@@ -35,6 +36,7 @@ const emit = defineEmits<{
 
 const formBaseSchema = baseActionDefinitionSchema.pick({
     config: true,
+    schedulerConfig: true,
     name: true,
     triggerType: true,
     actionType: true,
@@ -53,6 +55,7 @@ const {
         actionType: undefined as ActionType | undefined,
         triggerType: undefined as TriggerType | undefined,
         config: {} as Record<string, unknown>,
+        schedulerConfig: undefined as Record<string, unknown> | undefined,
     },
 });
 
@@ -72,10 +75,25 @@ watch(
     { immediate: true },
 );
 
+watch(
+    () => formValues.triggerType,
+    (newTriggerType) => {
+        if (newTriggerType === TriggerTypeEnum.scheduled_job) {
+            // Initialize schedulerConfig with default values if it's a scheduled job
+            if (!formValues.schedulerConfig || Object.keys(formValues.schedulerConfig).length === 0) {
+                setFieldValue('schedulerConfig', { customCronExpression: '0 0 * * *' });
+                console.log('Initialized schedulerConfig:', formValues.schedulerConfig);
+            }
+        }
+    },
+);
+
 const onSubmit = handleSubmit(async (values) => {
+    console.log('Form submission started', values); // Debug line
     isSubmitting.value = true;
     try {
         let validatedConfig: Record<string, unknown> | null = null;
+        let validatedSchedulerConfig = values.schedulerConfig || null;
 
         if (currentConfigSchema.value) {
             if (!values.config || Object.keys(values.config).length === 0) {
@@ -108,17 +126,36 @@ const onSubmit = handleSubmit(async (values) => {
             validatedConfig = {};
         }
 
+        // Check for customCronExpression since that's what ScheduledJobConfiguration sets
+        if (values.triggerType === TriggerTypeEnum.scheduled_job) {
+            console.log('Scheduler config:', values.schedulerConfig); // Debug line
+            if (!values.schedulerConfig || !values.schedulerConfig.customCronExpression) {
+                toast({
+                    title: 'Scheduler Configuration Error',
+                    description: 'Please provide a valid cron expression for the scheduled job.',
+                    variant: 'destructive',
+                });
+                isSubmitting.value = false;
+                return;
+            }
+            validatedSchedulerConfig = values.schedulerConfig;
+        }
+
         const newActionData = {
             id: crypto.randomUUID(),
             name: values.name,
             actionType: values.actionType!,
             triggerType: values.triggerType!,
             config: validatedConfig,
+            schedulerConfig: validatedSchedulerConfig,
             enabled: true,
         };
 
+        console.log('Action data before validation:', newActionData); // Debug line
+
         const finalValidation = baseActionDefinitionSchema.safeParse(newActionData);
         if (!finalValidation.success) {
+            console.error('Final validation failed:', finalValidation.error);
             toast({
                 title: 'Configuration Error',
                 description: 'Configuration details are invalid. Please check the fields.',
@@ -127,6 +164,8 @@ const onSubmit = handleSubmit(async (values) => {
             isSubmitting.value = false;
             return;
         }
+
+        console.log('Emitting action-created with:', finalValidation.data);
 
         emit('action-created', finalValidation.data);
         resetForm();
@@ -235,127 +274,17 @@ const actionTypes = actionTypeSchema.enum;
                         </FormField>
                     </div>
 
-                    <div v-if="formValues.actionType" class="pt-4 mt-4 border-t border-border/60">
-                        <h4 class="text-md font-semibold mb-4">Configure Action Details</h4>
-
-                        <!-- Add Inbound Rule Configuration -->
-                        <div v-if="formValues.actionType === actionTypes.add_inbound_rule" class="space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField name="config.securityGroupId" v-slot="{ field }">
-                                    <FormItem>
-                                        <FormLabel>Security Group ID</FormLabel>
-                                        <FormControl>
-                                            <Input v-bind="field" placeholder="sg-xxxxxxxxxxxxxxxxx" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                </FormField>
-
-                                <FormField name="config.protocol" v-slot="{ field }">
-                                    <FormItem>
-                                        <FormLabel>Protocol</FormLabel>
-                                        <FormControl>
-                                            <Input v-bind="field" placeholder="e.g., tcp, udp, icmp" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                </FormField>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField name="config.portRange" v-slot="{ field }">
-                                    <FormItem>
-                                        <FormLabel>Port / Range</FormLabel>
-                                        <FormControl>
-                                            <Input v-bind="field" placeholder="e.g., 22, 80, 1000-2000" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                </FormField>
-
-                                <FormField name="config.descriptionTemplate" v-slot="{ field }">
-                                    <FormItem>
-                                        <FormLabel>Description Template (Optional)</FormLabel>
-                                        <FormControl>
-                                            <Input v-bind="field" placeholder="Access for {email} on {timestamp}" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                </FormField>
-                            </div>
-                        </div>
-
-                        <!-- Email Notification Configuration -->
-                        <div v-if="formValues.actionType === actionTypes.send_email_notification" class="space-y-4">
-                            <FormField name="config.email" v-slot="{ field }">
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input v-bind="field" placeholder="admin@example.com" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-
-                            <FormField name="config.subject" v-slot="{ field }">
-                                <FormItem>
-                                    <FormLabel>Subject</FormLabel>
-                                    <FormControl>
-                                        <Input v-bind="field" placeholder="Service alert" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-
-                            <FormField name="config.body" v-slot="{ field }">
-                                <FormItem>
-                                    <FormLabel>Body</FormLabel>
-                                    <FormControl>
-                                        <Textarea v-bind="field" placeholder="User {userId} logged in." class="min-h-[100px]" />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                        </div>
-
-                        <!-- Slack Notification Configuration -->
-                        <div v-if="formValues.actionType === actionTypes.send_slack_notification" class="space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FormField name="config.channel" v-slot="{ field }">
-                                    <FormItem>
-                                        <FormLabel>Channel</FormLabel>
-                                        <FormControl>
-                                            <Input v-bind="field" placeholder="#alerts" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                </FormField>
-
-                                <FormField name="config.recipient" v-slot="{ field }">
-                                    <FormItem>
-                                        <FormLabel>Recipient</FormLabel>
-                                        <FormControl>
-                                            <Input v-bind="field" placeholder="@username or channel name" />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                </FormField>
-                            </div>
-
-                            <FormField name="config.messageTemplate" v-slot="{ field }">
-                                <FormItem>
-                                    <FormLabel>Message Template</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            v-bind="field"
-                                            placeholder="User {userId} logged in at {timestamp}."
-                                            class="min-h-[100px]"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            </FormField>
-                        </div>
+                    <div
+                        v-if="formValues.actionType || formValues.triggerType === TriggerTypeEnum.scheduled_job"
+                        class="pt-4 mt-4 border-t border-border/60"
+                    >
+                        <ConfigurationFactory
+                            :actionType="formValues.actionType"
+                            :triggerType="formValues.triggerType"
+                            :configPath="'config'"
+                            :schedulerConfig="formValues.schedulerConfig"
+                            @update:schedulerConfig="setFieldValue('schedulerConfig', $event)"
+                        />
                     </div>
 
                     <Alert
@@ -368,7 +297,7 @@ const actionTypes = actionTypeSchema.enum;
                     </Alert>
                 </div>
             </CardContent>
-
+            {{ formValues }}
             <CardFooter class="bg-muted/20 px-6 py-4 flex justify-between">
                 <Button type="button" variant="outline" @click="handleCancel">Cancel</Button>
                 <Button type="submit" :disabled="!formValues.actionType || !hasPermission(PermissionEnum.ACTIONS_CREATE) || isSubmitting">

@@ -103,7 +103,7 @@
             </template>
 
             <div class="ml-auto flex items-center gap-3 shrink-0">
-                <div class="hidden sm:block px-3 py-1.5 bg-primary/10 text-primary-foreground/90 rounded-full text-xs font-medium">
+                <div class="hidden sm:block px-3 py-1.5 bg-primary/10 rounded-full text-xs font-medium">
                     {{ cronDescription }}
                 </div>
                 <Button variant="ghost" size="icon" class="h-9 w-9 rounded-full" @click="toggleAdvancedMode">
@@ -117,7 +117,6 @@
             </div>
         </div>
 
-        <!-- Advanced mode (collapsible) with enhanced styling -->
         <div v-if="isAdvancedMode" class="mt-3 flex items-center gap-2 p-3 bg-muted/10 rounded-lg">
             <Input
                 v-model="cronExpression"
@@ -136,7 +135,6 @@ import { computed, onMounted, ref, watch } from 'vue';
 import cronstrue from 'cronstrue';
 import { ChevronDownIcon, ChevronUpIcon, ClipboardIcon } from '@heroicons/vue/24/outline';
 
-// Import shadcn-vue components
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -174,7 +172,6 @@ const cronExpression = ref(props.modelValue);
 const cronDescription = ref('');
 const isAdvancedMode = ref(false);
 
-// Simplified UI state
 const frequencyType = ref('every-day');
 
 // Conditional display flags
@@ -223,7 +220,6 @@ const formatOrdinal = (n) => {
     return num + (suffixes[(v - 20) % 10] || suffixes[v] || suffixes[0]);
 };
 
-// Update frequency type
 const updateFrequencyType = () => {
     switch (frequencyType.value) {
         case 'every-minute':
@@ -262,7 +258,6 @@ const updateFrequencyType = () => {
             dayOfWeekType.value = 'every';
             break;
         case 'custom':
-            // Keep current values
             break;
     }
     updateCronExpression();
@@ -298,7 +293,6 @@ const dayOfWeek = computed(() => {
     return dayOfWeekSpecific.value;
 });
 
-// Parse initial value
 const parseCronExpression = (expression) => {
     const parts = expression.split(' ');
     if (parts.length >= 5) {
@@ -354,12 +348,10 @@ const parseCronExpression = (expression) => {
             dayOfWeekSpecific.value = parts[4];
         }
 
-        // Determine the frequency type based on the parsed values
         determineFrequencyType();
     }
 };
 
-// Determine the frequency type based on current settings
 const determineFrequencyType = () => {
     if (
         minuteType.value === 'every' &&
@@ -521,7 +513,6 @@ onMounted(() => {
     vertical-align: middle;
 }
 
-/* Make the select trigger look more like part of a sentence */
 .fancy-select .select-trigger {
     min-height: 2.25rem;
     background-color: hsl(var(--background) / 0.8);

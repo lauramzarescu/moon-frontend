@@ -124,14 +124,17 @@ const saveEdit = (updatedAction: ActionDefinition) => {
 
         <!-- Action list -->
         <div v-else class="grid gap-4 w-full">
-            <!-- Regular view mode -->
-            <template v-for="action in filteredActions" :key="action.id">
-                <!-- Edit mode -->
-                <ActionEditForm v-if="editingActionId === action.id" :action="action" @save="saveEdit" @cancel="cancelEditing" />
+            <!-- Using transition-group for animated list changes -->
+            <TransitionGroup name="action-list" tag="div" class="grid gap-4 w-full">
+                <!-- Regular view mode -->
+                <template v-for="action in filteredActions" :key="action.id">
+                    <!-- Edit mode -->
+                    <ActionEditForm v-if="editingActionId === action.id" :action="action" @save="saveEdit" @cancel="cancelEditing" />
 
-                <!-- View mode -->
-                <ActionCard v-else :action="action" @update-status="handleStatusChange" @delete="confirmDelete" @edit="startEditing" />
-            </template>
+                    <!-- View mode -->
+                    <ActionCard v-else :action="action" @update-status="handleStatusChange" @delete="confirmDelete" @edit="startEditing" />
+                </template>
+            </TransitionGroup>
         </div>
 
         <!-- Pagination placeholder - can be implemented if needed -->
@@ -158,5 +161,23 @@ const saveEdit = (updatedAction: ActionDefinition) => {
 .action-card-leave-to {
     opacity: 0;
     transform: translateY(20px);
+}
+
+/* Transition for list reordering */
+.action-list-move,
+.action-list-enter-active,
+.action-list-leave-active {
+    transition: all 0.5s ease;
+}
+
+.action-list-enter-from,
+.action-list-leave-to {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+/* Ensure items maintain their position during transitions */
+.action-list-leave-active {
+    position: absolute;
 }
 </style>
