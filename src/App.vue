@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import Sidebar from '@/components/Sidebar/Sidebar.vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDataStore } from '@/stores/dataStore.ts';
 import UserNav from '@/components/ui/custom-table/UserNav.vue';
@@ -9,6 +8,10 @@ import { useAuthStore } from '@/stores/authStore.ts';
 import Cookies from 'js-cookie';
 import { AuthService } from '@/services/auth.service.ts';
 import { UserService } from '@/services/user.service.ts';
+import AppSidebar from '@/components/Sidebar/components/AppSidebar.vue';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
+import { Separator } from '@/components/ui/separator';
 
 const store = useDataStore();
 const authStore = useAuthStore();
@@ -66,31 +69,53 @@ setInterval(() => {
 }, 60000); // Check every minute
 
 const isLoginPage = computed(() => route.path === '/login');
+
+// Computed property to get the current page title from route meta
+const currentPageTitle = computed(() => {
+    // Access the title from the route's meta property
+    // Fallback to a default title if meta.title is not defined
+    return route.meta.title || 'Dashboard'; // Using 'Dashboard' as a common fallback
+});
 </script>
 
 <template>
-    <main vaul-drawer-wrapper autofocus class="h-screen w-screen bg-background overflow-hidden">
+    <main vaul-drawer-wrapper autofocus class="h-screen w-screen overflow-hidden">
         <!-- Login page without layout -->
         <router-view v-if="isLoginPage"></router-view>
 
         <!-- Main layout with sidebar for other routes -->
         <div v-else id="app" class="flex h-full">
-            <Sidebar class="h-screen w-64 left-0" />
-            <div class="flex-1 flex-col space-y-3 p-6 overflow-auto">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-2xl font-bold tracking-tight capitalize">
-                            <!--              {{ route.name }}-->
-                        </h2>
+            <SidebarProvider>
+                <AppSidebar class="h-screen w-64 left-0" />
+                <SidebarInset>
+                    <div class="flex flex-col h-full px-6 py-3 bg-background">
+                        <header class="flex h-14 shrink-0 gap-2 items-center justify-between">
+                            <!-- Left side: Sidebar trigger, Separator, Breadcrumb -->
+                            <div class="flex items-center gap-2">
+                                <SidebarTrigger />
+                                <Separator orientation="vertical" class="mr-2 h-4" />
+                                <Breadcrumb>
+                                    <BreadcrumbList>
+                                        <BreadcrumbItem>
+                                            <BreadcrumbPage class="line-clamp-1"> {{ currentPageTitle }} </BreadcrumbPage>
+                                        </BreadcrumbItem>
+                                    </BreadcrumbList>
+                                </Breadcrumb>
+                            </div>
+                            <!-- Right side: UserNav -->
+                            <div class="flex items-center">
+                                <UserNav />
+                            </div>
+                        </header>
+                        <!-- Main content area with vertical padding and overflow -->
+                        <div class="flex-1 flex-col space-y-3 overflow-auto py-6">
+                            <div class="flex-1 space-y-10">
+                                <router-view></router-view>
+                            </div>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <UserNav />
-                    </div>
-                </div>
-                <div class="flex-1 space-y-10">
-                    <router-view></router-view>
-                </div>
-            </div>
+                </SidebarInset>
+            </SidebarProvider>
         </div>
     </main>
     <Toaster />

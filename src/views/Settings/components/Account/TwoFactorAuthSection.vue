@@ -88,7 +88,7 @@ const onDisableComplete = (enabled: boolean, verified: boolean) => {
         <div class="flex items-center justify-between">
             <div>
                 <h4 class="text-sm font-medium">Two-Factor Authentication</h4>
-                <p class="text-sm text-muted-foreground">Add an extra layer of security to your account</p>
+                <p class="text-sm text-foreground">Add an extra layer of security to your account</p>
             </div>
             <div class="flex items-center space-x-2">
                 <Switch

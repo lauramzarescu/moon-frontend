@@ -148,9 +148,7 @@ const handleSAMLLogin = async () => {
         <div v-if="requires2FAVerification" class="flex flex-col space-y-4">
             <div class="text-sm text-center mb-2">
                 <p class="font-medium mb-2">Two-Factor Authentication Required</p>
-                <p class="text-muted-foreground">
-                    Please enter the 6-digit verification code from your authenticator app to complete login.
-                </p>
+                <p class="text-foreground">Please enter the 6-digit verification code from your authenticator app to complete login.</p>
             </div>
 
             <VerificationCodeInput v-model:code="verificationCode" prefix="login-2fa" :disabled="isLoading" @submit="verifyTwoFactorCode" />
@@ -170,7 +168,7 @@ const handleSAMLLogin = async () => {
                 <span class="w-full border-t" />
             </div>
             <div class="relative flex justify-center text-xs uppercase">
-                <span class="bg-background px-2 text-muted-foreground"> Or continue with </span>
+                <span class="bg-background px-2 text-foreground"> Or continue with </span>
             </div>
         </div>
         <Button v-if="!requires2FAVerification" variant="outline" type="button" :disabled="isLoading" @click="handleSAMLLogin">

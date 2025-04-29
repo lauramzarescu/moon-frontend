@@ -145,7 +145,7 @@ onMounted(async () => {
         <Alert variant="info" class="bg-blue-50 dark:bg-blue-950/30">
             <div class="flex items-center gap-2">
                 <InfoIcon class="h-4 w-4" />
-                <AlertDescription class="text-muted-foreground">
+                <AlertDescription class="text-foreground">
                     Define automated actions triggered by specific events in your system.
                 </AlertDescription>
             </div>
@@ -164,13 +164,9 @@ onMounted(async () => {
             <ActionBuilder v-if="showActionBuilder" @action-created="handleActionCreated" @cancel="handleBuilderCancel" />
 
             <!-- Add New Action Button (shown when builder is hidden) -->
-            <Card
-                v-if="!showActionBuilder"
-                class="border-dashed cursor-pointer hover:border-primary/50 transition-colors group"
-                @click="toggleActionBuilder"
-            >
-                <CardContent class="flex items-center justify-center p-6 group-hover:bg-muted/30 transition-colors">
-                    <div class="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
+            <Card v-if="!showActionBuilder" class="border-dashed cursor-pointer transition-colors group" @click="toggleActionBuilder">
+                <CardContent class="flex items-center justify-center p-6 group-hover:rounded-xl group-hover:bg-accent transition-colors">
+                    <div class="flex items-center gap-2 text-foreground group-hover:text-primary transition-colors">
                         <Plus class="h-5 w-5" />
                         <span class="font-medium">Add New Action</span>
                     </div>

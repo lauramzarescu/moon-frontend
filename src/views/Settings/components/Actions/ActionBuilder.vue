@@ -6,6 +6,7 @@ import {
     actionTypeLabels,
     actionTypeSchema,
     baseActionDefinitionSchema,
+    type ScheduledJobConfig,
     type TriggerType,
     TriggerTypeEnum,
     triggerTypeLabels,
@@ -55,7 +56,7 @@ const {
         actionType: undefined as ActionType | undefined,
         triggerType: undefined as TriggerType | undefined,
         config: {} as Record<string, unknown>,
-        schedulerConfig: undefined as Record<string, unknown> | undefined,
+        schedulerConfig: undefined as ScheduledJobConfig | undefined,
     },
 });
 
@@ -82,14 +83,12 @@ watch(
             // Initialize schedulerConfig with default values if it's a scheduled job
             if (!formValues.schedulerConfig || Object.keys(formValues.schedulerConfig).length === 0) {
                 setFieldValue('schedulerConfig', { customCronExpression: '0 0 * * *' });
-                console.log('Initialized schedulerConfig:', formValues.schedulerConfig);
             }
         }
     },
 );
 
 const onSubmit = handleSubmit(async (values) => {
-    console.log('Form submission started', values); // Debug line
     isSubmitting.value = true;
     try {
         let validatedConfig: Record<string, unknown> | null = null;
@@ -128,7 +127,6 @@ const onSubmit = handleSubmit(async (values) => {
 
         // Check for customCronExpression since that's what ScheduledJobConfiguration sets
         if (values.triggerType === TriggerTypeEnum.scheduled_job) {
-            console.log('Scheduler config:', values.schedulerConfig); // Debug line
             if (!values.schedulerConfig || !values.schedulerConfig.customCronExpression) {
                 toast({
                     title: 'Scheduler Configuration Error',
@@ -151,8 +149,6 @@ const onSubmit = handleSubmit(async (values) => {
             enabled: true,
         };
 
-        console.log('Action data before validation:', newActionData); // Debug line
-
         const finalValidation = baseActionDefinitionSchema.safeParse(newActionData);
         if (!finalValidation.success) {
             console.error('Final validation failed:', finalValidation.error);
@@ -164,8 +160,6 @@ const onSubmit = handleSubmit(async (values) => {
             isSubmitting.value = false;
             return;
         }
-
-        console.log('Emitting action-created with:', finalValidation.data);
 
         emit('action-created', finalValidation.data);
         resetForm();
@@ -282,6 +276,7 @@ const actionTypes = actionTypeSchema.enum;
                             :actionType="formValues.actionType"
                             :triggerType="formValues.triggerType"
                             :configPath="'config'"
+                            :config="formValues.config"
                             :schedulerConfig="formValues.schedulerConfig"
                             @update:schedulerConfig="setFieldValue('schedulerConfig', $event)"
                         />
@@ -297,7 +292,7 @@ const actionTypes = actionTypeSchema.enum;
                     </Alert>
                 </div>
             </CardContent>
-            {{ formValues }}
+
             <CardFooter class="bg-muted/20 px-6 py-4 flex justify-between">
                 <Button type="button" variant="outline" @click="handleCancel">Cancel</Button>
                 <Button type="submit" :disabled="!formValues.actionType || !hasPermission(PermissionEnum.ACTIONS_CREATE) || isSubmitting">

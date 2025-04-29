@@ -56,7 +56,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="flex gap-4 text-sm text-muted-foreground">
+    <div class="flex gap-4 text-sm text-foreground">
         <div class="flex items-center gap-2">
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +127,7 @@ onUnmounted(() => {
                             ? `Dynamic refresh (${store.refreshInterval}s)`
                             : refreshOptions.find((option) => option.value === store.refreshInterval)?.label
                     }}
-                    <ChevronDownIcon class="ml-2 h-4 w-4 text-muted-foreground" />
+                    <ChevronDownIcon class="ml-2 h-4 w-4 text-foreground" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent class="p-0" align="end" side="bottom">
@@ -144,7 +144,7 @@ onUnmounted(() => {
                                 class="space-y-1 flex flex-col items-start px-4 py-2"
                             >
                                 <p>{{ option.label }}</p>
-                                <p class="text-sm text-muted-foreground">
+                                <p class="text-sm text-foreground">
                                     {{ option.description }}
                                 </p>
                             </CommandItem>

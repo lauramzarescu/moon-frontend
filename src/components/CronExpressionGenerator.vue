@@ -4,7 +4,7 @@
         <div
             class="sentence-ui p-4 bg-gradient-to-r from-muted/30 to-muted/10 rounded-lg shadow-sm flex items-center gap-2 overflow-x-auto whitespace-nowrap"
         >
-            <span class="text-muted-foreground shrink-0 font-medium">Run</span>
+            <span class="text-foreground shrink-0 font-medium">Run</span>
 
             <!-- Frequency selector with enhanced styling -->
             <Select v-model="frequencyType" @update:modelValue="updateFrequencyType" class="fancy-select">
@@ -23,7 +23,7 @@
 
             <!-- Minute selector (conditional) -->
             <template v-if="showMinuteSelector">
-                <span class="text-muted-foreground shrink-0 font-medium">at minute</span>
+                <span class="text-foreground shrink-0 font-medium">at minute</span>
                 <Select v-model="minuteSpecific" @update:modelValue="updateCronExpression" class="fancy-select">
                     <SelectTrigger class="w-16 h-9 px-3 bg-background/80 backdrop-blur-sm border-none rounded-full">
                         <SelectValue :placeholder="minuteSpecific" />
@@ -38,7 +38,7 @@
 
             <!-- Hour selector (conditional) -->
             <template v-if="showHourSelector">
-                <span class="text-muted-foreground shrink-0 font-medium">at</span>
+                <span class="text-foreground shrink-0 font-medium">at</span>
                 <Select v-model="hourSpecific" @update:modelValue="updateCronExpression" class="fancy-select">
                     <SelectTrigger class="w-24 h-9 px-3 bg-background/80 backdrop-blur-sm border-none rounded-full">
                         <SelectValue :placeholder="formatHour(hourSpecific)" />
@@ -55,7 +55,7 @@
 
             <!-- Day of week selector (conditional) -->
             <template v-if="showDayOfWeekSelector">
-                <span class="text-muted-foreground shrink-0 font-medium">on</span>
+                <span class="text-foreground shrink-0 font-medium">on</span>
                 <Select v-model="dayOfWeekSpecific" @update:modelValue="updateCronExpression" class="fancy-select">
                     <SelectTrigger class="w-32 h-9 px-3 bg-background/80 backdrop-blur-sm border-none rounded-full">
                         <SelectValue :placeholder="getDayName(dayOfWeekSpecific)" />
@@ -72,7 +72,7 @@
 
             <!-- Day of month selector (conditional) -->
             <template v-if="showDayOfMonthSelector">
-                <span class="text-muted-foreground shrink-0 font-medium">on the</span>
+                <span class="text-foreground shrink-0 font-medium">on the</span>
                 <Select v-model="dayOfMonthSpecific" @update:modelValue="updateCronExpression" class="fancy-select">
                     <SelectTrigger class="w-20 h-9 px-3 bg-background/80 backdrop-blur-sm border-none rounded-full">
                         <SelectValue :placeholder="formatOrdinal(dayOfMonthSpecific)" />
@@ -87,7 +87,7 @@
 
             <!-- Month selector (conditional) -->
             <template v-if="showMonthSelector">
-                <span class="text-muted-foreground shrink-0 font-medium">of</span>
+                <span class="text-foreground shrink-0 font-medium">of</span>
                 <Select v-model="monthSpecific" @update:modelValue="updateCronExpression" class="fancy-select">
                     <SelectTrigger class="w-36 h-9 px-3 bg-background/80 backdrop-blur-sm border-none rounded-full">
                         <SelectValue :placeholder="getMonthName(monthSpecific)" />
@@ -439,10 +439,7 @@ const toggleAdvancedMode = () => {
 const copyToClipboard = () => {
     navigator.clipboard
         .writeText(cronExpression.value)
-        .then(() => {
-            // You could add a toast notification here
-            console.log('Copied to clipboard');
-        })
+        .then(() => {})
         .catch((err) => {
             console.error('Failed to copy: ', err);
         });

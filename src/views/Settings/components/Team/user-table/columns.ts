@@ -73,7 +73,7 @@ export const columns: ColumnDef<UserInput>[] = [
 
             return h('div', { class: 'flex items-center gap-2' }, [
                 h(loginType.icon, { class: 'h-4 w-4' }),
-                h('span', { class: 'text-sm text-muted-foreground' }, loginType.label),
+                h('span', { class: 'text-sm text-foreground' }, loginType.label),
             ]);
         },
         filterFn: (row, id, value) => {

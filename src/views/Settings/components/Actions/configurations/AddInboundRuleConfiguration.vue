@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Input } from '@/components/ui/input';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { InfoIcon } from 'lucide-vue-next';
 
 defineProps<{
     configPath: string;
@@ -44,7 +46,46 @@ defineProps<{
 
             <FormField :name="`${configPath}.descriptionTemplate`" v-slot="{ field }">
                 <FormItem>
-                    <FormLabel>Description Template (Optional)</FormLabel>
+                    <FormLabel>
+                        Description Template (Optional)
+                        <TooltipProvider :delay-duration="0">
+                            <Tooltip>
+                                <TooltipTrigger as="span" class="inline-flex align-text-bottom ml-1 cursor-pointer">
+                                    <InfoIcon class="h-4 w-4 text-foreground hover:text-foreground/50" />
+                                </TooltipTrigger>
+                                <TooltipContent class="max-w-xs p-4 text-sm">
+                                    <p class="font-medium mb-2">Available variables:</p>
+                                    <ul class="space-y-1">
+                                        <li><code class="bg-gray-400 dark:border-gray-800 px-1 py-0.5 rounded">{ip}</code> - IP address</li>
+                                        <li>
+                                            <code class="bg-gray-400 dark:border-gray-800 px-1 py-0.5 rounded">{fromPort}</code>
+                                            - Starting port
+                                        </li>
+                                        <li>
+                                            <code class="bg-gray-400 dark:border-gray-800 px-1 py-0.5 rounded">{toPort}</code>
+                                            - Ending port
+                                        </li>
+                                        <li>
+                                            <code class="bg-gray-400 dark:border-gray-800 px-1 py-0.5 rounded">{portRange}</code>
+                                            - Full port range
+                                        </li>
+                                        <li>
+                                            <code class="bg-gray-400 dark:border-gray-800 px-1 py-0.5 rounded">{protocol}</code>
+                                            - Protocol used
+                                        </li>
+                                        <li>
+                                            <code class="bg-gray-400 dark:border-gray-800 px-1 py-0.5 rounded">{timestamp}</code>
+                                            - Current time
+                                        </li>
+                                        <li>
+                                            <code class="bg-gray-400 dark:border-gray-800 px-1 py-0.5 rounded">{email}</code>
+                                            - User email
+                                        </li>
+                                    </ul>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </FormLabel>
                     <FormControl>
                         <Input v-bind="field" placeholder="Access for {email} on {timestamp}" />
                     </FormControl>

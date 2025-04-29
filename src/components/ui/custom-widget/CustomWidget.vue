@@ -5,7 +5,7 @@
                 {{ title }}
             </CardTitle>
             <slot name="icon">
-                <component :is="icon" v-if="icon" class="h-4 w-4 text-muted-foreground" />
+                <component :is="icon" v-if="icon" class="h-4 w-4 text-foreground" />
                 <svg
                     v-else
                     xmlns="http://www.w3.org/2000/svg"
@@ -15,7 +15,7 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    class="h-4 w-4 text-muted-foreground"
+                    class="h-4 w-4 text-foreground"
                 >
                     <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                 </svg>
@@ -25,7 +25,7 @@
             <div class="text-2xl font-bold">
                 {{ value }}
             </div>
-            <p class="text-xs text-muted-foreground">
+            <p class="text-xs text-foreground">
                 {{ description }}
             </p>
         </CardContent>

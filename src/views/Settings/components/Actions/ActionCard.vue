@@ -8,6 +8,7 @@ import {
     type RemoveInboundRuleConfig,
     type SendEmailNotificationConfig,
     type SendSlackNotificationConfig,
+    TriggerTypeEnum,
     triggerTypeLabels,
 } from './schema';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +16,14 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Mail, MessageSquare, Pencil, Shield, Trash2 } from 'lucide-vue-next';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import moment from 'moment';
+import { getActionAlerts } from '@/views/Settings/components/Actions/utils/actionAlerts.ts';
 
 const props = defineProps<{
     action: ActionDefinition;
@@ -52,50 +56,67 @@ const getActionIcon = (actionType: string) => {
 
 const getConfigEntries = (action: ActionDefinition): { key: string; value: string }[] => {
     const config = action.config;
+    const entries = [];
+
+    if (action.triggerType === TriggerTypeEnum.scheduled_job) {
+        entries.push(
+            { key: 'Scheduler', value: action.schedulerConfig?.readableCronExpression?.description || 'Default' },
+            { key: 'Scheduler Cron', value: action.schedulerConfig?.customCronExpression || 'Default' },
+            {
+                key: 'Next Run',
+                value: moment(action.schedulerConfig?.readableCronExpression?.nextRun).format('DD/MM/YYYY HH:mm:ss') || 'Default',
+            },
+        );
+    }
+
     switch (action.actionType) {
         case ActionTypeEnum.add_inbound_rule:
             const ruleConfig = config as AddInboundRuleConfig;
-            return [
+            return entries.concat([
                 { key: 'Security Group', value: ruleConfig.securityGroupId },
                 { key: 'Protocol', value: ruleConfig.protocol },
                 { key: 'Port/Range', value: ruleConfig.portRange },
                 { key: 'Description', value: ruleConfig.descriptionTemplate || 'Default' },
-            ];
+            ]);
 
         case ActionTypeEnum.remove_inbound_rule:
             const removeRule = config as RemoveInboundRuleConfig;
-            return [
+            return entries.concat([
                 { key: 'Security Group', value: removeRule.securityGroupId },
                 { key: 'IP', value: removeRule.ip || '0.0.0.0' },
                 { key: 'Protocol', value: removeRule.protocol },
                 { key: 'Port/Range', value: removeRule.portRange },
-                { key: 'Scheduler', value: removeRule.schedulerConfig?.customCronExpression || 'Default' },
-            ];
+            ]);
 
         case ActionTypeEnum.remove_all_inbound_rules:
             const removeAllRules = config as RemoveAllInboundRulesConfig;
-            return [{ key: 'Security Group', value: removeAllRules.securityGroupId }];
+            return entries.concat([
+                { key: 'Security Group', value: removeAllRules.securityGroupId },
+                { key: 'Protocol', value: removeAllRules.protocol || 'All' },
+                { key: 'Port/Range', value: removeAllRules.portRange || 'All' },
+            ]);
 
         case ActionTypeEnum.send_slack_notification:
             const notifyConfig = config as SendSlackNotificationConfig;
-            return [
+            return entries.concat([
                 { key: 'Channel', value: notifyConfig.channel },
                 { key: 'Recipient', value: notifyConfig.recipient },
                 { key: 'Message', value: notifyConfig.messageTemplate },
-            ];
+            ]);
 
         case ActionTypeEnum.send_email_notification:
             const emailConfig = config as SendEmailNotificationConfig;
-            return [
+            return entries.concat([
                 { key: 'Recipient', value: emailConfig.email },
                 { key: 'Subject', value: emailConfig.subject },
                 { key: 'Body', value: emailConfig.body },
-            ];
+            ]);
 
         default:
+            // Handle potential non-string values in config
             return Object.entries(config).map(([key, value]) => ({
                 key: key,
-                value: value as string,
+                value: typeof value === 'object' ? JSON.stringify(value) : String(value),
             }));
     }
 };
@@ -103,7 +124,7 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
 
 <template>
     <Card
-        class="overflow-hidden transition-all duration-200 hover:shadow-md w-full"
+        class="dark:!bg-card overflow-hidden transition-all duration-200 hover:shadow-md w-full"
         :class="{ 'opacity-60 border-dashed': !action.enabled }"
     >
         <CardHeader class="pb-4">
@@ -156,15 +177,23 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
         <CardContent class="pb-4">
             <Separator class="my-2" />
 
+            <!-- Action-specific alerts -->
+            <div v-if="getActionAlerts(action).length > 0" class="mb-3">
+                <Alert variant="warning" v-for="(alert, index) in getActionAlerts(action)" :key="index" class="mb-2">
+                    <AlertCircle class="h-4 w-4 mr-2" />
+                    <AlertDescription>{{ alert.message }}</AlertDescription>
+                </Alert>
+            </div>
+
             <div class="mt-3">
-                <h4 class="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-3">Configuration</h4>
-                <ScrollArea class="h-[120px] rounded-md border p-3">
-                    <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">
-                        <div v-for="detail in getConfigEntries(action)" :key="detail.key" class="flex justify-between">
-                            <dt class="text-sm text-muted-foreground font-medium">{{ detail.key }}:</dt>
-                            <dd class="text-sm font-mono text-right break-all">{{ detail.value }}</dd>
+                <h4 class="text-xs uppercase text-foreground font-semibold tracking-wider my-6">Configuration</h4>
+                <ScrollArea class="rounded-md">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div v-for="detail in getConfigEntries(action)" :key="detail.key" class="border rounded-md p-3 bg-muted/20">
+                            <div class="text-xs uppercase text-foreground font-semibold mb-1">{{ detail.key }}</div>
+                            <div class="text-sm font-mono break-all">{{ detail.value }}</div>
                         </div>
-                    </dl>
+                    </div>
                 </ScrollArea>
             </div>
         </CardContent>
@@ -175,7 +204,6 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                     <TooltipTrigger asChild>
                         <div>
                             <Button
-                                disabled
                                 :disabled="!hasPermission(PermissionEnum.ACTIONS_WRITE)"
                                 variant="ghost"
                                 size="sm"

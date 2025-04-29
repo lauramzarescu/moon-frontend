@@ -39,7 +39,7 @@ const steps = [
                     'onUpdate:modelValue': (val) => (formData.value.metadataUrl = val),
                     placeholder: 'https://idp.example.com/metadata.xml',
                 }),
-                h('p', { class: 'text-sm text-muted-foreground' }, 'The URL where your Identity Provider exposes its SAML metadata'),
+                h('p', { class: 'text-sm text-foreground' }, 'The URL where your Identity Provider exposes its SAML metadata'),
             ]),
     },
     {
@@ -55,7 +55,7 @@ const steps = [
                     'onUpdate:modelValue': (val) => (formData.value.entityId = val),
                     placeholder: 'urn:example:sp',
                 }),
-                h('p', { class: 'text-sm text-muted-foreground' }, 'A unique identifier for your Service Provider'),
+                h('p', { class: 'text-sm text-foreground' }, 'A unique identifier for your Service Provider'),
             ]),
     },
     {
@@ -73,7 +73,7 @@ const steps = [
                         '-----BEGIN CERTIFICATE-----\nMIIDXTCCAkWgAwIBAgIJAJC1HiIAZAiIMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n...\n-----END CERTIFICATE-----',
                     rows: 6,
                 }),
-                h('p', { class: 'text-sm text-muted-foreground' }, 'The public certificate used to verify SAML messages'),
+                h('p', { class: 'text-sm text-foreground' }, 'The public certificate used to verify SAML messages'),
             ]),
     },
     {
@@ -91,7 +91,7 @@ const steps = [
                         '-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCtVJkFkqHLGfEg\n...\n-----END PRIVATE KEY-----',
                     rows: 6,
                 }),
-                h('p', { class: 'text-sm text-muted-foreground' }, 'The private key used to sign SAML requests'),
+                h('p', { class: 'text-sm text-foreground' }, 'The private key used to sign SAML requests'),
             ]),
     },
     {

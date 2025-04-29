@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ActionTypeEnum, TriggerTypeEnum } from '../schema';
+import { ActionTypeEnum, type ScheduledJobConfig, TriggerTypeEnum } from '../schema';
 import AddInboundRuleConfiguration from './AddInboundRuleConfiguration.vue';
 import EmailNotificationConfiguration from './EmailNotificationConfiguration.vue';
 import SlackNotificationConfiguration from './SlackNotificationConfiguration.vue';
@@ -12,7 +12,8 @@ const props = defineProps<{
     actionType?: ActionTypeEnum;
     triggerType?: TriggerTypeEnum;
     configPath: string;
-    schedulerConfig: Record<string, unknown>;
+    config: Record<string, unknown> | undefined;
+    schedulerConfig: ScheduledJobConfig | null;
 }>();
 
 const showSchedulerConfig = computed(() => {
@@ -49,7 +50,7 @@ const actionConfigComponent = computed(() => {
 
         <div v-if="actionType" class="pt-4 mt-4 border-t border-border/60">
             <h4 class="text-md font-semibold mb-4">Configure Action Details</h4>
-            <component :is="actionConfigComponent" v-if="actionConfigComponent" :configPath="configPath" />
+            <component :is="actionConfigComponent" v-if="actionConfigComponent" :config="config" :configPath="configPath" />
         </div>
     </div>
 </template>

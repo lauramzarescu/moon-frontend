@@ -74,7 +74,7 @@ async function onSubmit(values: any) {
 <template>
     <div>
         <h3 class="text-lg font-medium">Account</h3>
-        <p class="text-sm text-muted-foreground">Update your account settings. Set your preferred language and timezone.</p>
+        <p class="text-sm text-foreground">Update your account settings. Set your preferred language and timezone.</p>
     </div>
     <Separator />
     <Form v-slot="{ setFieldValue }" :validation-schema="accountFormSchema" class="space-y-8" @submit="onSubmit">
@@ -97,7 +97,7 @@ async function onSubmit(values: any) {
                         <FormControl>
                             <Button
                                 variant="outline"
-                                :class="cn('w-[240px] justify-start text-left font-normal', !value && 'text-muted-foreground')"
+                                :class="cn('w-[240px] justify-start text-left font-normal', !value && 'text-foreground')"
                             >
                                 <RadixIconsCalendar class="mr-2 h-4 w-4 opacity-50" />
                                 <span>{{ value ? df.format(toDate(dateValue, getLocalTimeZone())) : 'Pick a date' }}</span>
@@ -143,7 +143,7 @@ async function onSubmit(values: any) {
                                 variant="outline"
                                 role="combobox"
                                 :aria-expanded="open"
-                                :class="cn('w-[200px] justify-between', !value && 'text-muted-foreground')"
+                                :class="cn('w-[200px] justify-between', !value && 'text-foreground')"
                             >
                                 {{ value ? languages.find((language) => language.value === value)?.label : 'Select language...' }}
 

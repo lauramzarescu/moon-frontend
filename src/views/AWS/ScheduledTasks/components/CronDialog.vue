@@ -43,18 +43,18 @@
                                 <div class="flex-1 min-w-0">
                                     <div class="flex justify-between items-center">
                                         <time class="text-sm font-semibold">
-                                            {{ moment.utc(run).format('dddd') }}
+                                            {{ moment(run).format('dddd') }}
                                         </time>
-                                        <span class="text-sm text-muted-foreground">
-                                            {{ moment.utc(run).format('HH:mm:ss') }}
+                                        <span class="text-sm text-foreground">
+                                            {{ moment(run).format('HH:mm:ss') }}
                                         </span>
                                     </div>
-                                    <p class="text-sm text-muted-foreground">
-                                        {{ moment.utc(run).format('MMMM D, YYYY') }}
+                                    <p class="text-sm text-foreground">
+                                        {{ moment(run).format('MMMM D, YYYY') }}
                                     </p>
                                 </div>
                             </div>
-                            <div v-else class="flex items-center justify-center text-muted-foreground">No upcoming executions</div>
+                            <div v-else class="flex items-center justify-center text-foreground">No upcoming executions</div>
                         </div>
                     </div>
                 </div>

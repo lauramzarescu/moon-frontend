@@ -107,7 +107,7 @@ const triggerTypes = triggerTypeSchema.enum;
                         <div class="space-y-2">
                             <FormLabel>Action Type</FormLabel>
                             <Input :value="actionTypeLabels[action.actionType]" disabled class="bg-muted/50" />
-                            <p class="text-xs text-muted-foreground">Action type cannot be changed</p>
+                            <p class="text-xs text-foreground">Action type cannot be changed</p>
                         </div>
                     </div>
                 </div>
@@ -117,7 +117,7 @@ const triggerTypes = triggerTypeSchema.enum;
                 <Separator class="my-2" />
 
                 <div class="mt-3">
-                    <h4 class="text-xs uppercase text-muted-foreground font-semibold tracking-wider mb-3">Configuration</h4>
+                    <h4 class="text-xs uppercase text-foreground font-semibold tracking-wider mb-3">Configuration</h4>
 
                     <!-- Add Inbound Rule Configuration -->
                     <div v-if="action.actionType === 'add_inbound_rule'" class="space-y-4">

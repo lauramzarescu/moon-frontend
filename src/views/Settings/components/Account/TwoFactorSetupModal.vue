@@ -81,7 +81,7 @@ const verify2FACode = async () => {
                 <div v-else class="flex justify-center py-4 text-red-500">QR code not available. Please try again.</div>
                 <div class="text-sm text-center">
                     <p class="font-medium mb-2">Scan the QR code with your authenticator app</p>
-                    <p class="text-muted-foreground">
+                    <p class="text-foreground">
                         Use an app like Google Authenticator, Authy, or Microsoft Authenticator to scan this QR code.
                     </p>
                 </div>
@@ -95,7 +95,7 @@ const verify2FACode = async () => {
             </div>
 
             <DialogFooter>
-                <Button variant="outline" @click="emit('update:open', false)" :disabled="isLoading || localIsLoading">Cancel </Button>
+                <Button variant="outline" @click="emit('update:open', false)" :disabled="isLoading || localIsLoading"> Cancel </Button>
                 <Button @click="verify2FACode" :disabled="isLoading || localIsLoading || verificationCode.join('').length !== 6">
                     <span v-if="isLoading || localIsLoading">Verifying...</span>
                     <span v-else>Verify</span>

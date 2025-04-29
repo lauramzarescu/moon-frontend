@@ -99,10 +99,10 @@ const saveEdit = (updatedAction: ActionDefinition) => {
         <Card v-else-if="props.actions.length === 0" class="bg-muted/20 border-dashed w-full">
             <CardContent class="flex flex-col items-center justify-center py-12 text-center">
                 <div class="rounded-full bg-muted p-3 mb-4">
-                    <AlertCircle class="h-6 w-6 text-muted-foreground" />
+                    <AlertCircle class="h-6 w-6 text-foreground" />
                 </div>
                 <h3 class="text-lg font-medium mb-2">No actions defined</h3>
-                <p class="text-muted-foreground max-w-md">
+                <p class="text-foreground max-w-md">
                     No actions have been defined yet. Create one using the builder above to automate responses to system events.
                 </p>
             </CardContent>
@@ -112,10 +112,10 @@ const saveEdit = (updatedAction: ActionDefinition) => {
         <Card v-else-if="filteredActions.length === 0" class="bg-muted/20 border-dashed w-full">
             <CardContent class="flex flex-col items-center justify-center py-12 text-center">
                 <div class="rounded-full bg-muted p-3 mb-4">
-                    <Search class="h-6 w-6 text-muted-foreground" />
+                    <Search class="h-6 w-6 text-foreground" />
                 </div>
                 <h3 class="text-lg font-medium mb-2">No matching actions</h3>
-                <p class="text-muted-foreground max-w-md">
+                <p class="text-foreground max-w-md">
                     No actions match your current filters. Try adjusting your search criteria or clear filters.
                 </p>
                 <Button variant="outline" size="sm" @click="handleFilterChange('', null)" class="mt-4"> Clear filters </Button>
@@ -124,9 +124,7 @@ const saveEdit = (updatedAction: ActionDefinition) => {
 
         <!-- Action list -->
         <div v-else class="grid gap-4 w-full">
-            <!-- Using transition-group for animated list changes -->
             <TransitionGroup name="action-list" tag="div" class="grid gap-4 w-full">
-                <!-- Regular view mode -->
                 <template v-for="action in filteredActions" :key="action.id">
                     <!-- Edit mode -->
                     <ActionEditForm v-if="editingActionId === action.id" :action="action" @save="saveEdit" @cancel="cancelEditing" />
@@ -137,7 +135,6 @@ const saveEdit = (updatedAction: ActionDefinition) => {
             </TransitionGroup>
         </div>
 
-        <!-- Pagination placeholder - can be implemented if needed -->
         <div v-if="filteredActions.length > 10" class="flex items-center justify-center space-x-2 py-4">
             <Button variant="outline" size="sm" disabled>Previous</Button>
             <Button variant="outline" size="sm" class="bg-primary text-primary-foreground">1</Button>

@@ -1,7 +1,7 @@
 <template>
     <div>
         <h3 class="pt-5 text-lg font-medium">Team Management</h3>
-        <p class="text-sm text-muted-foreground">Manage system users and their roles.</p>
+        <p class="text-sm text-foreground">Manage system users and their roles.</p>
     </div>
     <Separator />
 

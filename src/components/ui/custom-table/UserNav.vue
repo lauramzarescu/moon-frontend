@@ -153,10 +153,10 @@ const handleLogout = async () => {
                         <p class="text-sm font-medium leading-none">
                             {{ authStore.user?.name || 'User' }}
                         </p>
-                        <p class="text-xs leading-none text-muted-foreground">
+                        <p class="text-xs leading-none text-foreground">
                             {{ authStore.user?.email || 'user@example.com' }}
                         </p>
-                        <p v-if="authStore.user?.role" class="text-xs text-muted-foreground mt-1">
+                        <p v-if="authStore.user?.role" class="text-xs text-foreground mt-1">
                             {{ userRoleDisplay }}
                         </p>
                     </div>

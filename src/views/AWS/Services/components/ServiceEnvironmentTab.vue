@@ -77,7 +77,7 @@
 <!--              <span class="font-medium">Secrets</span>-->
 <!--            </div>-->
 <!--            <div v-if="!props.row.taskDefinition.environmentVariables.secrets?.length"-->
-<!--                 class="text-sm text-muted-foreground p-4 text-center bg-muted/10 rounded-lg">-->
+<!--                 class="text-sm text-foreground p-4 text-center bg-muted/10 rounded-lg">-->
 <!--              No secrets available-->
 <!--            </div>-->
 <!--            <Table v-else>-->

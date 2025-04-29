@@ -17,7 +17,7 @@ export function getActionConfig(actionType?: ActionTypeEnum) {
                     securityGroupId: '',
                     protocol: 'tcp',
                     portRange: '22',
-                    descriptionTemplate: 'Access granted on {timestamp}',
+                    descriptionTemplate: 'Access for {email} on {timestamp}',
                 },
             };
         case ActionTypeEnum.remove_inbound_rule:
