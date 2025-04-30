@@ -141,7 +141,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="container mx-auto py-6 space-y-8">
+    <div class="mx-auto py-6 space-y-8">
         <Alert variant="info" class="bg-blue-50 dark:bg-blue-950/30">
             <div class="flex items-center gap-2">
                 <InfoIcon class="h-4 w-4" />
