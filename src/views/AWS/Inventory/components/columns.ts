@@ -94,7 +94,7 @@ export const columns: ColumnDef<Instance>[] = [
         accessorKey: 'publicIp',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Public IP' }),
         cell: ({ row }) => {
-            const publicIp = row.getValue('publicIp');
+            const publicIp = row.getValue('publicIp') || '-';
             return h('div', { class: 'w-[120px] py-2' }, publicIp);
         },
     },
@@ -102,7 +102,7 @@ export const columns: ColumnDef<Instance>[] = [
         accessorKey: 'primaryPrivateIp',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Private IP' }),
         cell: ({ row }) => {
-            const privateIp = row.getValue('primaryPrivateIp');
+            const privateIp = row.getValue('primaryPrivateIp') || '-';
             return h('div', { class: 'w-[120px] py-2' }, privateIp);
         },
     },

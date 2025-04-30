@@ -106,6 +106,12 @@ function cancelTwoFactorVerification() {
 const handleSAMLLogin = async () => {
     window.location.href = `${config.BACKEND_URL}/auth/saml/login`;
 };
+
+// Placeholder function for forgot password - implementation needed
+const handleForgotPassword = () => {
+    console.log('Forgot Password clicked');
+    // TODO: Implement forgot password logic (e.g., navigate to forgot password page)
+};
 </script>
 
 <template>
@@ -141,6 +147,24 @@ const handleSAMLLogin = async () => {
                     <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
                     Sign In with Email
                 </Button>
+
+                <!-- Forgot Password Separator and Link -->
+                <!--                <div class="relative mt-4">-->
+                <!--                    <div class="absolute inset-0 flex items-center">-->
+                <!--                        <span class="w-full border-t" />-->
+                <!--                    </div>-->
+                <!--                    <div class="relative flex justify-center text-xs uppercase">-->
+                <!--                        <Button-->
+                <!--                            variant="link"-->
+                <!--                            type="button"-->
+                <!--                            class="!px-2 !text-foreground uppercase text-xs"-->
+                <!--                            :disabled="isLoading"-->
+                <!--                            @click="handleForgotPassword"-->
+                <!--                        >-->
+                <!--                            Forgot Password?-->
+                <!--                        </Button>-->
+                <!--                    </div>-->
+                <!--                </div>-->
             </div>
         </form>
 

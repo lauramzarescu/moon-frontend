@@ -70,7 +70,7 @@ export const columns: ColumnDef<Cluster>[] = [
         accessorKey: 'privateIp',
         header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Private IP' }),
         cell: ({ row }) => {
-            const privateIp = row.getValue('privateIp');
+            const privateIp = row.getValue('privateIp') || '-';
             return h('div', { class: 'w-[80px] py-2' }, privateIp);
         },
     },
