@@ -13,6 +13,7 @@ export enum TriggerTypeEnum {
     user_logout = 'user_logout',
     user_created = 'user_created',
     scheduled_job = 'scheduled_job',
+    page_refresh = 'page_refresh',
 }
 
 export const actionTypeSchema = z.nativeEnum(ActionTypeEnum);
@@ -181,4 +182,5 @@ export const triggerTypeLabels: Record<TriggerType, string> = {
     user_logout: 'User Logout',
     user_created: 'User Created',
     scheduled_job: 'Scheduled Job',
+    page_refresh: 'Page Refresh',
 };

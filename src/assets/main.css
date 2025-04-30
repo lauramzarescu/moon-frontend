@@ -308,7 +308,7 @@
         --accent: rgb(30, 45, 60); /* Converted from 217.2 32.6% 17.5% */
         --accent-foreground: rgb(245, 248, 250); /* Converted from 210 40% 98% */
 
-        --destructive: rgb(131, 30, 30); /* Converted from 0 62.8% 30.6% */
+        --destructive: var(--color-red-900); /* Converted from 0 62.8% 30.6% */
         --destructive-foreground: rgb(245, 248, 250); /* Converted from 210 40% 98% */
 
         --border: var(--color-slate-800); /* Converted from 217.2 32.6% 17.5% */

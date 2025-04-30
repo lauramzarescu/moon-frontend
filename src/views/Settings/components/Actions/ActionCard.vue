@@ -203,12 +203,7 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>
-                            <Button
-                                :disabled="!hasPermission(PermissionEnum.ACTIONS_WRITE)"
-                                variant="ghost"
-                                size="sm"
-                                @click="emit('edit', action)"
-                            >
+                            <Button :disabled="true" variant="ghost" size="sm" @click="emit('edit', action)">
                                 <Pencil class="h-4 w-4 mr-2" />
                                 Edit
                             </Button>
@@ -228,7 +223,7 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                                 :disabled="!hasPermission(PermissionEnum.ACTIONS_DELETE)"
                                 variant="ghost"
                                 size="sm"
-                                class="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                class="text-destructive dark:hover:bg-red-900/20 hover:bg-destructive/20 hover:text-destructive"
                                 @click="emit('delete', action.id)"
                             >
                                 <Trash2 class="h-4 w-4 mr-2" />
