@@ -47,7 +47,7 @@
                             <span class="sr-only">Increase</span>
                         </Button>
                     </div>
-                    <p class="mt-4 text-xs text-muted-foreground">Current running tasks: {{ currentCount }}</p>
+                    <p class="mt-4 text-xs text-foreground">Current running tasks: {{ currentCount }}</p>
                 </div>
             </div>
 

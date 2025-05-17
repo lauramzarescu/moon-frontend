@@ -3,7 +3,7 @@
         <div class="flex flex-col space-y-8">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight">Platform Login</h1>
-                <p class="text-lg text-muted-foreground">Select your authentication method to get started</p>
+                <p class="text-lg text-foreground">Select your authentication method to get started</p>
             </div>
 
             <Tabs default-value="credentials" class="w-full">
@@ -24,7 +24,7 @@
                                 <Input id="password" type="password" v-model="password" placeholder="Enter your password" />
                             </div>
                         </div>
-                        <Button size="lg" type="submit" @click="handleCredentialsLogin"> Login with Credentials </Button>
+                        <Button size="lg" type="submit" @click="handleCredentialsLogin"> Login with Credentials</Button>
                     </div>
                 </TabsContent>
 
@@ -59,7 +59,7 @@ company.org"
 
                         <div class="flex flex-col space-y-4">
                             <Button size="lg" variant="default" @click="redirectToSamlSetup"> Configure SAML Settings </Button>
-                            <p class="text-sm text-muted-foreground">
+                            <p class="text-sm text-foreground">
                                 Configure your SAML settings to enable single sign-on for your organization
                             </p>
                         </div>

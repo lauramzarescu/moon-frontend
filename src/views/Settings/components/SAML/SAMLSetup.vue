@@ -177,7 +177,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="w-full mt-6">
+    <div class="bg-card w-full mt-6">
         <!-- SAML Toggle Section -->
         <SAMLToggleSection
             :saml-enabled="samlEnabled"

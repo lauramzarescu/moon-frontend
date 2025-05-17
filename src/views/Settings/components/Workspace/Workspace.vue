@@ -11,6 +11,7 @@ import { ServicesConfigService } from '@/services/services-config.service.ts';
 import { type ServicesConfigInput, ServiceType } from '@/views/Settings/components/Workspace/schema.ts';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
 
 export interface AWSConfig {
     accessKeyId: string;
@@ -107,7 +108,7 @@ const saveAwsConfiguration = async (serviceId: string) => {
     const service = services.value.find((s) => s.id === serviceId);
     if (service && service.id === 'aws') {
         service.credentials = { ...awsForm.value };
-        service.isConfigured = true;
+        service.isConfigured = true; // Assume successful save for UI update
     }
 };
 
@@ -133,88 +134,89 @@ const getAwsFormLabel = (key: keyof AWSConfig): string | null => {
         </template>
 
         <div class="space-y-6">
-            <div v-for="service in services" :key="service.id" class="mb-8 p-4 border rounded-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-semibold">{{ service.name }}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                            {{ service.description }}
-                        </p>
+            <Card v-for="service in services" :key="service.id" class="mb-8">
+                <CardHeader>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <CardTitle>{{ service.name }}</CardTitle>
+                            <CardDescription>
+                                {{ service.description }}
+                            </CardDescription>
+                        </div>
+                        <Switch v-model:checked="service.isEnabled" :disabled="!hasPermission(PermissionEnum.SAML_CONFIGURATION_CREATE)" />
                     </div>
-                    <Switch v-model:checked="service.isEnabled" :disabled="!hasPermission(PermissionEnum.SAML_CONFIGURATION_CREATE)" />
-                </div>
+                </CardHeader>
+                <CardContent>
+                    <Alert :variant="service.isConfigured ? 'success' : 'warning'" class="mt-4" v-if="service.isEnabled">
+                        <AlertCircle class="h-4 w-4" />
+                        <AlertTitle>
+                            {{ service.isConfigured ? 'Service Active' : 'Service Not Configured' }}
+                        </AlertTitle>
+                        <AlertDescription>
+                            {{
+                                service.isConfigured
+                                    ? 'The service is up and running'
+                                    : `Please configure your ${service.name} credentials to start using the service.`
+                            }}
+                        </AlertDescription>
+                    </Alert>
 
-                <Alert :variant="service.isConfigured ? 'success' : 'warning'" class="mt-4" v-if="service.isEnabled">
-                    <AlertCircle class="h-4 w-4" />
-                    <AlertTitle>
-                        {{ service.isConfigured ? 'Service Active' : 'Service Not Configured' }}
-                    </AlertTitle>
-                    <AlertDescription>
-                        {{
-                            service.isConfigured
-                                ? 'The service is up and running'
-                                : `Please configure your ${service.name} credentials to start using the service.`
-                        }}
-                    </AlertDescription>
-                </Alert>
+                    <div v-if="service.isEnabled" class="mt-4">
+                        <div v-if="!service.isConfigured && service.id === ServiceType.aws" class="flex flex-col p-8 border rounded-lg">
+                            <h3 class="text-lg font-semibold mb-4">Configure AWS Credentials</h3>
+                            <Form @submit.prevent="saveAwsConfiguration(service.id)">
+                                <div class="space-y-4">
+                                    <template v-for="(value, key) in awsForm" :key="key">
+                                        <FormField :key="key" :name="key" class="mt-4" v-if="getAwsFormLabel(key as keyof AWSConfig)">
+                                            <FormItem>
+                                                <FormLabel>{{ getAwsFormLabel(key as keyof AWSConfig) }}</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        v-model="awsForm[key as keyof AWSConfig]"
+                                                        :type="key === 'secretAccessKey' ? 'password' : 'text'"
+                                                        :placeholder="`Enter ${getAwsFormLabel(key as keyof AWSConfig)}`"
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        </FormField>
+                                    </template>
 
-                <div v-if="service.isEnabled" class="mt-4">
-                    <div v-if="!service.isConfigured && service.id === ServiceType.aws" class="flex flex-col p-8 border rounded-lg">
-                        <h3 class="text-lg font-semibold mb-4">Configure AWS Credentials</h3>
-                        <Form @submit.prevent="saveAwsConfiguration(service.id)">
-                            <div class="space-y-4">
-                                <template v-for="(value, key) in awsForm" :key="key">
-                                    <FormField :key="key" :name="key" class="mt-4" v-if="getAwsFormLabel(key as keyof AWSConfig)">
-                                        <FormItem>
-                                            <FormLabel>{{ getAwsFormLabel(key as keyof AWSConfig) }}</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    v-model="awsForm[key as keyof AWSConfig]"
-                                                    :type="key === 'secretAccessKey' ? 'password' : 'text'"
-                                                    :placeholder="`Enter ${getAwsFormLabel(key as keyof AWSConfig)}`"
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    </FormField>
-                                </template>
-
-                                <Button type="submit" class="w-full">Save AWS Configuration</Button>
-                            </div>
-                        </Form>
-                    </div>
-
-                    <div
-                        v-if="!service.isConfigured && service.id !== ServiceType.aws"
-                        class="flex flex-col items-center justify-center p-8 border rounded-lg"
-                    >
-                        <h3 class="text-lg font-semibold mb-2">No Configuration Found</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                            Start configuring {{ service.name }} for your organization
-                        </p>
-                        <Button @click="configureService(service.id)"> Configure {{ service.name }}</Button>
-                    </div>
-
-                    <div v-if="service.isConfigured && service.id === ServiceType.aws" class="p-4 border rounded-lg mt-4">
-                        <h3 class="text-lg font-semibold mb-4">AWS Configuration</h3>
-                        <div class="space-y-2">
-                            <template v-for="(value, key) in service.credentials">
-                                <div v-if="getAwsFormLabel(key as keyof AWSConfig)" :key="key" class="flex justify-between items-center">
-                                    <span class="font-medium">{{ getAwsFormLabel(key as keyof AWSConfig) }}</span>
-                                    <span class="text-gray-600">
-                                        {{ key.includes('secret') ? '••••••••' : value }}
-                                    </span>
+                                    <Button type="submit" class="w-full">Save AWS Configuration</Button>
                                 </div>
-                            </template>
+                            </Form>
+                        </div>
+
+                        <div
+                            v-if="!service.isConfigured && service.id !== ServiceType.aws"
+                            class="flex flex-col items-center justify-center p-8 border rounded-lg"
+                        >
+                            <h3 class="text-lg font-semibold mb-2">No Configuration Found</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                                Start configuring {{ service.name }} for your organization
+                            </p>
+                            <Button @click="configureService(service.id)"> Configure {{ service.name }}</Button>
+                        </div>
+
+                        <div v-if="service.isConfigured && service.id === ServiceType.aws" class="p-4 border rounded-lg mt-4">
+                            <h3 class="text-lg font-semibold mb-4">AWS Configuration</h3>
+                            <div class="space-y-2">
+                                <template v-for="(value, key) in service.credentials">
+                                    <div v-if="getAwsFormLabel(key as keyof AWSConfig)" :key="key">
+                                        <span class="font-medium">{{ getAwsFormLabel(key as keyof AWSConfig) }}: </span>
+                                        <span class="text-gray-600 dark:text-gray-400">
+                                            {{ key.includes('secret') ? '••••••••' : value }}
+                                        </span>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
         </div>
     </FormsLayout>
 </template>
 
 <style scoped>
-.dark {
-    color-scheme: dark;
-}
+/* Assuming dark mode styles are handled by Tailwind and global CSS */
 </style>

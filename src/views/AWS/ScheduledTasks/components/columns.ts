@@ -89,7 +89,7 @@ export const columns: ColumnDef<ScheduledTask>[] = [
                 {
                     class: 'w-30 rounded px-2 py-1 transition-colors duration-200 cursor-pointer',
                 },
-                nextRun ? moment.utc(nextRun).format('DD MMM YYYY, HH:mm ') : 'N/A',
+                nextRun ? moment(nextRun).format('DD MMM YYYY, HH:mm ') : 'N/A',
             );
         },
     },

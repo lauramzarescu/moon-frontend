@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 export enum ActionTypeEnum {
     add_inbound_rule = 'add_inbound_rule',
+    remove_inbound_rule = 'remove_inbound_rule',
+    remove_all_inbound_rules = 'remove_all_inbound_rules',
     send_email_notification = 'send_email_notification',
     send_slack_notification = 'send_slack_notification',
 }
@@ -10,6 +12,8 @@ export enum TriggerTypeEnum {
     user_login = 'user_login',
     user_logout = 'user_logout',
     user_created = 'user_created',
+    scheduled_job = 'scheduled_job',
+    page_refresh = 'page_refresh',
 }
 
 export const actionTypeSchema = z.nativeEnum(ActionTypeEnum);
@@ -23,8 +27,24 @@ export const addInboundRuleConfigSchema = z.object({
     protocol: z.string().min(1, 'Protocol is required'),
     portRange: z.string().min(1, 'Port/Range is required'),
     descriptionTemplate: z.string().optional(),
+    ip: z.string().optional(),
 });
 export type AddInboundRuleConfig = z.infer<typeof addInboundRuleConfigSchema>;
+
+export const removeInboundRuleConfigSchema = z.object({
+    securityGroupId: z.string().min(1, 'Security Group ID is required'),
+    protocol: z.string().min(1, 'Protocol is required'),
+    portRange: z.string().min(1, 'Port/Range is required'),
+    ip: z.string().optional(),
+});
+export type RemoveInboundRuleConfig = z.infer<typeof removeInboundRuleConfigSchema>;
+
+export const removeAllInboundRulesConfigSchema = z.object({
+    securityGroupId: z.string().min(1, 'Security Group ID is required'),
+    protocol: z.string().optional(),
+    portRange: z.string().optional(),
+});
+export type RemoveAllInboundRulesConfig = z.infer<typeof removeAllInboundRulesConfigSchema>;
 
 export const sendSlackNotificationConfigSchema = z.object({
     channel: z.string().min(1, 'Channel/Type is required'),
@@ -38,8 +58,19 @@ export const sendEmailNotificationConfigSchema = z.object({
     subject: z.string().min(1, 'Subject is required'),
     body: z.string().min(1, 'Body is required'),
 });
-
 export type SendEmailNotificationConfig = z.infer<typeof sendEmailNotificationConfigSchema>;
+
+export const scheduledJobConfigSchema = z.object({
+    customCronExpression: z.string().min(1, 'Cron expression is required'),
+    readableCronExpression: z
+        .object({
+            description: z.string(),
+            nextRun: z.string(),
+            nextRuns: z.array(z.string()),
+        })
+        .optional(),
+});
+export type ScheduledJobConfig = z.infer<typeof scheduledJobConfigSchema>;
 
 export const baseActionDefinitionSchema = z.object({
     id: z.string().uuid(),
@@ -47,20 +78,14 @@ export const baseActionDefinitionSchema = z.object({
     actionType: actionTypeSchema,
     triggerType: triggerTypeSchema,
     config: z.record(z.string(), z.unknown()),
+    schedulerConfig: scheduledJobConfigSchema.optional().nullable(),
     enabled: z.boolean(),
 });
 export type ActionDefinition = z.infer<typeof baseActionDefinitionSchema>;
 
 export const createActionSchema = baseActionDefinitionSchema.omit({ id: true });
 
-export const createActionInputSchema = z
-    .object({
-        name: z.string().min(1, 'Action name is required'),
-        actionType: actionTypeSchema,
-        triggerType: triggerTypeSchema,
-        enabled: z.boolean(),
-        config: z.record(z.string(), z.unknown()),
-    })
+export const createActionInputSchema = createActionSchema
     .refine(
         (data) => {
             if (data.actionType === ActionTypeEnum.add_inbound_rule) {
@@ -72,49 +97,82 @@ export const createActionInputSchema = z
             if (data.actionType === ActionTypeEnum.send_email_notification) {
                 return sendEmailNotificationConfigSchema.safeParse(data.config).success;
             }
-            return true;
+            if (data.actionType === ActionTypeEnum.remove_inbound_rule) {
+                return removeInboundRuleConfigSchema.safeParse(data.config).success;
+            }
+            if (data.actionType === ActionTypeEnum.remove_all_inbound_rules) {
+                return removeAllInboundRulesConfigSchema.safeParse(data.config).success;
+            }
+
+            return false;
         },
         {
             message: 'Configuration object does not match the selected action type.',
             path: ['config'],
         },
+    )
+    .refine(
+        (data) => {
+            if (data.triggerType === TriggerTypeEnum.scheduled_job) {
+                return scheduledJobConfigSchema.safeParse(data.schedulerConfig).success;
+            }
+            return true;
+        },
+        {
+            message: 'Scheduler configuration is required for scheduled jobs.',
+            path: ['schedulerConfig'],
+        },
     );
 export type CreateActionDto = z.infer<typeof createActionInputSchema>;
 
-const updateActionBaseSchema = z
-    .object({
-        name: z.string().min(1, 'Action name is required'),
-        actionType: actionTypeSchema,
-        triggerType: triggerTypeSchema,
-        enabled: z.boolean(),
-        config: z.record(z.string(), z.unknown()),
-    })
-    .partial();
+const updateActionBaseSchema = z.object(baseActionDefinitionSchema.shape).omit({ id: true });
 
-export const updateActionInputSchema = updateActionBaseSchema.refine(
-    (data) => {
-        if (data.actionType && data.config) {
-            if (data.actionType === ActionTypeEnum.add_inbound_rule) {
-                return addInboundRuleConfigSchema.safeParse(data.config).success;
+export const updateActionInputSchema = updateActionBaseSchema
+    .refine(
+        (data) => {
+            if (data.actionType && data.config) {
+                if (data.actionType === ActionTypeEnum.add_inbound_rule) {
+                    return addInboundRuleConfigSchema.safeParse(data.config).success;
+                }
+                if (data.actionType === ActionTypeEnum.send_slack_notification) {
+                    return sendSlackNotificationConfigSchema.safeParse(data.config).success;
+                }
+                if (data.actionType === ActionTypeEnum.send_email_notification) {
+                    return sendEmailNotificationConfigSchema.safeParse(data.config).success;
+                }
+                if (data.actionType === ActionTypeEnum.remove_inbound_rule) {
+                    return removeInboundRuleConfigSchema.safeParse(data.config).success;
+                }
+                if (data.actionType === ActionTypeEnum.remove_all_inbound_rules) {
+                    return removeAllInboundRulesConfigSchema.safeParse(data.config).success;
+                }
             }
-            if (data.actionType === ActionTypeEnum.send_slack_notification) {
-                return sendSlackNotificationConfigSchema.safeParse(data.config).success;
+
+            return false;
+        },
+        {
+            message: 'Provided configuration object does not match the updated action type.',
+            path: ['config'],
+        },
+    )
+    .refine(
+        (data) => {
+            if (data.triggerType === TriggerTypeEnum.scheduled_job) {
+                return scheduledJobConfigSchema.safeParse(data.schedulerConfig).success;
             }
-            if (data.actionType === ActionTypeEnum.send_email_notification) {
-                return sendEmailNotificationConfigSchema.safeParse(data.config).success;
-            }
-        }
-        return true;
-    },
-    {
-        message: 'Provided configuration object does not match the updated action type.',
-        path: ['config'],
-    },
-);
+            return true;
+        },
+        {
+            message: 'Scheduler configuration is required for scheduled jobs.',
+            path: ['schedulerConfig'],
+        },
+    );
 export type UpdateActionDto = z.infer<typeof updateActionInputSchema>;
 
 export const actionTypeLabels: Record<ActionType, string> = {
     add_inbound_rule: 'Add Inbound Security Group Rule',
+    remove_inbound_rule: 'Remove Inbound Security Group Rule',
+    remove_all_inbound_rules: 'Remove All Inbound Security Group Rules',
     send_slack_notification: 'Send Slack Notification',
     send_email_notification: 'Send Email Notification',
 };
@@ -123,4 +181,6 @@ export const triggerTypeLabels: Record<TriggerType, string> = {
     user_login: 'User Login',
     user_logout: 'User Logout',
     user_created: 'User Created',
+    scheduled_job: 'Scheduled Job',
+    page_refresh: 'Page Refresh',
 };

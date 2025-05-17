@@ -17,11 +17,11 @@
                         <span>Create new user</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem disabled>
                         <Upload class="mr-2 h-4 w-4" />
                         <span>Import users</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem disabled>
                         <Mail class="mr-2 h-4 w-4" />
                         <span>Send invitation</span>
                     </DropdownMenuItem>

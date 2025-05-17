@@ -39,16 +39,16 @@ export default {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
                 <DropdownMenuItem @click="column.toggleSorting(false)">
-                    <ArrowUpIcon class="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+                    <ArrowUpIcon class="mr-2 h-3.5 w-3.5 text-foreground/70" />
                     Asc
                 </DropdownMenuItem>
                 <DropdownMenuItem @click="column.toggleSorting(true)">
-                    <ArrowDownIcon class="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+                    <ArrowDownIcon class="mr-2 h-3.5 w-3.5 text-foreground/70" />
                     Desc
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem v-if="column.getCanHide()" @click="column.toggleVisibility(false)">
-                    <EyeNoneIcon class="mr-2 h-3.5 w-3.5 text-muted-foreground/70" />
+                    <EyeNoneIcon class="mr-2 h-3.5 w-3.5 text-foreground/70" />
                     Hide
                 </DropdownMenuItem>
             </DropdownMenuContent>

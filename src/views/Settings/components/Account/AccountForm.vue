@@ -33,7 +33,7 @@ onMounted(async () => {
 <template>
     <div>
         <h3 class="pt-5 text-lg font-medium">Account Management</h3>
-        <p class="text-sm text-muted-foreground">Change your account details</p>
+        <p class="text-sm text-foreground">Change your account details</p>
     </div>
     <Separator />
 

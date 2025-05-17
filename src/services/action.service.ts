@@ -27,4 +27,8 @@ export class ActionService extends ApiService {
     async deleteOne(id: string) {
         return this.delete(`${this.resource}/${id}`);
     }
+
+    async refresh() {
+        return this.get<{ message: string }>(`${this.resource}/refresh`);
+    }
 }

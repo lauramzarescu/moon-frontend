@@ -17,8 +17,6 @@ const showActionBuilder = ref(false);
 const handleActionCreated = async (newAction: ActionDefinition) => {
     try {
         await actionService.create(newAction);
-        configuredActions.value.push(newAction);
-        showActionBuilder.value = false;
 
         toast({
             title: 'Action created',
@@ -32,12 +30,19 @@ const handleActionCreated = async (newAction: ActionDefinition) => {
             description: 'There was an error creating your action. Please try again.',
             variant: 'destructive',
         });
+        return;
     }
+
+    configuredActions.value.push(newAction);
+    showActionBuilder.value = false;
+
+    configuredActions.value = await actionService.getAll();
 };
 
 const handleUpdateActionStatus = async (actionId: string, newStatus: boolean) => {
+    const actionIndex = configuredActions.value.findIndex((a) => a.id === actionId);
+
     try {
-        const actionIndex = configuredActions.value.findIndex((a) => a.id === actionId);
         if (actionIndex !== -1) {
             configuredActions.value[actionIndex].enabled = newStatus;
             await actionService.updateOne(actionId, configuredActions.value[actionIndex]);
@@ -55,12 +60,14 @@ const handleUpdateActionStatus = async (actionId: string, newStatus: boolean) =>
             description: 'There was an error updating the action status. Please try again.',
             variant: 'destructive',
         });
+        return;
     }
+
+    configuredActions.value = await actionService.getAll();
 };
 
 const handleDeleteAction = async (actionId: string) => {
     try {
-        configuredActions.value = configuredActions.value.filter((a) => a.id !== actionId);
         await actionService.deleteOne(actionId);
 
         toast({
@@ -75,18 +82,19 @@ const handleDeleteAction = async (actionId: string) => {
             description: 'There was an error deleting the action. Please try again.',
             variant: 'destructive',
         });
+        return;
     }
+
+    configuredActions.value = configuredActions.value.filter((a) => a.id !== actionId);
+    configuredActions.value = await actionService.getAll();
 };
 
 const handleEditAction = async (updatedAction: ActionDefinition) => {
-    try {
-        // Find and update the action in the local array
-        const index = configuredActions.value.findIndex((a) => a.id === updatedAction.id);
-        if (index !== -1) {
-            // Replace the action with the updated version
-            configuredActions.value[index] = updatedAction;
+    const index = configuredActions.value.findIndex((a) => a.id === updatedAction.id);
 
-            // Send the update to the backend
+    try {
+        if (index !== -1) {
+            configuredActions.value[index] = updatedAction;
             await actionService.updateOne(updatedAction.id, updatedAction);
 
             toast({
@@ -102,7 +110,10 @@ const handleEditAction = async (updatedAction: ActionDefinition) => {
             description: 'There was an error updating the action. Please try again.',
             variant: 'destructive',
         });
+        return;
     }
+
+    configuredActions.value = await actionService.getAll();
 };
 
 const toggleActionBuilder = () => {
@@ -130,11 +141,11 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="container mx-auto py-6 space-y-8">
+    <div class="mx-auto py-6 space-y-8">
         <Alert variant="info" class="bg-blue-50 dark:bg-blue-950/30">
             <div class="flex items-center gap-2">
                 <InfoIcon class="h-4 w-4" />
-                <AlertDescription class="text-muted-foreground">
+                <AlertDescription class="text-foreground">
                     Define automated actions triggered by specific events in your system.
                 </AlertDescription>
             </div>
@@ -153,13 +164,9 @@ onMounted(async () => {
             <ActionBuilder v-if="showActionBuilder" @action-created="handleActionCreated" @cancel="handleBuilderCancel" />
 
             <!-- Add New Action Button (shown when builder is hidden) -->
-            <Card
-                v-if="!showActionBuilder"
-                class="border-dashed cursor-pointer hover:border-primary/50 transition-colors group"
-                @click="toggleActionBuilder"
-            >
-                <CardContent class="flex items-center justify-center p-6 group-hover:bg-muted/30 transition-colors">
-                    <div class="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
+            <Card v-if="!showActionBuilder" class="border-dashed cursor-pointer transition-colors group" @click="toggleActionBuilder">
+                <CardContent class="flex items-center justify-center p-6 group-hover:rounded-xl group-hover:bg-accent transition-colors">
+                    <div class="flex items-center gap-2 text-foreground group-hover:text-primary transition-colors">
                         <Plus class="h-5 w-5" />
                         <span class="font-medium">Add New Action</span>
                     </div>

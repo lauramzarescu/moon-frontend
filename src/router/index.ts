@@ -9,10 +9,12 @@ import SettingsView from '@/views/Settings/SettingsView.vue';
 import LoginView from '@/views/Login/LoginView.vue';
 import Cookies from 'js-cookie';
 import { AuthService } from '@/services/auth.service.ts';
+import { ActionService } from '@/services/action.service.ts'; // Import ActionService
 import InventoryView from '@/views/AWS/InventoryView.vue';
 import ActionView from '@/views/Settings/ActionView.vue';
 
 const authService = new AuthService();
+const actionService = new ActionService(); // Instantiate ActionService
 
 const router = createRouter({
     history: createWebHistory(),
@@ -102,7 +104,8 @@ const router = createRouter({
     ],
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+    // Make the guard async
     document.title = to.meta.title ? `${to.meta.title} - Moon` : 'Moon';
 
     const token = Cookies.get('token');
@@ -115,10 +118,23 @@ router.beforeEach((to, from, next) => {
     }
 
     if (to.path === '/login' && isAuthenticated) {
+        // If trying to go to login but already authenticated, redirect to home
         next('/');
     } else if (to.path !== '/login' && !isAuthenticated) {
+        // If trying to go to a protected route but not authenticated, redirect to login
         next('/login');
     } else {
+        // If authenticated and not going to login, or going to login and not authenticated, proceed
+        // Execute the global refresh request if authenticated
+        if (isAuthenticated) {
+            try {
+                console.log('Executing global action refresh...');
+                await actionService.refresh();
+                console.log('Action refresh successful.');
+            } catch (error) {
+                console.error('Failed to refresh actions:', error);
+            }
+        }
         next();
     }
 });

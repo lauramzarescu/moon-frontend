@@ -15,16 +15,14 @@
         <Alert variant="info" class="mt-4 bg-blue-50 dark:bg-blue-950/30" v-if="!restrictedAccess">
             <div class="flex items-center gap-2">
                 <InfoIcon class="h-4 w-4" />
-                <AlertDescription class="text-muted-foreground">
-                    Anyone from your organization can access this application.
-                </AlertDescription>
+                <AlertDescription class="text-foreground"> Anyone from your organization can access this application. </AlertDescription>
             </div>
         </Alert>
 
         <div v-if="restrictedAccess" class="mt-4 space-y-4">
             <div class="flex gap-2">
                 <Input v-model="newEmail" placeholder="Enter email address" @keyup.enter="addEmail" />
-                <Button @click="addEmail" :disabled="!hasPermission(PermissionEnum.ACCESS_CONTROL_WRITE)"> Add </Button>
+                <Button @click="addEmail" :disabled="!hasPermission(PermissionEnum.ACCESS_CONTROL_WRITE)"> Add</Button>
             </div>
 
             <div v-if="allowedEmails.length > 0" class="rounded-md border divide-y">

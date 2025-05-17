@@ -11,7 +11,7 @@
                             </div>
                             <div>
                                 <CardTitle class="text-base">Container Configuration</CardTitle>
-                                <CardDescription class="text-xs">Resources and Environment Variables </CardDescription>
+                                <CardDescription class="text-xs">Resources and Environment Variables</CardDescription>
                             </div>
                         </div>
                     </div>
@@ -28,11 +28,11 @@
                             >
                                 <div class="flex items-center gap-2">
                                     <div class="p-1.5 bg-muted rounded-md">
-                                        <ContainerIcon class="w-3.5 h-3.5 text-muted-foreground" />
+                                        <ContainerIcon class="w-3.5 h-3.5 text-foreground" />
                                     </div>
                                     <span class="font-medium text-sm">{{ container.name }}</span>
                                     <span
-                                        class="flex items-center justify-center w-5 h-5 text-xs font-semibold rounded-full bg-muted text-muted-foreground"
+                                        class="flex items-center justify-center w-5 h-5 text-xs font-semibold rounded-full bg-muted text-foreground"
                                     >
                                         {{ index + 1 }}
                                     </span>

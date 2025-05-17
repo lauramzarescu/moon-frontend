@@ -140,9 +140,9 @@ const handleDialogClose = () => {
         <div class="flex items-center justify-between space-y-4">
             <div>
                 <h4 class="text-sm font-medium">Password</h4>
-                <p class="text-sm text-muted-foreground">Update your account password</p>
+                <p class="text-sm text-foreground">Update your account password</p>
             </div>
-            <Button variant="outline" @click="showPasswordModal = true" :disabled="isSamlUser"> Change Password </Button>
+            <Button variant="outline" @click="showPasswordModal = true" :disabled="isSamlUser"> Change Password</Button>
         </div>
 
         <!-- Password Change Modal -->
@@ -216,7 +216,7 @@ const handleDialogClose = () => {
                 <div v-if="step === 2" class="space-y-6">
                     <div class="text-sm text-center">
                         <p class="font-medium mb-2">Two-Factor Authentication Required</p>
-                        <p class="text-muted-foreground">
+                        <p class="text-foreground">
                             For security reasons, please enter the current 6-digit code from your authenticator app to change your password.
                         </p>
                     </div>

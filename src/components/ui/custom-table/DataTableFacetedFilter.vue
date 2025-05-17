@@ -92,7 +92,7 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
                             >
                                 <CheckIcon :class="cn('h-4 w-4')" />
                             </div>
-                            <component :is="option.icon" v-if="option.icon" class="mr-2 h-4 w-4 text-muted-foreground" />
+                            <component :is="option.icon" v-if="option.icon" class="mr-2 h-4 w-4 text-foreground" />
                             <span>{{ option.label }}</span>
                             <span
                                 v-if="facets?.get(option.value)"

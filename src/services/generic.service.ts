@@ -55,7 +55,7 @@ export class ApiService {
             throw new Error(errorData.message || `Request failed with status ${response.status}`);
         }
 
-        return await response.json();
+        return await response?.json();
     }
 
     async get<T>(url: string, options: RequestInit = {}): Promise<T> {

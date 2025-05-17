@@ -20,6 +20,14 @@ const actionTypes = [
         label: actionTypeLabels[ActionTypeEnum.add_inbound_rule],
     },
     {
+        value: ActionTypeEnum.remove_inbound_rule,
+        label: actionTypeLabels[ActionTypeEnum.remove_inbound_rule],
+    },
+    {
+        value: ActionTypeEnum.remove_all_inbound_rules,
+        label: actionTypeLabels[ActionTypeEnum.remove_all_inbound_rules],
+    },
+    {
         value: ActionTypeEnum.send_email_notification,
         label: actionTypeLabels[ActionTypeEnum.send_email_notification],
     },
@@ -74,14 +82,14 @@ watch([searchQuery, selectedFilter], () => {
                 </DropdownMenu>
 
                 <div class="relative">
-                    <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Search class="absolute left-2.5 top-2.5 h-4 w-4 text-foreground" />
                     <Input v-model="searchQuery" placeholder="Search actions..." class="pl-8 h-9 w-[200px] md:w-[260px]" />
                 </div>
             </div>
         </div>
 
         <div v-if="searchQuery || selectedFilter" class="flex items-center gap-2">
-            <span class="text-sm text-muted-foreground">Filters:</span>
+            <span class="text-sm text-foreground">Filters:</span>
             <Badge v-if="selectedFilter" variant="outline" class="flex items-center gap-1">
                 {{ actionTypeLabels[selectedFilter as ActionTypeEnum] }}
                 <button @click="selectedFilter = null" class="ml-1 hover:text-primary">×</button>

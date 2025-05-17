@@ -79,13 +79,13 @@ watch(
             <div v-for="user in users" :key="user.id" class="flex items-center justify-between space-x-4">
                 <div class="flex items-center space-x-4">
                     <Avatar>
-                        <AvatarFallback>{{ getInitials(user?.name || user?.nameIDFormat || 'NA') }} </AvatarFallback>
+                        <AvatarFallback>{{ getInitials(user?.name || user?.nameIDFormat || 'NA') }}</AvatarFallback>
                     </Avatar>
                     <div>
                         <p class="text-sm font-medium leading-none">
                             {{ user?.name || user?.nameIDFormat }}
                         </p>
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-sm text-foreground">
                             {{ user.email }}
                         </p>
                     </div>
@@ -94,7 +94,7 @@ watch(
                     <PopoverTrigger as-child>
                         <Button variant="outline" class="ml-auto">
                             {{ userRoles[user.id] }}
-                            <ChevronDownIcon class="ml-2 h-4 w-4 text-muted-foreground" />
+                            <ChevronDownIcon class="ml-2 h-4 w-4 text-foreground" />
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent class="p-0" align="end">
@@ -112,7 +112,7 @@ watch(
                                         class="space-y-1 flex flex-col items-start px-4 py-2"
                                     >
                                         <p>{{ role }}</p>
-                                        <p class="text-sm text-muted-foreground">
+                                        <p class="text-sm text-foreground">
                                             {{ getRoleDescription(role) }}
                                         </p>
                                     </CommandItem>
