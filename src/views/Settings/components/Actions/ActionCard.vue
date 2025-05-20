@@ -207,7 +207,7 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>
-                            <Button variant="ghost" size="sm" @click="emit('copy', action)">
+                            <Button variant="outline" size="sm" @click="emit('copy', action)">
                                 <Copy class="h-4 w-4 mr-2" />
                                 Copy
                             </Button>
@@ -223,7 +223,7 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>
-                            <Button disabled variant="ghost" size="sm" @click="emit('edit', action)">
+                            <Button disabled variant="outline" size="sm" @click="emit('edit', action)">
                                 <Pencil class="h-4 w-4 mr-2" />
                                 Edit
                             </Button>
