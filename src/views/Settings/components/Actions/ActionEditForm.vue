@@ -27,17 +27,14 @@ const formSchema = ref<z.ZodObject<any>>();
 const defaultValues = ref<any>({});
 
 onMounted(() => {
-    // Get the appropriate schema and default values for this action type
     const { schema } = getActionConfig(props.action.actionType as ActionType);
 
-    // Create a form schema that includes the base fields and the specific config
     formSchema.value = z.object({
         name: z.string().min(1, 'Name is required'),
         triggerType: triggerTypeSchema,
         config: schema || z.any(),
     });
 
-    // Set default values from the current action
     defaultValues.value = {
         name: props.action.name,
         triggerType: props.action.triggerType,
