@@ -2,35 +2,34 @@ import type { ColumnDef } from '@tanstack/vue-table';
 import type { Service } from '../data/schema.ts';
 
 import { h } from 'vue';
-import { Checkbox } from '@/components/ui/checkbox';
 import { lastDeploymentStatuses, statuses } from '@/views/AWS/Services/data/data.ts';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue';
 import { AlertTriangle } from 'lucide-vue-next';
 
 export const columns: ColumnDef<Service>[] = [
-    {
-        id: 'select',
-        header: ({ table }) =>
-            h(Checkbox, {
-                checked: table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
-                'onUpdate:checked': (value) => table.toggleAllPageRowsSelected(!!value),
-                ariaLabel: 'Select all',
-                class: 'translate-y-0.5',
-            }),
-        cell: ({ row }) =>
-            h(Checkbox, {
-                checked: row.getIsSelected(),
-                'onUpdate:checked': (value) => row.toggleSelected(!!value),
-                ariaLabel: 'Select row',
-                class: 'translate-y-0.5',
-            }),
-        enableSorting: false,
-        enableHiding: false,
-    },
+    // {
+    //     id: 'select',
+    //     header: ({ table }) =>
+    //         h(Checkbox, {
+    //             checked: table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
+    //             'onUpdate:checked': (value) => table.toggleAllPageRowsSelected(!!value),
+    //             ariaLabel: 'Select all',
+    //             class: 'translate-y-0.5',
+    //         }),
+    //     cell: ({ row }) =>
+    //         h(Checkbox, {
+    //             checked: row.getIsSelected(),
+    //             'onUpdate:checked': (value) => row.toggleSelected(!!value),
+    //             ariaLabel: 'Select row',
+    //             class: 'translate-y-0.5',
+    //         }),
+    //     enableSorting: false,
+    //     enableHiding: false,
+    // },
     {
         accessorKey: 'name',
-        header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Name' }),
+        header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Name', class: 'ml-4' }),
         cell: ({ row }) => {
             const service = row.original as unknown as ServiceInterface;
             const isStuck = service.deploymentStatus?.isStuck === true;
@@ -38,7 +37,7 @@ export const columns: ColumnDef<Service>[] = [
             return h(
                 'div',
                 {
-                    class: `w-25 py-2 flex items-center ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+                    class: `w-25 py-2 ml-4 flex items-center ${isStuck ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
                 },
                 [
                     isStuck &&
