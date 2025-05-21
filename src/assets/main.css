@@ -570,4 +570,15 @@
     body {
         @apply bg-background text-foreground m-0;
     }
+
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        border-radius: 5px;
+        background-color: var(--color-slate-800);
+        color: var(--color-slate-950);
+        -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+    }
 }

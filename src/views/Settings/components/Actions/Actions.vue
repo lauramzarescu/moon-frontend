@@ -116,6 +116,29 @@ const handleEditAction = async (updatedAction: ActionDefinition) => {
     configuredActions.value = await actionService.getAll();
 };
 
+const handleCopyAction = async (copiedAction: ActionDefinition) => {
+    try {
+        await actionService.create(copiedAction);
+
+        toast({
+            title: 'Action copied',
+            description: 'The action has been successfully copied.',
+            variant: 'success',
+        });
+    } catch (error) {
+        console.error('Error copying action:', error);
+        toast({
+            title: 'Error copying action',
+            description: 'There was an error copying the action. Please try again.',
+            variant: 'destructive',
+        });
+        return;
+    }
+
+    configuredActions.value.push(copiedAction);
+    configuredActions.value = await actionService.getAll();
+};
+
 const toggleActionBuilder = () => {
     showActionBuilder.value = !showActionBuilder.value;
 };
@@ -158,6 +181,7 @@ onMounted(async () => {
                 @update-action-status="handleUpdateActionStatus"
                 @delete-action="handleDeleteAction"
                 @edit-action="handleEditAction"
+                @copy-action="handleCopyAction"
             />
 
             <!-- Action Builder (shown conditionally) -->

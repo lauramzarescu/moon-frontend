@@ -1,20 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import ClustersView from '@/views/AWS/ClustersView.vue';
-import ServiceView from '@/views/AWS/ServiceView.vue';
-import ScheduledTasksView from '@/views/AWS/ScheduledTasksView.vue';
-import SAMLSetup from '@/views/Settings/components/SAML/SAMLSetup.vue';
-import AccountView from '@/views/Settings/AccountView.vue';
-import ProfileView from '@/views/Settings/ProfileView.vue';
-import SettingsView from '@/views/Settings/SettingsView.vue';
-import LoginView from '@/views/Login/LoginView.vue';
 import Cookies from 'js-cookie';
 import { AuthService } from '@/services/auth.service.ts';
-import { ActionService } from '@/services/action.service.ts'; // Import ActionService
-import InventoryView from '@/views/AWS/InventoryView.vue';
-import ActionView from '@/views/Settings/ActionView.vue';
+import { ActionService } from '@/services/action.service.ts';
 
 const authService = new AuthService();
-const actionService = new ActionService(); // Instantiate ActionService
+const actionService = new ActionService();
 
 const router = createRouter({
     history: createWebHistory(),
@@ -29,7 +19,7 @@ const router = createRouter({
         {
             path: '/login',
             name: 'Login',
-            component: LoginView,
+            component: () => import('@/views/Login/LoginView.vue'),
             meta: {
                 title: 'Login',
             },
@@ -37,7 +27,7 @@ const router = createRouter({
         {
             path: '/aws/inventory',
             name: 'inventory',
-            component: InventoryView,
+            component: () => import('@/views/AWS/InventoryView.vue'),
             meta: {
                 title: 'AWS Inventory',
             },
@@ -45,7 +35,7 @@ const router = createRouter({
         {
             path: '/aws/clusters',
             name: 'clusters',
-            component: ClustersView,
+            component: () => import('@/views/AWS/ClustersView.vue'),
             meta: {
                 title: 'AWS Clusters',
             },
@@ -53,7 +43,7 @@ const router = createRouter({
         {
             path: '/aws/services',
             name: 'services',
-            component: ServiceView,
+            component: () => import('@/views/AWS/ServiceView.vue'),
             meta: {
                 title: 'AWS Services',
             },
@@ -61,42 +51,42 @@ const router = createRouter({
         {
             path: '/aws/scheduled-tasks',
             name: 'scheduled-tasks',
-            component: ScheduledTasksView,
+            component: () => import('@/views/AWS/ScheduledTasksView.vue'),
             meta: {
                 title: 'AWS Scheduled Tasks',
             },
         },
         {
             path: '/settings',
-            component: SettingsView,
+            component: () => import('@/views/Settings/SettingsView.vue'),
             meta: {
                 title: 'Settings',
             },
         },
         {
             path: '/settings/saml-setup',
-            component: SAMLSetup,
+            component: () => import('@/views/Settings/SAMLView.vue'),
             meta: {
                 title: 'SAML Setup',
             },
         },
         {
             path: '/settings/profile',
-            component: ProfileView,
+            component: () => import('@/views/Settings/ProfileView.vue'),
             meta: {
                 title: 'Profile',
             },
         },
         {
             path: '/settings/actions',
-            component: ActionView,
+            component: () => import('@/views/Settings/ActionView.vue'),
             meta: {
                 title: 'Actions',
             },
         },
         {
             path: '/settings/account',
-            component: AccountView,
+            component: () => import('@/views/Settings/AccountView.vue'),
             meta: {
                 title: 'Account',
             },
@@ -124,18 +114,15 @@ router.beforeEach(async (to, from, next) => {
         // If trying to go to a protected route but not authenticated, redirect to login
         next('/login');
     } else {
+        next();
+
         // If authenticated and not going to login, or going to login and not authenticated, proceed
         // Execute the global refresh request if authenticated
         if (isAuthenticated) {
-            try {
-                console.log('Executing global action refresh...');
-                await actionService.refresh();
-                console.log('Action refresh successful.');
-            } catch (error) {
+            actionService.refresh().catch((error) => {
                 console.error('Failed to refresh actions:', error);
-            }
+            });
         }
-        next();
     }
 });
 

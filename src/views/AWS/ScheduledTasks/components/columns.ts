@@ -3,39 +3,39 @@ import type { ScheduledTask } from '../data/schema.ts';
 
 import { h } from 'vue';
 import { statuses } from '../data/data.ts';
-import { Checkbox } from '@/components/ui/checkbox';
 import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue';
 import moment from 'moment';
 
 export const columns: ColumnDef<ScheduledTask>[] = [
-    {
-        id: 'select',
-        header: ({ table }) =>
-            h(Checkbox, {
-                checked: table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
-                'onUpdate:checked': (value) => table.toggleAllPageRowsSelected(!!value),
-                ariaLabel: 'Select all',
-                class: 'translate-y-0.5',
-            }),
-        cell: ({ row }) =>
-            h(Checkbox, {
-                checked: row.getIsSelected(),
-                'onUpdate:checked': (value) => row.toggleSelected(!!value),
-                ariaLabel: 'Select row',
-                class: 'translate-y-0.5',
-            }),
-        enableSorting: false,
-        enableHiding: false,
-    },
+    // {
+    //     id: 'select',
+    //     header: ({ table }) =>
+    //         h(Checkbox, {
+    //             checked: table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
+    //             'onUpdate:checked': (value) => table.toggleAllPageRowsSelected(!!value),
+    //             ariaLabel: 'Select all',
+    //             class: 'translate-y-0.5',
+    //         }),
+    //     cell: ({ row }) =>
+    //         h(Checkbox, {
+    //             checked: row.getIsSelected(),
+    //             'onUpdate:checked': (value) => row.toggleSelected(!!value),
+    //             ariaLabel: 'Select row',
+    //             class: 'translate-y-0.5',
+    //         }),
+    //     enableSorting: false,
+    //     enableHiding: false,
+    // },
     {
         accessorKey: 'name',
         header: ({ column }) =>
             h(DataTableColumnHeader, {
                 column,
+                class: 'ml-4',
                 title: 'Name',
             }),
         cell: ({ row }) => {
-            return h('div', { class: 'w-40 py-2' }, row.getValue('name'));
+            return h('div', { class: 'w-40 py-2 ml-4' }, row.getValue('name'));
         },
         enableSorting: true,
         enableHiding: false,

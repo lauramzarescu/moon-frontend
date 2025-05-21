@@ -20,6 +20,7 @@ const emit = defineEmits<{
     (e: 'update-action-status', id: string, enabled: boolean): void;
     (e: 'delete-action', id: string): void;
     (e: 'edit-action', action: ActionDefinition): void;
+    (e: 'copy-action', action: ActionDefinition): void;
 }>();
 
 const searchQuery = ref('');
@@ -62,6 +63,11 @@ const handleStatusChange = (actionId: string, newStatus: boolean) => {
 const confirmDelete = (actionId: string) => {
     actionToDelete.value = actionId;
     isDeleteDialogOpen.value = true;
+};
+
+const handleCopy = (action: ActionDefinition) => {
+    const copiedAction = { ...action, id: crypto.randomUUID() };
+    emit('copy-action', copiedAction);
 };
 
 const handleDelete = () => {
@@ -130,7 +136,14 @@ const saveEdit = (updatedAction: ActionDefinition) => {
                     <ActionEditForm v-if="editingActionId === action.id" :action="action" @save="saveEdit" @cancel="cancelEditing" />
 
                     <!-- View mode -->
-                    <ActionCard v-else :action="action" @update-status="handleStatusChange" @delete="confirmDelete" @edit="startEditing" />
+                    <ActionCard
+                        v-else
+                        :action="action"
+                        @update-status="handleStatusChange"
+                        @delete="confirmDelete"
+                        @edit="startEditing"
+                        @copy="handleCopy"
+                    />
                 </template>
             </TransitionGroup>
         </div>

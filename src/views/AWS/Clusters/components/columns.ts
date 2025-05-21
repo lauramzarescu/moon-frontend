@@ -3,7 +3,6 @@ import type { Cluster } from '../data/schema.ts';
 
 import { h } from 'vue';
 import { statuses } from '../data/data.ts';
-import { Checkbox } from '@/components/ui/checkbox';
 import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue';
 import { AlertTriangle } from 'lucide-vue-next';
 import { useDataStore } from '@/stores/dataStore';
@@ -22,28 +21,28 @@ const getClusterStuckInfo = (clusterName: string) => {
 };
 
 export const columns: ColumnDef<Cluster>[] = [
-    {
-        id: 'select',
-        header: ({ table }) =>
-            h(Checkbox, {
-                checked: table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
-                'onUpdate:checked': (value) => table.toggleAllPageRowsSelected(!!value),
-                ariaLabel: 'Select all',
-                class: 'translate-y-0.5',
-            }),
-        cell: ({ row }) =>
-            h(Checkbox, {
-                checked: row.getIsSelected(),
-                'onUpdate:checked': (value) => row.toggleSelected(!!value),
-                ariaLabel: 'Select row',
-                class: 'translate-y-0.5',
-            }),
-        enableSorting: false,
-        enableHiding: false,
-    },
+    // {
+    //     id: 'select',
+    //     header: ({ table }) =>
+    //         h(Checkbox, {
+    //             checked: table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
+    //             'onUpdate:checked': (value) => table.toggleAllPageRowsSelected(!!value),
+    //             ariaLabel: 'Select all',
+    //             class: 'translate-y-0.5',
+    //         }),
+    //     cell: ({ row }) =>
+    //         h(Checkbox, {
+    //             checked: row.getIsSelected(),
+    //             'onUpdate:checked': (value) => row.toggleSelected(!!value),
+    //             ariaLabel: 'Select row',
+    //             class: 'translate-y-0.5',
+    //         }),
+    //     enableSorting: false,
+    //     enableHiding: false,
+    // },
     {
         accessorKey: 'name',
-        header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Name' }),
+        header: ({ column }) => h(DataTableColumnHeader, { column, class: 'ml-4', title: 'Name' }),
         cell: ({ row }) => {
             const clusterName = row.getValue('name');
             const { hasStuckDeployments, stuckServicesCount } = getClusterStuckInfo(clusterName as string);
@@ -51,7 +50,7 @@ export const columns: ColumnDef<Cluster>[] = [
             return h(
                 'div',
                 {
-                    class: `w-30 py-2 flex items-center ${hasStuckDeployments ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
+                    class: `w-30 py-2 ml-4 flex items-center ${hasStuckDeployments ? 'font-bold text-yellow-700 dark:text-yellow-100' : ''}`,
                 },
                 [
                     hasStuckDeployments &&

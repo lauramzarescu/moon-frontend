@@ -17,7 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Mail, MessageSquare, Pencil, Shield, Trash2 } from 'lucide-vue-next';
+import { AlertCircle, Copy, Mail, MessageSquare, Pencil, Shield, Trash2 } from 'lucide-vue-next';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -33,6 +33,7 @@ const emit = defineEmits<{
     (e: 'update-status', id: string, enabled: boolean): void;
     (e: 'delete', id: string): void;
     (e: 'edit', action: ActionDefinition): void;
+    (e: 'copy', action: ActionDefinition): void;
 }>();
 
 const { hasPermission } = usePermissions();
@@ -60,7 +61,10 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
 
     if (action.triggerType === TriggerTypeEnum.scheduled_job) {
         entries.push(
-            { key: 'Scheduler', value: action.schedulerConfig?.readableCronExpression?.description || 'Default' },
+            {
+                key: 'Scheduler',
+                value: action.schedulerConfig?.readableCronExpression?.description || 'Default',
+            },
             { key: 'Scheduler Cron', value: action.schedulerConfig?.customCronExpression || 'Default' },
             {
                 key: 'Next Run',
@@ -203,7 +207,23 @@ const getConfigEntries = (action: ActionDefinition): { key: string; value: strin
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div>
-                            <Button :disabled="true" variant="ghost" size="sm" @click="emit('edit', action)">
+                            <Button variant="outline" size="sm" @click="emit('copy', action)">
+                                <Copy class="h-4 w-4 mr-2" />
+                                Copy
+                            </Button>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent v-if="!hasPermission(PermissionEnum.ACTIONS_WRITE)">
+                        <p>You don't have permission to copy actions</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div>
+                            <Button disabled variant="outline" size="sm" @click="emit('edit', action)">
                                 <Pencil class="h-4 w-4 mr-2" />
                                 Edit
                             </Button>

@@ -4,7 +4,6 @@ import { useSocket } from '@/composables/useSocket.ts';
 import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts';
 import type { InstanceInterface, ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts';
-import * as LZString from 'lz-string';
 import type { ScheduledTaskInterface } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts';
 
 export const useDataStore = defineStore(
@@ -76,16 +75,6 @@ export const useDataStore = defineStore(
     {
         persist: {
             storage: window.localStorage,
-            serializer: {
-                serialize: (value: any) => {
-                    const stringified = JSON.stringify(value);
-                    return LZString.compress(stringified);
-                },
-                deserialize: (value: string) => {
-                    const decompressed = LZString.decompress(value);
-                    return JSON.parse(decompressed || '{}');
-                },
-            },
         },
     },
 );
