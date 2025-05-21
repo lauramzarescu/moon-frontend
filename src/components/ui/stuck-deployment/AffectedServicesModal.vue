@@ -3,7 +3,7 @@
         <DialogContent class="sm:max-w-[800px]">
             <DialogHeader>
                 <DialogTitle>Affected Services</DialogTitle>
-                <DialogDescription> Services with stuck deployments </DialogDescription>
+                <DialogDescription> Services with stuck deployments</DialogDescription>
             </DialogHeader>
 
             <div class="max-h-[60vh] overflow-y-auto">
@@ -44,6 +44,12 @@
                                 </div>
                             </div>
 
+                            <!-- Display failure reason if available -->
+                            <div v-if="getServiceFailureReason(service)" class="mt-3 bg-white dark:bg-slate-800 rounded-md p-2 shadow-sm">
+                                <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Failure Reason</div>
+                                <div class="text-xs text-red-600 dark:text-red-400">{{ getServiceFailureReason(service) }}</div>
+                            </div>
+
                             <div class="mt-3 text-sm">
                                 <div class="flex items-center gap-2">
                                     <div class="flex items-center">
@@ -60,6 +66,17 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- View Service Details Button -->
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="mt-3 bg-white dark:bg-slate-800 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-slate-700"
+                                @click="openServiceDrawer(service)"
+                            >
+                                View service details
+                                <ChevronRight class="h-3.5 w-3.5 ml-1" />
+                            </Button>
                         </div>
                     </Card>
                 </div>
@@ -71,10 +88,20 @@
             </DialogFooter>
         </DialogContent>
     </Dialog>
+
+    <!-- Service Drawer -->
+    <component
+        v-if="selectedService && isServiceDrawerOpen"
+        :is="ServiceDrawer"
+        :row="selectedService"
+        :isOpen="isServiceDrawerOpen"
+        :initial-section="'overview'"
+        @update:isOpen="isServiceDrawerOpen = $event"
+    />
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useDataStore } from '@/stores/dataStore.ts';
 import moment from 'moment';
 import { Card } from '@/components/ui/card';
@@ -82,6 +109,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
+import { ChevronRight } from 'lucide-vue-next';
+import ServiceDrawer from '@/views/AWS/Services/components/ServiceDrawer.vue';
 
 const props = defineProps<{
     isOpen: boolean;
@@ -92,6 +121,8 @@ const emit = defineEmits<{
 }>();
 
 const dataStore = useDataStore();
+const isServiceDrawerOpen = ref(false);
+const selectedService = ref<ServiceInterface | null>(null);
 
 const stuckServices = computed(() => {
     return dataStore.services.filter((service) => service.deploymentStatus?.isStuck === true);
@@ -104,13 +135,25 @@ const getStuckTime = (service: ServiceInterface) => {
 
 const getServiceCurrentImage = (service: ServiceInterface) => {
     const images = service.deploymentStatus?.currentImages;
-    if (!images || images.length === 0) return null;
+    if (!images || images.length === 0) return undefined;
     return images[0].image;
 };
 
 const getServiceTargetImage = (service: ServiceInterface) => {
     const images = service.deploymentStatus?.targetImages;
-    if (!images || images.length === 0) return null;
+    if (!images || images.length === 0) return undefined;
     return images[0].image;
+};
+
+const getServiceFailureReason = (service: ServiceInterface) => {
+    if (service.failedTasks && service.failedTasks.length > 0 && service.failedTasks[0].stoppedReason) {
+        return service.failedTasks[0].stoppedReason;
+    }
+    return null;
+};
+
+const openServiceDrawer = (service: ServiceInterface) => {
+    selectedService.value = service;
+    isServiceDrawerOpen.value = true;
 };
 </script>

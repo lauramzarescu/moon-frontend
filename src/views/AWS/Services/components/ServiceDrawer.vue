@@ -18,7 +18,7 @@
                     </Button>
                 </DrawerTitle>
 
-                <DrawerDescription class="sr-only"> Configuration for {{ props.row.name }} service </DrawerDescription>
+                <DrawerDescription class="sr-only"> Configuration for {{ props.row.name }} service</DrawerDescription>
             </DrawerHeader>
 
             <div class="flex h-[calc(100%-80px)]">
@@ -68,7 +68,7 @@
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { GearIcon } from '@radix-icons/vue';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import ServiceOverviewTab from '@/views/AWS/Services/components/ServiceOverviewTab.vue';
 import ServiceContainerTab from '@/views/AWS/Services/components/ServiceContainerTab.vue';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,7 @@ const showRestartDialog = ref(false);
 const props = defineProps<{
     row: TData;
     isOpen?: boolean;
+    initialSection?: string;
 }>();
 const awsService = new AwsService();
 const emit = defineEmits(['update:isOpen', 'dialog-open', 'dialog-close']);
@@ -92,6 +93,17 @@ const isOpen = computed({
     get: () => props.isOpen,
     set: (value) => emit('update:isOpen', value),
 });
+
+// Set the initial section if provided
+watch(
+    () => props.initialSection,
+    (newValue) => {
+        if (newValue) {
+            activeSection.value = newValue;
+        }
+    },
+    { immediate: true },
+);
 
 const handleDialogToggle = (isOpen: boolean) => {
     showRestartDialog.value = isOpen;

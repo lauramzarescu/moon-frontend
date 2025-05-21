@@ -1,10 +1,7 @@
 <template>
     <div v-if="hasStuckDeployments" class="w-full">
         <div v-if="!isMinimized" class="relative">
-            <Card
-                class="border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 cursor-pointer"
-                @click="openServiceDrawer"
-            >
+            <Card class="border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
                 <div class="p-4 flex items-start">
                     <AlertCircle class="h-6 w-6 mr-4 mt-0.5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
                     <div class="flex-1">
@@ -37,6 +34,17 @@
                                 <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Failure Reason</div>
                                 <div class="text-xs text-red-600 dark:text-red-400">{{ failureReason }}</div>
                             </div>
+
+                            <!-- View Service Details Button -->
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="mt-3 bg-white dark:bg-slate-800 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-slate-700"
+                                @click="openServiceDrawer"
+                            >
+                                View service details
+                                <ChevronRight class="h-3.5 w-3.5 ml-1" />
+                            </Button>
                         </div>
 
                         <div v-else>
@@ -47,7 +55,7 @@
                                 variant="outline"
                                 size="sm"
                                 class="mt-3 bg-white dark:bg-slate-800 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-slate-700"
-                                @click.stop="showAffectedServices = true"
+                                @click="showAffectedServices = true"
                             >
                                 View affected services
                                 <ChevronRight class="h-3.5 w-3.5 ml-1" />
@@ -57,7 +65,7 @@
                 </div>
             </Card>
             <button
-                @click.stop="minimizeBanner"
+                @click="minimizeBanner"
                 class="absolute top-2 right-2 p-1 rounded-md text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-800/30"
                 title="Minimize"
             >
@@ -85,6 +93,7 @@
             :is="ServiceDrawer"
             :row="singleService"
             :isOpen="isServiceDrawerOpen"
+            :initial-section="'overview'"
             @update:isOpen="isServiceDrawerOpen = $event"
         />
     </div>
@@ -99,7 +108,6 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, ChevronRight, Maximize2, Minimize2 } from 'lucide-vue-next';
 import AffectedServicesModal from '@/components/ui/stuck-deployment/AffectedServicesModal.vue';
 import ServiceDrawer from '@/views/AWS/Services/components/ServiceDrawer.vue';
-import { useRouter } from 'vue-router';
 
 const STORAGE_KEY = 'stuck-deployment-banner-minimized';
 
@@ -107,7 +115,6 @@ const showAffectedServices = ref(false);
 const isMinimized = ref(false);
 const isServiceDrawerOpen = ref(false);
 const dataStore = useDataStore();
-const router = useRouter();
 
 onMounted(() => {
     const savedState = localStorage.getItem(STORAGE_KEY);
@@ -150,11 +157,7 @@ const targetImage = computed(() => {
 });
 
 const failureReason = computed(() => {
-    if (
-        singleService.value?.failedTasks &&
-        singleService.value?.failedTasks?.length > 0 &&
-        singleService.value?.failedTasks[0]?.stoppedReason
-    ) {
+    if (singleService.value.failedTasks && singleService.value.failedTasks.length > 0 && singleService.value.failedTasks[0].stoppedReason) {
         return singleService.value.failedTasks[0].stoppedReason;
     }
     return null;
@@ -168,11 +171,7 @@ const multipleServicesMessage = computed(() => `${stuckServices.value.length} se
 
 const openServiceDrawer = () => {
     if (stuckServices.value.length === 1) {
-        // For single service, directly open the drawer
         isServiceDrawerOpen.value = true;
-    } else {
-        // For multiple services, show the affected services modal
-        showAffectedServices.value = true;
     }
 };
 </script>
