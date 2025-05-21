@@ -197,25 +197,11 @@
                             </div>
                         </div>
 
-                        <Collapsible v-if="task.containers && task.containers.length">
-                            <CollapsibleTrigger class="w-full text-left mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">
-                                Show container details
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                                <div
-                                    v-for="(container, cIndex) in task.containers"
-                                    :key="cIndex"
-                                    class="mt-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700"
-                                >
-                                    <div class="font-medium">{{ container.name }}</div>
-                                    <div class="text-xs mt-1">
-                                        <div><span class="text-gray-500">Image:</span> {{ container.image }}</div>
-                                        <div><span class="text-gray-500">Status:</span> {{ container.lastStatus }}</div>
-                                        <div v-if="container.reason" class="text-red-500">{{ container.reason }}</div>
-                                    </div>
-                                </div>
-                            </CollapsibleContent>
-                        </Collapsible>
+                        <div v-if="task.stoppedReason" class="mt-4">
+                            <div class="mt-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
+                                <div class="font-medium">{{ task.stoppedReason }}</div>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </div>
@@ -233,7 +219,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import CustomWidget from '@/components/ui/custom-widget/CustomWidget.vue';
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 
 const props = defineProps<{
@@ -242,7 +227,7 @@ const props = defineProps<{
 }>();
 
 const isDialogOpen = ref(false);
-const expandedTasks = ref(false);
+const expandedTasks = ref(true);
 
 const handleDialogToggle = (isOpen: boolean) => {
     isDialogOpen.value = isOpen;
