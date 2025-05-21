@@ -1,7 +1,10 @@
 <template>
     <div v-if="hasStuckDeployments" class="w-full">
         <div v-if="!isMinimized" class="relative">
-            <Card class="border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800">
+            <Card
+                class="border-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-800 cursor-pointer"
+                @click="openServiceDrawer"
+            >
                 <div class="p-4 flex items-start">
                     <AlertCircle class="h-6 w-6 mr-4 mt-0.5 flex-shrink-0 text-yellow-600 dark:text-yellow-500" />
                     <div class="flex-1">
@@ -28,6 +31,12 @@
                                     <div class="text-xs font-mono truncate" :title="targetImage">{{ targetImage }}</div>
                                 </div>
                             </div>
+
+                            <!-- Display failure reason if available -->
+                            <div v-if="failureReason" class="bg-white dark:bg-slate-800 rounded-md p-2 shadow-sm">
+                                <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Failure Reason</div>
+                                <div class="text-xs text-red-600 dark:text-red-400">{{ failureReason }}</div>
+                            </div>
                         </div>
 
                         <div v-else>
@@ -38,7 +47,7 @@
                                 variant="outline"
                                 size="sm"
                                 class="mt-3 bg-white dark:bg-slate-800 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-slate-700"
-                                @click="showAffectedServices = true"
+                                @click.stop="showAffectedServices = true"
                             >
                                 View affected services
                                 <ChevronRight class="h-3.5 w-3.5 ml-1" />
@@ -48,7 +57,7 @@
                 </div>
             </Card>
             <button
-                @click="minimizeBanner"
+                @click.stop="minimizeBanner"
                 class="absolute top-2 right-2 p-1 rounded-md text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-800/30"
                 title="Minimize"
             >
@@ -69,6 +78,15 @@
         </div>
 
         <AffectedServicesModal v-model:isOpen="showAffectedServices" />
+
+        <!-- Service Drawer for the stuck service -->
+        <component
+            v-if="singleService && isServiceDrawerOpen"
+            :is="ServiceDrawer"
+            :row="singleService"
+            :isOpen="isServiceDrawerOpen"
+            @update:isOpen="isServiceDrawerOpen = $event"
+        />
     </div>
 </template>
 
@@ -80,12 +98,16 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, ChevronRight, Maximize2, Minimize2 } from 'lucide-vue-next';
 import AffectedServicesModal from '@/components/ui/stuck-deployment/AffectedServicesModal.vue';
+import ServiceDrawer from '@/views/AWS/Services/components/ServiceDrawer.vue';
+import { useRouter } from 'vue-router';
 
 const STORAGE_KEY = 'stuck-deployment-banner-minimized';
 
 const showAffectedServices = ref(false);
 const isMinimized = ref(false);
+const isServiceDrawerOpen = ref(false);
 const dataStore = useDataStore();
+const router = useRouter();
 
 onMounted(() => {
     const savedState = localStorage.getItem(STORAGE_KEY);
@@ -127,9 +149,30 @@ const targetImage = computed(() => {
     return images[0].image;
 });
 
+const failureReason = computed(() => {
+    if (
+        singleService.value?.failedTasks &&
+        singleService.value?.failedTasks?.length > 0 &&
+        singleService.value?.failedTasks[0]?.stoppedReason
+    ) {
+        return singleService.value.failedTasks[0].stoppedReason;
+    }
+    return null;
+});
+
 const singleServiceMessage = computed(
     () => `Deployment for ${singleService.value?.name} in cluster ${singleService.value?.clusterName} is stuck.`,
 );
 
 const multipleServicesMessage = computed(() => `${stuckServices.value.length} services have stuck deployments.`);
+
+const openServiceDrawer = () => {
+    if (stuckServices.value.length === 1) {
+        // For single service, directly open the drawer
+        isServiceDrawerOpen.value = true;
+    } else {
+        // For multiple services, show the affected services modal
+        showAffectedServices.value = true;
+    }
+};
 </script>
