@@ -171,7 +171,7 @@
                     <div
                         v-for="(task, index) in props.row?.failedTasks"
                         :key="index"
-                        class="mb-4 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg"
+                        class="mb-6 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg"
                     >
                         <div class="flex justify-between items-start mb-2">
                             <div class="font-medium text-sm">Task ID: {{ getTaskId(task.taskArn) }}</div>
