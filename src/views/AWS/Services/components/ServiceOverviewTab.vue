@@ -198,8 +198,59 @@
                         </div>
 
                         <div v-if="task.stoppedReason" class="mt-4">
-                            <div class="mt-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700">
-                                <div class="font-medium">{{ task.stoppedReason }}</div>
+                            <div class="font-medium text-sm text-red-700 dark:text-red-400 mb-2">Stopped Reason:</div>
+                            <div class="p-3 bg-white dark:bg-gray-800 rounded-lg border border-red-200 dark:border-red-900/30 shadow-sm">
+                                <div class="flex items-start gap-2">
+                                    <AlertTriangleIcon class="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                                    <div class="text-sm">{{ task.stoppedReason }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <Separator class="my-2" />
+                            <div class="font-medium text-sm mb-2">Additional Details</div>
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <span class="text-gray-500 dark:text-gray-400">Group:</span>
+                                    {{ task.group || 'N/A' }}
+                                </div>
+                                <div>
+                                    <span class="text-gray-500 dark:text-gray-400">Launch Type:</span>
+                                    {{ task.launchType || 'N/A' }}
+                                </div>
+                                <div>
+                                    <span class="text-gray-500 dark:text-gray-400">Platform Version:</span>
+                                    {{ task.platformVersion || 'N/A' }}
+                                </div>
+                                <div>
+                                    <span class="text-gray-500 dark:text-gray-400">Health Status:</span>
+                                    <Badge :variant="task.healthStatus === 'HEALTHY' ? 'default' : 'destructive'" class="ml-1">
+                                        {{ task.healthStatus || 'UNKNOWN' }}
+                                    </Badge>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500 dark:text-gray-400">Stopped At:</span>
+                                    {{ task.stoppedAt ? new Date(task.stoppedAt).toLocaleString() : 'N/A' }}
+                                </div>
+                                <div>
+                                    <span class="text-gray-500 dark:text-gray-400">Started At:</span>
+                                    {{ task.startedAt ? new Date(task.startedAt).toLocaleString() : 'N/A' }}
+                                </div>
+                            </div>
+
+                            <div v-if="task.attributes && task.attributes.length > 0" class="mt-3">
+                                <div class="font-medium text-sm mb-2">Task Attributes</div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div
+                                        v-for="(attr, attrIndex) in task.attributes"
+                                        :key="attrIndex"
+                                        class="p-2 bg-gray-50 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700"
+                                    >
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{ attr.name }}</div>
+                                        <div class="text-sm font-medium">{{ attr.value }}</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
