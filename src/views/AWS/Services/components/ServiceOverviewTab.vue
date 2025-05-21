@@ -144,10 +144,87 @@
             </div>
         </div>
     </Card>
+
+    <!-- Failed Tasks Section -->
+    <Card class="overflow-hidden mb-4 border-none" v-if="hasFailed">
+        <div class="flex">
+            <div class="w-2 h-full bg-red-500"></div>
+            <div class="flex-1">
+                <CardHeader class="py-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
+                                <AlertTriangleIcon class="w-4 h-4 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div>
+                                <CardTitle class="text-base">Failed Tasks</CardTitle>
+                                <CardDescription class="text-xs"> {{ props.row?.failedTasks?.length }} tasks failed </CardDescription>
+                            </div>
+                        </div>
+                        <Button variant="outline" size="sm" @click="expandedTasks = !expandedTasks">
+                            {{ expandedTasks ? 'Collapse' : 'Expand' }}
+                        </Button>
+                    </div>
+                </CardHeader>
+
+                <CardContent v-if="expandedTasks">
+                    <div
+                        v-for="(task, index) in props.row?.failedTasks"
+                        :key="index"
+                        class="mb-4 p-3 bg-red-50 dark:bg-red-900/10 rounded-lg"
+                    >
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="font-medium text-sm">Task ID: {{ getTaskId(task.taskArn) }}</div>
+                            <Badge variant="destructive">Failed</Badge>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="text-gray-500 dark:text-gray-400">Created:</span>
+                                {{ task.createdAt ? new Date(task.createdAt).toLocaleString() : 'N/A' }}
+                            </div>
+                            <div>
+                                <span class="text-gray-500 dark:text-gray-400">Last Status:</span>
+                                {{ task.lastStatus || 'N/A' }}
+                            </div>
+                            <div>
+                                <span class="text-gray-500 dark:text-gray-400">Desired Status:</span>
+                                {{ task.desiredStatus || 'N/A' }}
+                            </div>
+                            <div>
+                                <span class="text-gray-500 dark:text-gray-400">Connectivity:</span>
+                                {{ task.connectivity || 'N/A' }}
+                            </div>
+                        </div>
+
+                        <Collapsible v-if="task.containers && task.containers.length">
+                            <CollapsibleTrigger class="w-full text-left mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                                Show container details
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <div
+                                    v-for="(container, cIndex) in task.containers"
+                                    :key="cIndex"
+                                    class="mt-2 p-2 bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700"
+                                >
+                                    <div class="font-medium">{{ container.name }}</div>
+                                    <div class="text-xs mt-1">
+                                        <div><span class="text-gray-500">Image:</span> {{ container.image }}</div>
+                                        <div><span class="text-gray-500">Status:</span> {{ container.lastStatus }}</div>
+                                        <div v-if="container.reason" class="text-red-500">{{ container.reason }}</div>
+                                    </div>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </div>
+                </CardContent>
+            </div>
+        </div>
+    </Card>
 </template>
 
 <script setup lang="ts" generic="TData extends ServiceInterface">
-import { ActivityIcon, CalendarIcon, Clock8Icon, InfoIcon, RocketIcon, ServerIcon, XCircleIcon } from 'lucide-vue-next';
+import { ActivityIcon, AlertTriangleIcon, CalendarIcon, Clock8Icon, InfoIcon, RocketIcon, ServerIcon, XCircleIcon } from 'lucide-vue-next';
 import UpdateDesiredCountDialog from './UpdateDesiredCountDialog.vue';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import { Badge } from '@/components/ui/badge';
@@ -155,6 +232,9 @@ import { computed, ref } from 'vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import CustomWidget from '@/components/ui/custom-widget/CustomWidget.vue';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
 
 const props = defineProps<{
     row: TData;
@@ -162,6 +242,7 @@ const props = defineProps<{
 }>();
 
 const isDialogOpen = ref(false);
+const expandedTasks = ref(false);
 
 const handleDialogToggle = (isOpen: boolean) => {
     isDialogOpen.value = isOpen;
@@ -169,6 +250,10 @@ const handleDialogToggle = (isOpen: boolean) => {
 
 const latestDeployment = computed(() => {
     return props.row?.deployments?.[0] ?? null;
+});
+
+const hasFailed = computed(() => {
+    return props.row?.failedTasks && props.row.failedTasks.length > 0;
 });
 
 const emit = defineEmits<{
@@ -183,6 +268,12 @@ const getStatusVariant = (status: string) => {
         PENDING: 'warning',
     };
     return variants[status as keyof typeof variants] ?? 'default';
+};
+
+const getTaskId = (taskArn: string | undefined) => {
+    if (!taskArn) return 'Unknown';
+    const parts = taskArn.split('/');
+    return parts[parts.length - 1];
 };
 
 const handleCountUpdated = () => {
