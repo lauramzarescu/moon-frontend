@@ -97,7 +97,7 @@ const currentPageTitle = computed(() => {
                                 <Breadcrumb>
                                     <BreadcrumbList>
                                         <BreadcrumbItem>
-                                            <BreadcrumbPage class="line-clamp-1"> {{ currentPageTitle }} </BreadcrumbPage>
+                                            <BreadcrumbPage class="line-clamp-1"> {{ currentPageTitle }}</BreadcrumbPage>
                                         </BreadcrumbItem>
                                     </BreadcrumbList>
                                 </Breadcrumb>
@@ -108,8 +108,8 @@ const currentPageTitle = computed(() => {
                             </div>
                         </header>
                         <!-- Main content area with vertical padding and overflow -->
-                        <div class="flex-1 flex-col space-y-3 overflow-auto py-6">
-                            <div class="flex-1 space-y-10">
+                        <div class="flex-1 flex-col space-y-3 px-10 overflow-auto py-6">
+                            <div class="flex-1 space-y-8">
                                 <router-view></router-view>
                             </div>
                         </div>

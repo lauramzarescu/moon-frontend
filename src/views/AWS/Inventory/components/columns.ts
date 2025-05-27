@@ -3,33 +3,32 @@ import type { Instance } from '../data/schema.ts';
 
 import { h } from 'vue';
 import { statuses } from '../data/data.ts';
-import { Checkbox } from '@/components/ui/checkbox';
 import DataTableColumnHeader from '@/components/ui/custom-table/DataTableColumnHeader.vue';
 import { Server } from 'lucide-vue-next';
 
 export const columns: ColumnDef<Instance>[] = [
-    {
-        id: 'select',
-        header: ({ table }) =>
-            h(Checkbox, {
-                checked: table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
-                'onUpdate:checked': (value) => table.toggleAllPageRowsSelected(!!value),
-                ariaLabel: 'Select all',
-                class: 'translate-y-0.5',
-            }),
-        cell: ({ row }) =>
-            h(Checkbox, {
-                checked: row.getIsSelected(),
-                'onUpdate:checked': (value) => row.toggleSelected(!!value),
-                ariaLabel: 'Select row',
-                class: 'translate-y-0.5',
-            }),
-        enableSorting: false,
-        enableHiding: false,
-    },
+    // {
+    //     id: 'select',
+    //     header: ({ table }) =>
+    //         h(Checkbox, {
+    //             checked: table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate'),
+    //             'onUpdate:checked': (value) => table.toggleAllPageRowsSelected(!!value),
+    //             ariaLabel: 'Select all',
+    //             class: 'translate-y-0.5',
+    //         }),
+    //     cell: ({ row }) =>
+    //         h(Checkbox, {
+    //             checked: row.getIsSelected(),
+    //             'onUpdate:checked': (value) => row.toggleSelected(!!value),
+    //             ariaLabel: 'Select row',
+    //             class: 'translate-y-0.5',
+    //         }),
+    //     enableSorting: false,
+    //     enableHiding: false,
+    // },
     {
         accessorKey: 'name',
-        header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Name' }),
+        header: ({ column }) => h(DataTableColumnHeader, { column, class: 'ml-4', title: 'Name' }),
         cell: ({ row }) => {
             const instanceName = row.getValue('name');
             const services = row.original.services || [];
@@ -38,7 +37,7 @@ export const columns: ColumnDef<Instance>[] = [
             return h(
                 'div',
                 {
-                    class: `w-30 py-2 flex items-center ${hasServices ? 'font-bold' : ''}`,
+                    class: `w-30 py-2 ml-4 flex items-center ${hasServices ? 'font-bold' : ''}`,
                 },
                 [
                     h(Server, {

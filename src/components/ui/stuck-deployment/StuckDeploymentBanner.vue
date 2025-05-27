@@ -28,6 +28,23 @@
                                     <div class="text-xs font-mono truncate" :title="targetImage">{{ targetImage }}</div>
                                 </div>
                             </div>
+
+                            <!-- Display failure reason if available -->
+                            <div v-if="failureReason" class="bg-white dark:bg-slate-800 rounded-md p-2 shadow-sm">
+                                <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Failure Reason</div>
+                                <div class="text-xs text-red-600 dark:text-red-400">{{ failureReason }}</div>
+                            </div>
+
+                            <!-- View Service Details Button -->
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="mt-3 bg-white dark:bg-slate-800 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-50 dark:hover:bg-slate-700"
+                                @click="openServiceDrawer"
+                            >
+                                View service details
+                                <ChevronRight class="h-3.5 w-3.5 ml-1" />
+                            </Button>
                         </div>
 
                         <div v-else>
@@ -69,6 +86,16 @@
         </div>
 
         <AffectedServicesModal v-model:isOpen="showAffectedServices" />
+
+        <!-- Service Drawer for the stuck service -->
+        <component
+            v-if="singleService && isServiceDrawerOpen"
+            :is="ServiceDrawer"
+            :row="singleService"
+            :isOpen="isServiceDrawerOpen"
+            :initial-section="'overview'"
+            @update:isOpen="isServiceDrawerOpen = $event"
+        />
     </div>
 </template>
 
@@ -80,11 +107,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, ChevronRight, Maximize2, Minimize2 } from 'lucide-vue-next';
 import AffectedServicesModal from '@/components/ui/stuck-deployment/AffectedServicesModal.vue';
+import ServiceDrawer from '@/views/AWS/Services/components/ServiceDrawer.vue';
 
 const STORAGE_KEY = 'stuck-deployment-banner-minimized';
 
 const showAffectedServices = ref(false);
 const isMinimized = ref(false);
+const isServiceDrawerOpen = ref(false);
 const dataStore = useDataStore();
 
 onMounted(() => {
@@ -127,9 +156,22 @@ const targetImage = computed(() => {
     return images[0].image;
 });
 
+const failureReason = computed(() => {
+    if (singleService.value.failedTasks && singleService.value.failedTasks.length > 0 && singleService.value.failedTasks[0].stoppedReason) {
+        return singleService.value.failedTasks[0].stoppedReason;
+    }
+    return null;
+});
+
 const singleServiceMessage = computed(
     () => `Deployment for ${singleService.value?.name} in cluster ${singleService.value?.clusterName} is stuck.`,
 );
 
 const multipleServicesMessage = computed(() => `${stuckServices.value.length} services have stuck deployments.`);
+
+const openServiceDrawer = () => {
+    if (stuckServices.value.length === 1) {
+        isServiceDrawerOpen.value = true;
+    }
+};
 </script>

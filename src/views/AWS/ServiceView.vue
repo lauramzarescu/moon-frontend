@@ -27,7 +27,6 @@
 <script setup lang="ts" generic="TData extends ServiceInterface">
 import { columns as serviceColumns } from '@/views/AWS/Services/components/columns.ts';
 import { useDataStore } from '@/stores/dataStore.ts';
-import { storeToRefs } from 'pinia';
 import DataTable from '@/components/ui/custom-table/DataTable.vue';
 import { lastDeploymentStatuses, statuses } from '@/views/AWS/Services/data/data.ts';
 import type { DataTableConfig, DataTableRowActionProps } from '@/components/ui/drawer/interfaces/custom-table.interface.ts';
@@ -39,6 +38,7 @@ import ServiceDataTableToolbar from '@/views/AWS/Services/components/ServiceData
 import { onBeforeRouteLeave } from 'vue-router';
 import ProviderHeader from '@/components/ui/provider-header/ProviderHeader.vue';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
+import { storeToRefs } from 'pinia';
 
 const { services } = storeToRefs(useDataStore());
 const defaultSorting: SortingState = [

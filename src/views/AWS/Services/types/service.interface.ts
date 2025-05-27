@@ -1,4 +1,4 @@
-import type { DeploymentRolloutState, TaskDefinitionStatus } from 'aws-sdk/clients/ecs';
+import type { DeploymentRolloutState, Task, TaskDefinitionStatus } from 'aws-sdk/clients/ecs';
 import type { InstanceStateName } from 'aws-sdk/clients/ec2';
 
 export interface ServiceInterface {
@@ -18,6 +18,7 @@ export interface ServiceInterface {
         currentImages: { containerName: string; image: string }[];
         targetImages: { containerName: string; image: string }[];
     };
+    failedTasks?: Task[];
 }
 
 export interface TaskDefinitionInterface {
