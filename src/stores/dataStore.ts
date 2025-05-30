@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { debounce } from 'lodash'; // Add this import
 import { useSocket } from '@/composables/useSocket.ts';
 import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts';
 import type { InstanceInterface, ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
@@ -38,6 +39,21 @@ export const useDataStore = defineStore(
         const isProgressiveLoading = ref<boolean>(false);
         const loadingStages = ref<string[]>([]);
 
+        // Helper functions for loadingStages management
+        const addLoadingStage = (stage: string) => {
+            if (!loadingStages.value.includes(stage)) {
+                loadingStages.value.push(stage);
+            }
+        };
+
+        const hasLoadingStage = (stage: string) => {
+            return loadingStages.value.includes(stage);
+        };
+
+        const clearLoadingStages = () => {
+            loadingStages.value = [];
+        };
+
         // Computed properties
         const loadingPercentage = computed(() => {
             if (loadingProgress.value.total === 0) return 0;
@@ -47,6 +63,24 @@ export const useDataStore = defineStore(
         const isDataPartiallyLoaded = computed(() => {
             return clusters.value.length > 0 && isProgressiveLoading.value;
         });
+
+        // Create debounced manual refresh function
+        const debouncedManualRefresh = debounce(
+            () => {
+                // Reset loading state
+                isProgressiveLoading.value = true;
+                clearLoadingStages();
+                loadingProgress.value = { current: 0, total: 0, stage: 'Initiating refresh...' };
+
+                // Emit the manual refresh socket event
+                manualRefresh();
+            },
+            1000, // 1 second debounce delay
+            {
+                leading: true, // Execute immediately on first call
+                trailing: false, // Don't execute again after the delay
+            },
+        );
 
         const initializeData = () => {
             // Remove any existing listeners to prevent duplicates
@@ -76,7 +110,7 @@ export const useDataStore = defineStore(
                     const processedData = processBasicClusters(data.clusters);
                     clusters.value = processedData.clusters as ClusterInterface[];
                     updatedOn.value = data.updatedOn;
-                    loadingStages.value.push('clusters-basic');
+                    addLoadingStage('clusters-basic');
                 },
 
                 onClusterServicesUpdate: (data: { clusterArn: string; services: ServiceInterface[] }) => {
@@ -105,7 +139,7 @@ export const useDataStore = defineStore(
 
                         services.value = allServices;
                     }
-                    loadingStages.value.push('cluster-services');
+                    addLoadingStage('cluster-services');
                 },
 
                 onClusterScheduledTasksUpdate: (data: { clusterArn: string; scheduledTasks: ScheduledTaskInterface[] }) => {
@@ -125,14 +159,14 @@ export const useDataStore = defineStore(
 
                         scheduledTasks.value = allScheduledTasks;
                     }
-                    loadingStages.value.push('cluster-scheduled-tasks');
+                    addLoadingStage('cluster-scheduled-tasks');
                 },
 
                 onEC2InventoryUpdate: (data: { instances: InstanceInterface[]; updatedOn: Date }) => {
                     console.log('Received EC2 inventory data:', data);
                     instances.value = data.instances;
                     updatedOn.value = data.updatedOn;
-                    loadingStages.value.push('ec2-inventory');
+                    addLoadingStage('ec2-inventory');
                 },
 
                 onLoadingProgress: (progress: { current: number; total: number; stage: string }) => {
@@ -145,13 +179,13 @@ export const useDataStore = defineStore(
                     console.log('Loading complete');
                     isProgressiveLoading.value = false;
                     loadingProgress.value = { current: 0, total: 0, stage: '' };
-                    loadingStages.value = [];
+                    clearLoadingStages();
                 },
                 onClustersError: (error: any) => {
                     console.error('Clusters loading error:', error);
                     isProgressiveLoading.value = false;
                     loadingProgress.value = { current: 0, total: 0, stage: '' };
-                    loadingStages.value = [];
+                    clearLoadingStages();
                 },
             });
 
@@ -160,15 +194,6 @@ export const useDataStore = defineStore(
             } else {
                 setRefreshInterval(refreshInterval.value);
             }
-        };
-
-        const manualRefreshData = async () => {
-            // Reset loading state
-            isProgressiveLoading.value = true;
-            loadingStages.value = [];
-            loadingProgress.value = { current: 0, total: 0, stage: 'Initiating refresh...' };
-
-            manualRefresh();
         };
 
         const processCompleteData = (receivedData: ClusterResponseInterface) => {
@@ -186,7 +211,7 @@ export const useDataStore = defineStore(
             // Reset progressive loading state
             isProgressiveLoading.value = false;
             loadingProgress.value = { current: 0, total: 0, stage: '' };
-            loadingStages.value = [];
+            clearLoadingStages();
         };
 
         // Cleanup function
@@ -195,13 +220,15 @@ export const useDataStore = defineStore(
             socket?.off('connect');
             socket?.off(SOCKET_EVENTS.CLUSTERS_UPDATE);
             socket?.off(SOCKET_EVENTS.INTERVAL_UPDATED);
+            // Cancel any pending debounced calls
+            debouncedManualRefresh.cancel();
         };
 
         // Helper functions to check loading status of specific data types
-        const isClustersBasicLoaded = computed(() => loadingStages.value.includes('clusters-basic'));
-        const isServicesLoaded = computed(() => loadingStages.value.includes('cluster-services'));
-        const isScheduledTasksLoaded = computed(() => loadingStages.value.includes('cluster-scheduled-tasks'));
-        const isEC2InventoryLoaded = computed(() => loadingStages.value.includes('ec2-inventory'));
+        const isClustersBasicLoaded = computed(() => hasLoadingStage('clusters-basic'));
+        const isServicesLoaded = computed(() => hasLoadingStage('cluster-services'));
+        const isScheduledTasksLoaded = computed(() => hasLoadingStage('cluster-scheduled-tasks'));
+        const isEC2InventoryLoaded = computed(() => hasLoadingStage('ec2-inventory'));
 
         // Get clusters with loading status
         const clustersWithLoadingStatus = computed(() => {
@@ -239,7 +266,7 @@ export const useDataStore = defineStore(
             // Methods
             initializeData,
             setRefreshInterval,
-            manualRefresh: manualRefreshData,
+            manualRefresh: debouncedManualRefresh,
             cleanup,
         };
     },
