@@ -39,19 +39,21 @@ const checkAndSetUserFromToken = async () => {
     }
 
     try {
-        const decodedToken = authService.decodeToken(token);
         const me = await userService.getDetails();
+        const decodedToken = authService.decodeToken(token);
 
         authStore.setUser(me);
         authStore.setPermissions(decodedToken.permissions);
     } catch (error) {
-        authStore.clearUser();
+        // authStore.clearUser();
+        //
+        // Cookies.remove('token');
+        //
+        // if (route.path !== '/login') {
+        //     router.push('/login');
+        // }
 
-        Cookies.remove('token');
-
-        if (route.path !== '/login') {
-            router.push('/login');
-        }
+        console.log('Error checking and setting user from token:', error);
     }
 };
 
@@ -97,7 +99,7 @@ const currentPageTitle = computed(() => {
                                 <Breadcrumb>
                                     <BreadcrumbList>
                                         <BreadcrumbItem>
-                                            <BreadcrumbPage class="line-clamp-1"> {{ currentPageTitle }}</BreadcrumbPage>
+                                            <BreadcrumbPage class="line-clamp-1"> {{ currentPageTitle }} </BreadcrumbPage>
                                         </BreadcrumbItem>
                                     </BreadcrumbList>
                                 </Breadcrumb>

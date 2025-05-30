@@ -26,7 +26,7 @@ export class ApiService {
             }
         },
         300,
-        { leading: false, trailing: true },
+        { leading: true, trailing: false },
     );
 
     constructor() {
