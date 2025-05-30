@@ -4,10 +4,30 @@ import { jwtDecode } from 'jwt-decode';
 import type { JwtInterface } from '@/types/jwt/jwt.interface.ts';
 import Cookies from 'js-cookie';
 import { config } from '../../app.config.ts';
+import { debounce } from 'lodash';
 
 export class ApiService {
     protected jwt: string | null | undefined = null;
     private baseUrl = config.BACKEND_URL;
+    private pendingRequests: Map<string, Promise<any>> = new Map();
+
+    // Create debounced request method with 300ms delay
+    private debouncedRequest = debounce(
+        async <T>(url: string, options: RequestInit, requestKey: string): Promise<T> => {
+            try {
+                const result = await this.executeRequest<T>(url, options);
+                // Remove from pending requests after completion
+                this.pendingRequests.delete(requestKey);
+                return result;
+            } catch (error) {
+                // Also remove on error
+                this.pendingRequests.delete(requestKey);
+                throw error;
+            }
+        },
+        300,
+        { leading: false, trailing: true },
+    );
 
     constructor() {
         this.jwt = Cookies.get('token');
@@ -31,6 +51,24 @@ export class ApiService {
             throw new Error('JWT token expired');
         }
 
+        // Generate a unique key for this request
+        const method = options.method || 'GET';
+        const requestKey = `${method}-${url}-${JSON.stringify(options.body || '')}`;
+
+        // If this exact request is already pending, return the existing promise
+        if (this.pendingRequests.has(requestKey)) {
+            return this.pendingRequests.get(requestKey) as Promise<T>;
+        }
+
+        // Create a new debounced request
+        const promise = this.debouncedRequest<T>(url, options, requestKey);
+        this.pendingRequests.set(requestKey, promise);
+
+        return promise;
+    }
+
+    // Separate the actual request execution
+    private async executeRequest<T>(url: string, options: RequestInit): Promise<T> {
         const headers = new Headers(options.headers);
         headers.set('Content-Type', 'application/json');
 
@@ -94,5 +132,18 @@ export class ApiService {
 
         // Redirect to login page
         await router.push('/login');
+    }
+
+    // Method to cancel all pending requests
+    cancelPendingRequests(): void {
+        this.pendingRequests.clear();
+    }
+
+    // Allow changing the debounce wait time
+    setDebounceTime(ms: number): void {
+        this.debouncedRequest = debounce(this.debouncedRequest.cancel(), ms, {
+            leading: false,
+            trailing: true,
+        });
     }
 }
