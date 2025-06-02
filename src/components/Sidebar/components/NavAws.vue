@@ -27,7 +27,6 @@ const navigate = (route: string) => {
 onMounted(async () => {
     await router.isReady();
     activeButton.value = route.path;
-    console.log('activeButton', activeButton.value);
 });
 
 watch(

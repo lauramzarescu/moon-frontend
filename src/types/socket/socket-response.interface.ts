@@ -1,21 +1,30 @@
-import {ClusterInterface} from '../aws-entities/cluster.interface';
-import {ServiceInterface} from '../aws-entities/service.interface';
-import {ScheduledTaskInterface} from '../aws-entities/scheduled-task.interface';
-import {InstanceInterface} from '../aws-entities/instance.interface';
+import type { ScheduledTaskInterface } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts';
+import type { InstanceInterface, ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
+import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts';
 
-export interface AWSResponseInterface {
+export interface ClientInfoResponse {
+    intervalTime: number; // in seconds
+    automaticIntervalTime?: number; // in seconds
+    isAutomatic: boolean;
+    isExecuting: boolean;
+    useProgressiveLoading: boolean;
+    connectedSockets: number;
+}
+
+// For non-progressive loading
+export interface AWSResponseInterface extends BaseSocketResponse {
     clusters: {
         clusters: ClusterInterface[];
     };
     ec2Instances: {
         instances: InstanceInterface[];
     };
-    updatedOn: string;
 }
 
 // Base response interface
 export interface BaseSocketResponse {
-    updatedOn: string;
+    updatedOn: Date;
+    clientInfo: ClientInfoResponse;
 }
 
 // Progressive loading responses

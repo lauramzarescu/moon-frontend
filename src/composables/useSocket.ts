@@ -2,15 +2,11 @@ import { io, Socket } from 'socket.io-client';
 import { ref } from 'vue';
 import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts';
 import type { DeploymentInterface, ServiceInterface, TaskDefinitionInterface } from '@/views/AWS/Services/types/service.interface.ts';
-import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts';
 import type { ScheduledTaskInterface } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts';
 import { config } from '../../app.config.ts';
+import type { RefreshClusterScheduledTasksPayload, RefreshClusterServicesPayload } from '@/types/socket/socket-events.interface.ts';
 import type {
-    RefreshClusterScheduledTasksPayload,
-    RefreshClusterServicesPayload,
-    ToggleProgressiveLoadingPayload,
-} from '@/types/socket/socket-events.interface.ts';
-import type {
+    AWSResponseInterface,
     ClustersBasicResponse,
     ClusterScheduledTasksResponse,
     ClusterServicesResponse,
@@ -21,10 +17,10 @@ import type {
 } from '@/types/socket/socket-response.interface.ts';
 
 export const SOCKET_EVENTS = {
-    CLUSTERS_UPDATE: 'clusters-update',
+    CLUSTERS_UPDATE: 'clusters-update', // For non-progressive loading
     CLUSTERS_ERROR: 'clusters-error',
 
-    CLUSTERS_BASIC_UPDATE: 'clusters-basic-update',
+    CLUSTERS_BASIC_UPDATE: 'clusters-basic-update', // For progressive loading
     CLUSTER_SERVICES_UPDATE: 'cluster-services-update',
     CLUSTER_SCHEDULED_TASKS_UPDATE: 'cluster-scheduled-tasks-update',
     EC2_INVENTORY_UPDATE: 'ec2-inventory-update',
@@ -67,7 +63,7 @@ export function useSocket() {
         });
     }
 
-    const data = ref<ClusterResponseInterface | null>(null);
+    const data = ref<AWSResponseInterface | null>(null);
     const loadingProgress = ref<{ current: number; total: number; stage: string }>({
         current: 0,
         total: 0,
@@ -131,8 +127,9 @@ export function useSocket() {
     };
 
     const toggleProgressiveLoading = (enabled: boolean) => {
-        const payload: ToggleProgressiveLoadingPayload = { enabled };
-        socket?.emit(SOCKET_EVENTS.TOGGLE_PROGRESSIVE_LOADING, payload);
+        console.log(`Toggling progressive loading: ${enabled}`);
+        localStorage.setItem('useProgressiveLoading', String(enabled));
+        socket?.emit(SOCKET_EVENTS.TOGGLE_PROGRESSIVE_LOADING, enabled);
     };
 
     const refreshClusterServices = (clusterName: string) => {

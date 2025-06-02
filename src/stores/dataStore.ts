@@ -2,11 +2,12 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { debounce } from 'lodash';
 import { useSocket } from '@/composables/useSocket.ts';
-import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts';
 import type { InstanceInterface, ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts';
 import type { ScheduledTaskInterface } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts';
 import type {
+    AWSResponseInterface,
+    ClientInfoResponse,
     ClustersBasicResponse,
     ClusterScheduledTasksResponse,
     ClusterServicesResponse,
@@ -38,6 +39,7 @@ export const useDataStore = defineStore(
         const updatedOn = ref<Date | null>(null);
         const refreshInterval = ref<number>(15);
         const refreshIsDynamic = ref<boolean>(false);
+        const clientInfo = ref<ClientInfoResponse | null>(null);
 
         // Progressive loading state
         const loadingProgress = ref<{ current: number; total: number; stage: string }>({
@@ -47,6 +49,8 @@ export const useDataStore = defineStore(
         });
         const isProgressiveLoading = ref<boolean>(false);
         const loadingStages = ref<string[]>([]);
+
+        const useProgressiveLoading = ref<boolean>(localStorage.getItem('useProgressiveLoading') === 'true' || false);
 
         const addLoadingStage = (stage: string) => {
             if (!loadingStages.value.includes(stage)) {
@@ -88,6 +92,12 @@ export const useDataStore = defineStore(
             },
         );
 
+        const handleToggleProgressiveLoading = (enabled: boolean) => {
+            useProgressiveLoading.value = enabled;
+            localStorage.setItem('useProgressiveLoading', String(enabled));
+            toggleProgressiveLoading(enabled);
+        };
+
         const initializeData = () => {
             // Remove any existing listeners to prevent duplicates
             socket?.off('connect');
@@ -97,115 +107,122 @@ export const useDataStore = defineStore(
 
             // Set up basic socket listeners
             socket?.on('connect', () => {
-                setRefreshInterval(refreshInterval.value);
+                setRefreshInterval(refreshIsDynamic ? -1 : refreshInterval.value);
+                toggleProgressiveLoading(useProgressiveLoading.value);
             });
 
-            socket?.on(SOCKET_EVENTS.CLUSTERS_UPDATE, (receivedData: ClusterResponseInterface) => {
+            socket?.on(SOCKET_EVENTS.CLUSTERS_UPDATE, (receivedData: AWSResponseInterface) => {
                 processCompleteData(receivedData);
             });
 
-            socket?.on(SOCKET_EVENTS.INTERVAL_UPDATED, (intervalTime: number) => {
-                refreshInterval.value = intervalTime;
+            socket?.on(SOCKET_EVENTS.INTERVAL_UPDATED, (payload: { clientInfo: ClientInfoResponse }) => {
+                refreshInterval.value =
+                    (payload.clientInfo.isAutomatic ? payload.clientInfo?.automaticIntervalTime : payload.clientInfo?.intervalTime) || 0;
             });
 
-            setupProgressiveListeners({
-                onClustersBasicUpdate: (data: ClustersBasicResponse) => {
-                    console.log('Received basic clusters data:', data);
-                    const processedData = processBasicClusters(data.clusters);
-                    clusters.value = processedData.clusters as ClusterInterface[];
-                    updatedOn.value = new Date(data.updatedOn);
-                    addLoadingStage('clusters-basic');
-                },
+            // Only setup progressive listeners if progressive loading is enabled
+            if (useProgressiveLoading.value) {
+                setupProgressiveListeners({
+                    onClustersBasicUpdate: (data: ClustersBasicResponse) => {
+                        console.log('Received basic clusters data:', data);
+                        const processedData = processBasicClusters(data.clusters);
+                        clusters.value = processedData.clusters as ClusterInterface[];
+                        updatedOn.value = new Date(data.updatedOn);
+                        clientInfo.value = data.clientInfo;
+                        addLoadingStage('clusters-basic');
+                    },
 
-                onClusterServicesUpdate: (data: ClusterServicesResponse) => {
-                    console.log('Received cluster services data:', data);
-                    const clusterIndex = clusters.value.findIndex((c) => c.arn === data.clusterArn || c.name === data.clusterName);
+                    onClusterServicesUpdate: (data: ClusterServicesResponse) => {
+                        console.log('Received cluster services data:', data);
+                        const clusterIndex = clusters.value.findIndex((c) => c.arn === data.clusterArn || c.name === data.clusterName);
 
-                    if (clusterIndex !== -1) {
-                        clusters.value[clusterIndex].services = data.services;
+                        if (clusterIndex !== -1) {
+                            clusters.value[clusterIndex].services = data.services;
 
-                        // Update services array and related data
-                        const allServices: ServiceInterface[] = [];
-                        const allDeployments: any[] = [];
-                        const allTaskDefinitions: any[] = [];
+                            // Update services array and related data
+                            const allServices: ServiceInterface[] = [];
+                            const allDeployments: any[] = [];
+                            const allTaskDefinitions: any[] = [];
 
-                        clusters.value.forEach((cluster) => {
-                            cluster.services?.forEach((service) => {
-                                allServices.push(service);
-                                if (service.deployments) {
-                                    allDeployments.push(...service.deployments);
-                                }
-                                if (service.taskDefinition) {
-                                    allTaskDefinitions.push(service.taskDefinition);
+                            clusters.value.forEach((cluster) => {
+                                cluster.services?.forEach((service) => {
+                                    allServices.push(service);
+                                    if (service.deployments) {
+                                        allDeployments.push(...service.deployments);
+                                    }
+                                    if (service.taskDefinition) {
+                                        allTaskDefinitions.push(service.taskDefinition);
+                                    }
+                                });
+                            });
+
+                            services.value = allServices;
+                        }
+                        addLoadingStage('cluster-services');
+                    },
+
+                    onClusterScheduledTasksUpdate: (data: ClusterScheduledTasksResponse) => {
+                        console.log('Received cluster scheduled tasks data:', data);
+                        const clusterIndex = clusters.value.findIndex((c) => c.arn === data.clusterArn);
+
+                        if (clusterIndex !== -1) {
+                            clusters.value[clusterIndex].scheduledTasks = data.scheduledTasks;
+
+                            // Update scheduled tasks array
+                            const allScheduledTasks: ScheduledTaskInterface[] = [];
+                            clusters.value.forEach((cluster) => {
+                                if (cluster.scheduledTasks) {
+                                    allScheduledTasks.push(...cluster.scheduledTasks);
                                 }
                             });
-                        });
 
-                        services.value = allServices;
-                    }
-                    addLoadingStage('cluster-services');
-                },
+                            scheduledTasks.value = allScheduledTasks;
+                        }
+                        addLoadingStage('cluster-scheduled-tasks');
+                    },
 
-                onClusterScheduledTasksUpdate: (data: ClusterScheduledTasksResponse) => {
-                    console.log('Received cluster scheduled tasks data:', data);
-                    const clusterIndex = clusters.value.findIndex((c) => c.arn === data.clusterArn);
+                    onEC2InventoryUpdate: (data: EC2InventoryResponse) => {
+                        console.log('Received EC2 inventory data:', data);
+                        instances.value = data.instances;
+                        updatedOn.value = new Date(data.updatedOn);
+                        addLoadingStage('ec2-inventory');
+                    },
 
-                    if (clusterIndex !== -1) {
-                        clusters.value[clusterIndex].scheduledTasks = data.scheduledTasks;
+                    onLoadingProgress: (progress: LoadingProgressResponse) => {
+                        console.log('Loading progress:', progress);
+                        loadingProgress.value = {
+                            current: progress.step,
+                            total: progress.totalSteps,
+                            stage: progress.message,
+                        };
+                        isProgressiveLoading.value = true;
+                    },
 
-                        // Update scheduled tasks array
-                        const allScheduledTasks: ScheduledTaskInterface[] = [];
-                        clusters.value.forEach((cluster) => {
-                            if (cluster.scheduledTasks) {
-                                allScheduledTasks.push(...cluster.scheduledTasks);
-                            }
-                        });
+                    onLoadingComplete: () => {
+                        console.log('Loading complete');
+                        isProgressiveLoading.value = false;
+                        loadingProgress.value = { current: 0, total: 0, stage: '' };
+                        clearLoadingStages();
+                    },
 
-                        scheduledTasks.value = allScheduledTasks;
-                    }
-                    addLoadingStage('cluster-scheduled-tasks');
-                },
-
-                onEC2InventoryUpdate: (data: EC2InventoryResponse) => {
-                    console.log('Received EC2 inventory data:', data);
-                    instances.value = data.instances;
-                    updatedOn.value = new Date(data.updatedOn);
-                    addLoadingStage('ec2-inventory');
-                },
-
-                onLoadingProgress: (progress: LoadingProgressResponse) => {
-                    console.log('Loading progress:', progress);
-                    loadingProgress.value = {
-                        current: progress.step,
-                        total: progress.totalSteps,
-                        stage: progress.message,
-                    };
-                    isProgressiveLoading.value = true;
-                },
-
-                onLoadingComplete: () => {
-                    console.log('Loading complete');
-                    isProgressiveLoading.value = false;
-                    loadingProgress.value = { current: 0, total: 0, stage: '' };
-                    clearLoadingStages();
-                },
-
-                onClustersError: (error: SocketErrorResponse) => {
-                    console.error('Clusters loading error:', error);
-                    isProgressiveLoading.value = false;
-                    loadingProgress.value = { current: 0, total: 0, stage: '' };
-                    clearLoadingStages();
-                },
-            });
+                    onClustersError: (error: SocketErrorResponse) => {
+                        console.error('Clusters loading error:', error);
+                        isProgressiveLoading.value = false;
+                        loadingProgress.value = { current: 0, total: 0, stage: '' };
+                        clearLoadingStages();
+                    },
+                });
+            }
 
             if (!socket?.connected) {
                 socket?.connect();
             } else {
                 setRefreshInterval(refreshInterval.value);
+                toggleProgressiveLoading(useProgressiveLoading.value);
             }
         };
 
-        const processCompleteData = (receivedData: ClusterResponseInterface) => {
+        const processCompleteData = (receivedData: AWSResponseInterface) => {
             console.log('Received complete data update:', receivedData);
             const processedData = processClusters(receivedData.clusters.clusters);
 
@@ -215,6 +232,7 @@ export const useDataStore = defineStore(
                 clusters.value = processedData.clusters;
                 scheduledTasks.value = processedData.scheduledTasks;
                 updatedOn.value = receivedData.updatedOn;
+                clientInfo.value = receivedData.clientInfo;
             }
 
             // Reset progressive loading state
@@ -256,11 +274,13 @@ export const useDataStore = defineStore(
             updatedOn,
             refreshInterval,
             refreshIsDynamic,
+            clientInfo,
 
             // Progressive loading state
             loadingProgress,
             isProgressiveLoading,
             loadingStages,
+            useProgressiveLoading,
 
             // Computed properties
             loadingPercentage,
@@ -274,7 +294,7 @@ export const useDataStore = defineStore(
             // Methods
             initializeData,
             setRefreshInterval,
-            toggleProgressiveLoading,
+            toggleProgressiveLoading: handleToggleProgressiveLoading, // Use the wrapper function
             manualRefresh: debouncedManualRefresh,
             cleanup,
         };

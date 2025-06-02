@@ -7,6 +7,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ChevronDownIcon } from '@radix-icons/vue';
 import { useSocket } from '@/composables/useSocket.ts';
 import StuckDeploymentBanner from '@/components/ui/stuck-deployment/StuckDeploymentBanner.vue';
+import Switch from '@/components/ui/switch/Switch.vue';
 
 const store = useDataStore();
 const { setRefreshInterval } = useSocket();
@@ -14,7 +15,7 @@ const { setRefreshInterval } = useSocket();
 const currentDate = ref(new Date());
 const lastUpdated = ref('Loading...');
 const timeInterval = ref<number>(1000); // milliseconds
-const isPopoverOpen = ref(false); // Add this line to track popover state
+const isPopoverOpen = ref(false);
 
 const refreshOptions = [
     { value: 5, label: '5 seconds', description: 'Update every 5 seconds' },
@@ -33,7 +34,7 @@ const handleRefreshIntervalChange = (interval: number) => {
     setRefreshInterval(interval);
     store.refreshInterval = interval;
     store.refreshIsDynamic = interval === -1;
-    isPopoverOpen.value = false; // Close the popover after selection
+    isPopoverOpen.value = false;
 };
 
 const handleManualRefresh = () => {
@@ -41,8 +42,8 @@ const handleManualRefresh = () => {
     store.refreshInterval = 0;
 };
 
-const toggleProgressiveLoading = (event: Event) => {
-    store.toggleProgressiveLoading((event.target as HTMLInputElement).checked);
+const handleProgressiveLoadingChange = (checked: boolean) => {
+    store.toggleProgressiveLoading(checked);
 };
 
 onMounted(() => {
@@ -58,7 +59,6 @@ onUnmounted(() => {
     }
 });
 </script>
-
 <template>
     <div class="flex gap-4 text-sm text-foreground">
         <div class="flex items-center gap-2">
@@ -160,11 +160,7 @@ onUnmounted(() => {
 
         <div class="flex items-center gap-2">
             <label class="inline-flex items-center space-x-2">
-                <input
-                    type="checkbox"
-                    @change="toggleProgressiveLoading"
-                    class="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
+                <Switch v-model:checked="store.useProgressiveLoading" @update:checked="handleProgressiveLoadingChange" />
                 <span>Progressive Loading</span>
             </label>
         </div>
