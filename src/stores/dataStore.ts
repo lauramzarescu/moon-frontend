@@ -107,7 +107,7 @@ export const useDataStore = defineStore(
 
             // Set up basic socket listeners
             socket?.on('connect', () => {
-                setRefreshInterval(refreshIsDynamic ? -1 : refreshInterval.value);
+                setRefreshInterval(refreshIsDynamic.value ? -1 : refreshInterval.value);
                 toggleProgressiveLoading(useProgressiveLoading.value);
             });
 
@@ -118,6 +118,7 @@ export const useDataStore = defineStore(
             socket?.on(SOCKET_EVENTS.INTERVAL_UPDATED, (payload: { clientInfo: ClientInfoResponse }) => {
                 refreshInterval.value =
                     (payload.clientInfo.isAutomatic ? payload.clientInfo?.automaticIntervalTime : payload.clientInfo?.intervalTime) || 0;
+                refreshIsDynamic.value = payload.clientInfo.isAutomatic;
             });
 
             // Only setup progressive listeners if progressive loading is enabled

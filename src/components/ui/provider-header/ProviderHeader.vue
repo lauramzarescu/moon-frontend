@@ -39,7 +39,6 @@ const handleRefreshIntervalChange = (interval: number) => {
 
 const handleManualRefresh = () => {
     store.manualRefresh();
-    store.refreshInterval = 0;
 };
 
 const handleProgressiveLoadingChange = (checked: boolean) => {
