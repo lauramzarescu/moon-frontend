@@ -1,4 +1,4 @@
-import {
+import type {
     AWSResponseInterface,
     ClustersBasicResponse,
     ClusterScheduledTasksResponse,
@@ -9,9 +9,8 @@ import {
     SocketErrorResponse,
 } from './socket-response.interface';
 
-// Socket event payload interfaces
 export interface IntervalSetPayload {
-    intervalTime: number; // -1 for automatic, 0 to stop, positive number for manual interval
+    intervalTime: number; // -1 for automatic, 0 for manual, positive number for custom interval
 }
 
 export interface IntervalUpdatedPayload {

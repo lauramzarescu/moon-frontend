@@ -41,6 +41,10 @@ const handleManualRefresh = () => {
     store.refreshInterval = 0;
 };
 
+const toggleProgressiveLoading = (event: Event) => {
+    store.toggleProgressiveLoading((event.target as HTMLInputElement).checked);
+};
+
 onMounted(() => {
     setInterval(() => {
         currentDate.value = new Date();
@@ -153,6 +157,17 @@ onUnmounted(() => {
                 </Command>
             </PopoverContent>
         </Popover>
+
+        <div class="flex items-center gap-2">
+            <label class="inline-flex items-center space-x-2">
+                <input
+                    type="checkbox"
+                    @change="toggleProgressiveLoading"
+                    class="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span>Progressive Loading</span>
+            </label>
+        </div>
     </div>
     <StuckDeploymentBanner />
 </template>

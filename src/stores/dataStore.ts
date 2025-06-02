@@ -23,6 +23,7 @@ export const useDataStore = defineStore(
             processClusters,
             processBasicClusters,
             setRefreshInterval,
+            toggleProgressiveLoading,
             manualRefresh,
             setupProgressiveListeners,
             removeProgressiveListeners,
@@ -103,8 +104,8 @@ export const useDataStore = defineStore(
                 processCompleteData(receivedData);
             });
 
-            socket?.on(SOCKET_EVENTS.INTERVAL_UPDATED, (data: { intervalTime: number }) => {
-                refreshInterval.value = data.intervalTime;
+            socket?.on(SOCKET_EVENTS.INTERVAL_UPDATED, (intervalTime: number) => {
+                refreshInterval.value = intervalTime;
             });
 
             setupProgressiveListeners({
@@ -273,6 +274,7 @@ export const useDataStore = defineStore(
             // Methods
             initializeData,
             setRefreshInterval,
+            toggleProgressiveLoading,
             manualRefresh: debouncedManualRefresh,
             cleanup,
         };

@@ -6,7 +6,6 @@ import type { ClusterResponseInterface } from '@/types/response/cluster.interfac
 import type { ScheduledTaskInterface } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts';
 import { config } from '../../app.config.ts';
 import type {
-    IntervalSetPayload,
     RefreshClusterScheduledTasksPayload,
     RefreshClusterServicesPayload,
     ToggleProgressiveLoadingPayload,
@@ -124,8 +123,7 @@ export function useSocket() {
     };
 
     const setRefreshInterval = (intervalTime: number) => {
-        const payload: IntervalSetPayload = { intervalTime };
-        socket?.emit(SOCKET_EVENTS.INTERVAL_SET, payload);
+        socket?.emit(SOCKET_EVENTS.INTERVAL_SET, intervalTime);
     };
 
     const manualRefresh = () => {
