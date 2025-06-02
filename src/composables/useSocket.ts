@@ -3,14 +3,28 @@ import { ref } from 'vue';
 import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts';
 import type { DeploymentInterface, ServiceInterface, TaskDefinitionInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts';
-import { config } from '../../app.config.ts';
 import type { ScheduledTaskInterface } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts';
+import { config } from '../../app.config.ts';
+import type {
+    IntervalSetPayload,
+    RefreshClusterScheduledTasksPayload,
+    RefreshClusterServicesPayload,
+    ToggleProgressiveLoadingPayload,
+} from '@/types/socket/socket-events.interface.ts';
+import type {
+    ClustersBasicResponse,
+    ClusterScheduledTasksResponse,
+    ClusterServicesResponse,
+    EC2InventoryResponse,
+    LoadingCompleteResponse,
+    LoadingProgressResponse,
+    SocketErrorResponse,
+} from '@/types/socket/socket-response.interface.ts';
 
 export const SOCKET_EVENTS = {
     CLUSTERS_UPDATE: 'clusters-update',
     CLUSTERS_ERROR: 'clusters-error',
 
-    // Progressive loading events
     CLUSTERS_BASIC_UPDATE: 'clusters-basic-update',
     CLUSTER_SERVICES_UPDATE: 'cluster-services-update',
     CLUSTER_SCHEDULED_TASKS_UPDATE: 'cluster-scheduled-tasks-update',
@@ -32,6 +46,16 @@ export const SOCKET_EVENTS = {
 } as const;
 
 let socket: Socket | null = null;
+
+interface ProgressiveLoadingCallbacks {
+    onClustersBasicUpdate?: (data: ClustersBasicResponse) => void;
+    onClusterServicesUpdate?: (data: ClusterServicesResponse) => void;
+    onClusterScheduledTasksUpdate?: (data: ClusterScheduledTasksResponse) => void;
+    onEC2InventoryUpdate?: (data: EC2InventoryResponse) => void;
+    onLoadingProgress?: (progress: LoadingProgressResponse) => void;
+    onLoadingComplete?: (data: LoadingCompleteResponse) => void;
+    onClustersError?: (error: SocketErrorResponse) => void;
+}
 
 export function useSocket() {
     if (!socket) {
@@ -100,23 +124,34 @@ export function useSocket() {
     };
 
     const setRefreshInterval = (intervalTime: number) => {
-        socket?.emit(SOCKET_EVENTS.INTERVAL_SET, intervalTime);
+        const payload: IntervalSetPayload = { intervalTime };
+        socket?.emit(SOCKET_EVENTS.INTERVAL_SET, payload);
     };
 
     const manualRefresh = () => {
         socket?.emit(SOCKET_EVENTS.MANUAL_REFRESH);
     };
 
-    const setupProgressiveListeners = (callbacks: {
-        onClustersBasicUpdate?: (data: any) => void;
-        onClusterServicesUpdate?: (data: any) => void;
-        onClusterScheduledTasksUpdate?: (data: any) => void;
-        onEC2InventoryUpdate?: (data: any) => void;
-        onLoadingProgress?: (progress: { current: number; total: number; stage: string }) => void;
-        onLoadingComplete?: () => void;
-        onClustersError?: (error: any) => void;
-    }) => {
-        // Remove existing listeners to prevent duplicates
+    const toggleProgressiveLoading = (enabled: boolean) => {
+        const payload: ToggleProgressiveLoadingPayload = { enabled };
+        socket?.emit(SOCKET_EVENTS.TOGGLE_PROGRESSIVE_LOADING, payload);
+    };
+
+    const refreshClusterServices = (clusterName: string) => {
+        const payload: RefreshClusterServicesPayload = { clusterName };
+        socket?.emit(SOCKET_EVENTS.REFRESH_CLUSTER_SERVICES, payload);
+    };
+
+    const refreshClusterScheduledTasks = (clusterName: string, clusterArn: string) => {
+        const payload: RefreshClusterScheduledTasksPayload = { clusterName, clusterArn };
+        socket?.emit(SOCKET_EVENTS.REFRESH_CLUSTER_SCHEDULED_TASKS, payload);
+    };
+
+    const getEC2Inventory = () => {
+        socket?.emit(SOCKET_EVENTS.GET_EC2_INVENTORY);
+    };
+
+    const setupProgressiveListeners = (callbacks: ProgressiveLoadingCallbacks) => {
         socket?.off(SOCKET_EVENTS.CLUSTERS_BASIC_UPDATE);
         socket?.off(SOCKET_EVENTS.CLUSTER_SERVICES_UPDATE);
         socket?.off(SOCKET_EVENTS.CLUSTER_SCHEDULED_TASKS_UPDATE);
@@ -125,41 +160,52 @@ export function useSocket() {
         socket?.off(SOCKET_EVENTS.LOADING_COMPLETE);
         socket?.off(SOCKET_EVENTS.CLUSTERS_ERROR);
 
-        // Set up progressive loading listeners
         if (callbacks.onClustersBasicUpdate) {
-            socket?.on(SOCKET_EVENTS.CLUSTERS_BASIC_UPDATE, callbacks.onClustersBasicUpdate);
+            socket?.on(SOCKET_EVENTS.CLUSTERS_BASIC_UPDATE, (data: ClustersBasicResponse) => {
+                callbacks.onClustersBasicUpdate?.(data);
+            });
         }
 
         if (callbacks.onClusterServicesUpdate) {
-            socket?.on(SOCKET_EVENTS.CLUSTER_SERVICES_UPDATE, callbacks.onClusterServicesUpdate);
+            socket?.on(SOCKET_EVENTS.CLUSTER_SERVICES_UPDATE, (data: ClusterServicesResponse) => {
+                callbacks.onClusterServicesUpdate?.(data);
+            });
         }
 
         if (callbacks.onClusterScheduledTasksUpdate) {
-            socket?.on(SOCKET_EVENTS.CLUSTER_SCHEDULED_TASKS_UPDATE, callbacks.onClusterScheduledTasksUpdate);
+            socket?.on(SOCKET_EVENTS.CLUSTER_SCHEDULED_TASKS_UPDATE, (data: ClusterScheduledTasksResponse) => {
+                callbacks.onClusterScheduledTasksUpdate?.(data);
+            });
         }
 
         if (callbacks.onEC2InventoryUpdate) {
-            socket?.on(SOCKET_EVENTS.EC2_INVENTORY_UPDATE, callbacks.onEC2InventoryUpdate);
+            socket?.on(SOCKET_EVENTS.EC2_INVENTORY_UPDATE, (data: EC2InventoryResponse) => {
+                callbacks.onEC2InventoryUpdate?.(data);
+            });
         }
 
         if (callbacks.onLoadingProgress) {
-            socket?.on(SOCKET_EVENTS.LOADING_PROGRESS, (progress) => {
-                loadingProgress.value = progress;
+            socket?.on(SOCKET_EVENTS.LOADING_PROGRESS, (progress: LoadingProgressResponse) => {
+                loadingProgress.value = {
+                    current: progress.step,
+                    total: progress.totalSteps,
+                    stage: progress.message,
+                };
                 isLoading.value = true;
                 callbacks.onLoadingProgress?.(progress);
             });
         }
 
         if (callbacks.onLoadingComplete) {
-            socket?.on(SOCKET_EVENTS.LOADING_COMPLETE, () => {
+            socket?.on(SOCKET_EVENTS.LOADING_COMPLETE, (data: LoadingCompleteResponse) => {
                 isLoading.value = false;
                 loadingProgress.value = { current: 0, total: 0, stage: '' };
-                callbacks.onLoadingComplete?.();
+                callbacks.onLoadingComplete?.(data);
             });
         }
 
         if (callbacks.onClustersError) {
-            socket?.on(SOCKET_EVENTS.CLUSTERS_ERROR, (error) => {
+            socket?.on(SOCKET_EVENTS.CLUSTERS_ERROR, (error: SocketErrorResponse) => {
                 isLoading.value = false;
                 loadingProgress.value = { current: 0, total: 0, stage: '' };
                 callbacks.onClustersError?.(error);
@@ -177,6 +223,11 @@ export function useSocket() {
         socket?.off(SOCKET_EVENTS.CLUSTERS_ERROR);
     };
 
+    const disconnect = () => {
+        socket?.emit(SOCKET_EVENTS.DISCONNECT);
+        socket?.disconnect();
+    };
+
     return {
         socket,
         data,
@@ -186,8 +237,13 @@ export function useSocket() {
         processBasicClusters,
         setRefreshInterval,
         manualRefresh,
+        toggleProgressiveLoading,
+        refreshClusterServices,
+        refreshClusterScheduledTasks,
+        getEC2Inventory,
         setupProgressiveListeners,
         removeProgressiveListeners,
+        disconnect,
         SOCKET_EVENTS,
     };
 }

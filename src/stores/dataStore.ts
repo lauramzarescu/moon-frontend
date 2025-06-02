@@ -1,11 +1,19 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { debounce } from 'lodash'; // Add this import
+import { debounce } from 'lodash';
 import { useSocket } from '@/composables/useSocket.ts';
 import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts';
 import type { InstanceInterface, ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import type { ClusterInterface } from '@/views/AWS/Clusters/types/cluster.interface.ts';
 import type { ScheduledTaskInterface } from '@/views/AWS/ScheduledTasks/types/scheduled-task.interface.ts';
+import type {
+    ClustersBasicResponse,
+    ClusterScheduledTasksResponse,
+    ClusterServicesResponse,
+    EC2InventoryResponse,
+    LoadingProgressResponse,
+    SocketErrorResponse,
+} from '@/types/socket/socket-response.interface.ts';
 
 export const useDataStore = defineStore(
     'data',
@@ -39,7 +47,6 @@ export const useDataStore = defineStore(
         const isProgressiveLoading = ref<boolean>(false);
         const loadingStages = ref<string[]>([]);
 
-        // Helper functions for loadingStages management
         const addLoadingStage = (stage: string) => {
             if (!loadingStages.value.includes(stage)) {
                 loadingStages.value.push(stage);
@@ -54,7 +61,6 @@ export const useDataStore = defineStore(
             loadingStages.value = [];
         };
 
-        // Computed properties
         const loadingPercentage = computed(() => {
             if (loadingProgress.value.total === 0) return 0;
             return Math.round((loadingProgress.value.current / loadingProgress.value.total) * 100);
@@ -67,7 +73,6 @@ export const useDataStore = defineStore(
         // Create debounced manual refresh function
         const debouncedManualRefresh = debounce(
             () => {
-                // Reset loading state
                 isProgressiveLoading.value = true;
                 clearLoadingStages();
                 loadingProgress.value = { current: 0, total: 0, stage: 'Initiating refresh...' };
@@ -94,28 +99,26 @@ export const useDataStore = defineStore(
                 setRefreshInterval(refreshInterval.value);
             });
 
-            // Fallback for complete data update (backward compatibility)
             socket?.on(SOCKET_EVENTS.CLUSTERS_UPDATE, (receivedData: ClusterResponseInterface) => {
                 processCompleteData(receivedData);
             });
 
-            socket?.on(SOCKET_EVENTS.INTERVAL_UPDATED, (interval: number) => {
-                refreshInterval.value = interval;
+            socket?.on(SOCKET_EVENTS.INTERVAL_UPDATED, (data: { intervalTime: number }) => {
+                refreshInterval.value = data.intervalTime;
             });
 
-            // Set up progressive loading listeners
             setupProgressiveListeners({
-                onClustersBasicUpdate: (data: { clusters: Partial<ClusterInterface>[]; updatedOn: Date }) => {
+                onClustersBasicUpdate: (data: ClustersBasicResponse) => {
                     console.log('Received basic clusters data:', data);
                     const processedData = processBasicClusters(data.clusters);
                     clusters.value = processedData.clusters as ClusterInterface[];
-                    updatedOn.value = data.updatedOn;
+                    updatedOn.value = new Date(data.updatedOn);
                     addLoadingStage('clusters-basic');
                 },
 
-                onClusterServicesUpdate: (data: { clusterArn: string; services: ServiceInterface[] }) => {
+                onClusterServicesUpdate: (data: ClusterServicesResponse) => {
                     console.log('Received cluster services data:', data);
-                    const clusterIndex = clusters.value.findIndex((c) => c.arn === data.clusterArn);
+                    const clusterIndex = clusters.value.findIndex((c) => c.arn === data.clusterArn || c.name === data.clusterName);
 
                     if (clusterIndex !== -1) {
                         clusters.value[clusterIndex].services = data.services;
@@ -142,7 +145,7 @@ export const useDataStore = defineStore(
                     addLoadingStage('cluster-services');
                 },
 
-                onClusterScheduledTasksUpdate: (data: { clusterArn: string; scheduledTasks: ScheduledTaskInterface[] }) => {
+                onClusterScheduledTasksUpdate: (data: ClusterScheduledTasksResponse) => {
                     console.log('Received cluster scheduled tasks data:', data);
                     const clusterIndex = clusters.value.findIndex((c) => c.arn === data.clusterArn);
 
@@ -162,16 +165,20 @@ export const useDataStore = defineStore(
                     addLoadingStage('cluster-scheduled-tasks');
                 },
 
-                onEC2InventoryUpdate: (data: { instances: InstanceInterface[]; updatedOn: Date }) => {
+                onEC2InventoryUpdate: (data: EC2InventoryResponse) => {
                     console.log('Received EC2 inventory data:', data);
                     instances.value = data.instances;
-                    updatedOn.value = data.updatedOn;
+                    updatedOn.value = new Date(data.updatedOn);
                     addLoadingStage('ec2-inventory');
                 },
 
-                onLoadingProgress: (progress: { current: number; total: number; stage: string }) => {
+                onLoadingProgress: (progress: LoadingProgressResponse) => {
                     console.log('Loading progress:', progress);
-                    loadingProgress.value = progress;
+                    loadingProgress.value = {
+                        current: progress.step,
+                        total: progress.totalSteps,
+                        stage: progress.message,
+                    };
                     isProgressiveLoading.value = true;
                 },
 
@@ -181,7 +188,8 @@ export const useDataStore = defineStore(
                     loadingProgress.value = { current: 0, total: 0, stage: '' };
                     clearLoadingStages();
                 },
-                onClustersError: (error: any) => {
+
+                onClustersError: (error: SocketErrorResponse) => {
                     console.error('Clusters loading error:', error);
                     isProgressiveLoading.value = false;
                     loadingProgress.value = { current: 0, total: 0, stage: '' };
@@ -214,7 +222,6 @@ export const useDataStore = defineStore(
             clearLoadingStages();
         };
 
-        // Cleanup function
         const cleanup = () => {
             removeProgressiveListeners();
             socket?.off('connect');
