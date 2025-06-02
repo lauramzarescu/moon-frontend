@@ -45,7 +45,7 @@ export class ApiService {
     }
 
     async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-        // Check if token exists and is expired before making the request
+        // Check if the token exists and is expired before making the request
         if (this.jwt && this.isTokenExpired(this.jwt)) {
             await this.handleTokenExpiration();
             throw new Error('JWT token expired');
@@ -61,7 +61,7 @@ export class ApiService {
         }
 
         // Create a new debounced request
-        const promise = this.debouncedRequest<T>(url, options, requestKey);
+        const promise = this.debouncedRequest(url, options, requestKey) as Promise<T>;
         this.pendingRequests.set(requestKey, promise);
 
         return promise;
@@ -132,18 +132,5 @@ export class ApiService {
 
         // Redirect to login page
         await router.push('/login');
-    }
-
-    // Method to cancel all pending requests
-    cancelPendingRequests(): void {
-        this.pendingRequests.clear();
-    }
-
-    // Allow changing the debounce wait time
-    setDebounceTime(ms: number): void {
-        this.debouncedRequest = debounce(this.debouncedRequest.cancel(), ms, {
-            leading: false,
-            trailing: true,
-        });
     }
 }

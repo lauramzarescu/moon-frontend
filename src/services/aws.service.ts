@@ -1,9 +1,19 @@
 import { ApiService } from '@/services/generic.service.ts';
 import type { ServiceRestartInput, ServiceUpdateCountInput, ServiceUpdateImageInput } from '@/views/AWS/Services/components/schema.ts';
 import { serviceRestartSchema, serviceUpdateCountSchema, serviceUpdateImageSchema } from '@/views/AWS/Services/components/schema.ts';
+import type { ClusterResponseInterface } from '@/types/response/cluster.interface.ts';
 
 export class AwsService extends ApiService {
     public resource = '/aws';
+
+    async getClusters(): Promise<ClusterResponseInterface> {
+        try {
+            return await this.get<ClusterResponseInterface>(`${this.resource}/clusters`, { credentials: 'include' });
+        } catch (error) {
+            console.error('Failed to get clusters:', error);
+            throw error;
+        }
+    }
 
     async updateServiceDesiredCount(data: ServiceUpdateCountInput) {
         try {
