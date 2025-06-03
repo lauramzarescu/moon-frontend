@@ -144,7 +144,14 @@ onUnmounted(() => {
                                 :key="option.value"
                                 :value="option.value"
                                 @select="handleRefreshIntervalChange(option.value)"
-                                class="space-y-1 flex flex-col items-start px-4 py-2"
+                                :class="[
+                                    'space-y-1 flex flex-col items-start px-4 py-2',
+                                    {
+                                        'bg-accent text-accent-foreground': store.refreshInterval === option.value,
+                                        'font-medium': store.refreshInterval === option.value,
+                                    },
+                                ]"
+                                :aria-selected="store.refreshInterval === option.value"
                             >
                                 <p>{{ option.label }}</p>
                                 <p class="text-sm text-foreground">
