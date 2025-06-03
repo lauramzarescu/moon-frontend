@@ -40,6 +40,7 @@ export const useDataStore = defineStore(
         const refreshInterval = ref<number>(15);
         const refreshIsDynamic = ref<boolean>(false);
         const clientInfo = ref<ClientInfoResponse | null>(null);
+        const hasInitialData = ref<boolean>(false);
 
         // Progressive loading state
         const loadingProgress = ref<{ current: number; total: number; stage: string }>({
@@ -138,24 +139,18 @@ export const useDataStore = defineStore(
                     if (clusterIndex !== -1) {
                         clusters.value[clusterIndex].services = data.services;
 
-                        // Update services array and related data
-                        const allServices: ServiceInterface[] = [];
-                        const allDeployments: any[] = [];
-                        const allTaskDefinitions: any[] = [];
+                        const updatedServices: ServiceInterface[] = [];
 
                         clusters.value.forEach((cluster) => {
                             cluster.services?.forEach((service) => {
-                                allServices.push(service);
-                                if (service.deployments) {
-                                    allDeployments.push(...service.deployments);
-                                }
-                                if (service.taskDefinition) {
-                                    allTaskDefinitions.push(service.taskDefinition);
-                                }
+                                updatedServices.push(service);
                             });
                         });
 
-                        services.value = allServices;
+                        if (updatedServices.length > 0 || !hasInitialData.value) {
+                            services.value = updatedServices;
+                            hasInitialData.value = true;
+                        }
                     }
                     addLoadingStage('cluster-services');
                 },
@@ -202,6 +197,7 @@ export const useDataStore = defineStore(
                     isProgressiveLoading.value = false;
                     loadingProgress.value = { current: 0, total: 0, stage: '' };
                     clearLoadingStages();
+                    hasInitialData.value = true;
                 },
 
                 onClustersError: (error: SocketErrorResponse) => {
