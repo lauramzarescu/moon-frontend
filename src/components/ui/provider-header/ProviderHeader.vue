@@ -7,7 +7,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ChevronDownIcon } from '@radix-icons/vue';
 import { useSocket } from '@/composables/useSocket.ts';
 import StuckDeploymentBanner from '@/components/ui/stuck-deployment/StuckDeploymentBanner.vue';
-import Switch from '@/components/ui/switch/Switch.vue';
 
 const store = useDataStore();
 const { setRefreshInterval } = useSocket();
@@ -164,12 +163,12 @@ onUnmounted(() => {
             </PopoverContent>
         </Popover>
 
-        <div class="flex items-center gap-2">
-            <label class="inline-flex items-center space-x-2">
-                <Switch v-model:checked="store.useProgressiveLoading" @update:checked="handleProgressiveLoadingChange" />
-                <span>Progressive Loading</span>
-            </label>
-        </div>
+        <!--        <div class="flex items-center gap-2">-->
+        <!--            <label class="inline-flex items-center space-x-2">-->
+        <!--                <Switch v-model:checked="store.useProgressiveLoading" @update:checked="handleProgressiveLoadingChange" />-->
+        <!--                <span>Progressive Loading</span>-->
+        <!--            </label>-->
+        <!--        </div>-->
     </div>
     <StuckDeploymentBanner />
 </template>
