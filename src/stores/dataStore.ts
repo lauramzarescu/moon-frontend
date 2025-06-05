@@ -37,10 +37,22 @@ export const useDataStore = defineStore(
         const clusters = ref<ClusterInterface[]>([]);
         const scheduledTasks = ref<ScheduledTaskInterface[]>([]);
         const updatedOn = ref<Date | null>(null);
-        const refreshInterval = ref<number>(15);
+        const refreshInterval = ref<number>(0);
         const refreshIsDynamic = ref<boolean>(false);
         const clientInfo = ref<ClientInfoResponse | null>(null);
         const hasInitialData = ref<boolean>(false);
+
+        // Validation to ensure refreshInterval is always a number
+        // watch(
+        //     refreshInterval,
+        //     (newValue: number) => {
+        //         if (typeof newValue !== 'number') {
+        //             console.warn('Invalid refreshInterval value detected, resetting to default', newValue);
+        //             refreshInterval.value = 0;
+        //         }
+        //     },
+        //     { immediate: true },
+        // );
 
         // Progressive loading state
         const loadingProgress = ref<{ current: number; total: number; stage: string }>({
