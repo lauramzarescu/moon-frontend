@@ -14,7 +14,7 @@ const { setRefreshInterval } = useSocket();
 const currentDate = ref(new Date());
 const lastUpdated = ref('Loading...');
 const timeInterval = ref<number>(1000); // milliseconds
-const isPopoverOpen = ref(false); // Add this line to track popover state
+const isPopoverOpen = ref(false);
 
 const refreshOptions = [
     { value: 5, label: '5 seconds', description: 'Update every 5 seconds' },
@@ -33,12 +33,15 @@ const handleRefreshIntervalChange = (interval: number) => {
     setRefreshInterval(interval);
     store.refreshInterval = interval;
     store.refreshIsDynamic = interval === -1;
-    isPopoverOpen.value = false; // Close the popover after selection
+    isPopoverOpen.value = false;
 };
 
 const handleManualRefresh = () => {
     store.manualRefresh();
-    store.refreshInterval = 0;
+};
+
+const handleProgressiveLoadingChange = (checked: boolean) => {
+    store.toggleProgressiveLoading(checked);
 };
 
 onMounted(() => {
@@ -54,7 +57,6 @@ onUnmounted(() => {
     }
 });
 </script>
-
 <template>
     <div class="flex gap-4 text-sm text-foreground">
         <div class="flex items-center gap-2">
@@ -141,7 +143,14 @@ onUnmounted(() => {
                                 :key="option.value"
                                 :value="option.value"
                                 @select="handleRefreshIntervalChange(option.value)"
-                                class="space-y-1 flex flex-col items-start px-4 py-2"
+                                :class="[
+                                    'space-y-1 flex flex-col items-start px-4 py-2',
+                                    {
+                                        'bg-accent text-accent-foreground': store.refreshInterval === option.value,
+                                        'font-medium': store.refreshInterval === option.value,
+                                    },
+                                ]"
+                                :aria-selected="store.refreshInterval === option.value"
                             >
                                 <p>{{ option.label }}</p>
                                 <p class="text-sm text-foreground">
@@ -153,6 +162,13 @@ onUnmounted(() => {
                 </Command>
             </PopoverContent>
         </Popover>
+
+        <!--        <div class="flex items-center gap-2">-->
+        <!--            <label class="inline-flex items-center space-x-2">-->
+        <!--                <Switch v-model:checked="store.useProgressiveLoading" @update:checked="handleProgressiveLoadingChange" />-->
+        <!--                <span>Progressive Loading</span>-->
+        <!--            </label>-->
+        <!--        </div>-->
     </div>
     <StuckDeploymentBanner />
 </template>
