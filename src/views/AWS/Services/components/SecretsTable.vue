@@ -1,5 +1,5 @@
 <template>
-    <Card class="overflow-hidden">
+    <Card class="" :inert="editDialog.isOpen || addDialog.isOpen">
         <div class="flex">
             <div class="w-2 h-full bg-primary"></div>
             <div class="flex-1">
@@ -18,6 +18,7 @@
                         <div class="flex items-center gap-2">
                             <SecretsComparisonDialog v-if="allServices" :services="allServices" />
                             <AddEnvironmentVariableDialog
+                                v-model:open="addDialog.isOpen"
                                 :cluster-name="clusterName"
                                 :service-name="serviceName"
                                 :container-name="container.name"
@@ -71,11 +72,11 @@
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem @click="openEditDialog(env, 'environment')">
+                                            <DropdownMenuItem @click="openEditDialog(env)">
                                                 <EditIcon class="h-4 w-4 mr-2" />
                                                 Edit
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem @click="deleteVariable(env.name, 'environment')" class="text-red-600">
+                                            <DropdownMenuItem @click="deleteVariable(env.name)" class="text-red-600">
                                                 <TrashIcon class="h-4 w-4 mr-2" />
                                                 Delete
                                             </DropdownMenuItem>
@@ -117,11 +118,7 @@
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem @click="openEditDialog(secret, 'secret')">
-                                                <EditIcon class="h-4 w-4 mr-2" />
-                                                Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem @click="deleteVariable(secret.name, 'secret')" class="text-red-600">
+                                            <DropdownMenuItem @click="deleteVariable(secret.name)" class="text-red-600">
                                                 <TrashIcon class="h-4 w-4 mr-2" />
                                                 Delete
                                             </DropdownMenuItem>
@@ -144,7 +141,6 @@
         :container-name="container.name"
         :variable-name="editDialog.variableName"
         :current-value="editDialog.currentValue"
-        :type="editDialog.type"
         @variable-updated="handleRefresh"
     />
 </template>
@@ -159,9 +155,10 @@ import { useToast } from '@/components/ui/toast';
 import { CopyIcon, EditIcon, GlobeIcon, KeyIcon, MoreHorizontalIcon, SettingsIcon, TrashIcon } from 'lucide-vue-next';
 import { computed, reactive } from 'vue';
 import { AwsService } from '@/services/aws.service';
-import SecretsComparisonDialog from './SecretsComparisonDialog.vue';
+import SecretsComparisonDialog from './EnvironmentVariablesComparison/SecretsComparisonDialog.vue';
 import AddEnvironmentVariableDialog from './AddEnvironmentVariableDialog.vue';
 import EditEnvironmentVariableDialog from './EditEnvironmentVariableDialog.vue';
+import type { RemoveEnvironmentVariablesInput } from '@/views/AWS/Services/components/environment-variable.schema';
 
 const { toast } = useToast();
 const awsService = new AwsService();
@@ -183,6 +180,11 @@ const editDialog = reactive({
     variableName: '',
     currentValue: '',
     type: 'environment' as 'environment' | 'secret',
+});
+
+// Add dialog state
+const addDialog = reactive({
+    isOpen: false,
 });
 
 const sortedEnvironmentVariables = computed(() => {
@@ -210,27 +212,27 @@ const copyToClipboard = async (text: string) => {
     }
 };
 
-const openEditDialog = (variable: { name: string; value: string }, type: 'environment' | 'secret') => {
+const openEditDialog = (variable: { name: string; value: string }) => {
     editDialog.variableName = variable.name;
     editDialog.currentValue = variable.value;
-    editDialog.type = type;
     editDialog.isOpen = true;
 };
 
-const deleteVariable = async (variableName: string, type: 'environment' | 'secret') => {
+const deleteVariable = async (variableName: string) => {
     try {
-        await awsService.removeEnvironmentVariable({
+        const payload: RemoveEnvironmentVariablesInput = {
             clusterName: props.clusterName,
             serviceName: props.serviceName,
             containerName: props.container.name,
-            type,
-            name: variableName,
-        });
+            variableNames: [variableName],
+        };
+
+        await awsService.removeEnvironmentVariables(payload);
 
         toast({
             variant: 'success',
-            title: 'Variable deleted',
-            description: `${type === 'environment' ? 'Environment variable' : 'Secret'} "${variableName}" has been deleted.`,
+            title: 'Variable deleted successfully',
+            description: `Environment variable "${variableName}" has been deleted.`,
         });
 
         handleRefresh();

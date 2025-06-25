@@ -1,103 +1,128 @@
 <template>
-    <Dialog v-model:open="isOpen">
+    <Dialog :modal="true" v-model:open="isOpen" class="z-10">
         <DialogTrigger as-child>
             <Button variant="outline" size="sm" class="gap-2">
                 <PlusIcon class="h-4 w-4" />
                 Add Variable
             </Button>
         </DialogTrigger>
-        <DialogContent class="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-                <DialogTitle>Add Environment Variables</DialogTitle>
-                <DialogDescription> Add new environment variables or secrets to {{ containerName }}</DialogDescription>
+        <DialogContent class="max-w-3xl max-h-[90vh] overflow-hidden">
+            <!-- Header -->
+            <DialogHeader class="pb-6 border-b">
+                <DialogTitle class="text-2xl font-bold text-foreground flex items-center gap-3">
+                    <div class="p-2 bg-primary/10 rounded-md">
+                        <GlobeIcon class="h-5 w-5 text-primary" />
+                    </div>
+                    Environment Variables
+                </DialogTitle>
+                <DialogDescription class="text-muted-foreground mt-2">
+                    Add environment variables to <span class="font-semibold text-foreground">{{ containerName }}</span>
+                </DialogDescription>
             </DialogHeader>
 
-            <form @submit.prevent="handleSubmit" class="space-y-4">
-                <div class="space-y-4">
-                    <div v-for="(variable, index) in variables" :key="index" class="border rounded-lg p-4 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h4 class="font-medium">Variable {{ index + 1 }}</h4>
+            <!-- Content -->
+            <div class="py-6 max-h-[60vh] overflow-y-auto">
+                <Form
+                    :validation-schema="formSchema"
+                    @submit="handleSubmit"
+                    :initial-values="initialValues"
+                    class="space-y-6"
+                    v-slot="{ values, setFieldValue }"
+                >
+                    <!-- Variables List -->
+                    <div class="space-y-4">
+                        <div
+                            v-for="(variable, index) in variables"
+                            :key="index"
+                            class="relative p-4 border rounded-lg bg-card hover:bg-accent/5 transition-colors"
+                        >
+                            <!-- Remove Button -->
                             <Button
                                 v-if="variables.length > 1"
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                @click="removeVariable(index)"
-                                class="text-red-600 hover:text-red-700"
+                                @click="removeVariable(index, setFieldValue)"
+                                class="absolute top-2 right-2 h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             >
                                 <TrashIcon class="h-4 w-4" />
                             </Button>
-                        </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="space-y-2">
-                                <Label :for="`type-${index}`">Type</Label>
-                                <Select :model-value="variable.type" @update:model-value="variable.type = $event">
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="environment">
-                                            <div class="flex items-center gap-2">
-                                                <GlobeIcon class="h-4 w-4 text-green-600" />
-                                                Environment Variable
-                                            </div>
-                                        </SelectItem>
-                                        <SelectItem value="secret">
-                                            <div class="flex items-center gap-2">
-                                                <KeyIcon class="h-4 w-4 text-purple-600" />
-                                                Secret
-                                            </div>
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <!-- Variable Number -->
+                            <div class="flex items-center gap-2 mb-4">
+                                <div
+                                    class="flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground rounded-full text-xs font-medium"
+                                >
+                                    {{ index + 1 }}
+                                </div>
+                                <span class="text-sm font-medium text-muted-foreground">Variable {{ index + 1 }}</span>
                             </div>
 
-                            <div class="space-y-2">
-                                <Label :for="`name-${index}`">Name</Label>
-                                <Input
-                                    :id="`name-${index}`"
-                                    :model-value="variable.name"
-                                    @update:model-value="variable.name = $event"
-                                    placeholder="VARIABLE_NAME"
-                                    required
-                                    :class="{ 'border-red-500': errors[index]?.name }"
-                                />
-                                <p v-if="errors[index]?.name" class="text-sm text-red-500">{{ errors[index].name }}</p>
-                            </div>
+                            <!-- Fields -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Name Field -->
+                                <FormField v-slot="{ componentField }" :name="`environmentVariables.${index}.name`">
+                                    <FormItem>
+                                        <FormLabel>Name</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                autofocus
+                                                placeholder="VARIABLE_NAME"
+                                                class="font-mono"
+                                                v-bind="componentField"
+                                                :disabled="false"
+                                                @input="updateVariable(index, 'name', $event.target.value)"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
 
-                            <div class="space-y-2">
-                                <Label :for="`value-${index}`">Value</Label>
-                                <Textarea
-                                    :id="`value-${index}`"
-                                    :model-value="variable.value"
-                                    @update:model-value="variable.value = $event"
-                                    placeholder="Enter value..."
-                                    required
-                                    :class="{ 'border-red-500': errors[index]?.value }"
-                                    rows="2"
-                                />
-                                <p v-if="errors[index]?.value" class="text-sm text-red-500">{{ errors[index].value }}</p>
+                                <!-- Value Field -->
+                                <FormField v-slot="{ componentField }" :name="`environmentVariables.${index}.value`">
+                                    <FormItem>
+                                        <FormLabel>Value</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Enter value..."
+                                                rows="3"
+                                                class="resize-none font-mono text-sm"
+                                                v-bind="componentField"
+                                                :disabled="isLoading"
+                                                @input="updateVariable(index, 'value', $event.target.value)"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                </FormField>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="flex justify-center">
-                    <Button type="button" variant="outline" @click="addVariable" class="gap-2">
-                        <PlusIcon class="h-4 w-4" />
-                        Add Another Variable
-                    </Button>
-                </div>
+                    <!-- Add Variable Button -->
+                    <div class="flex justify-center pt-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="addVariable(setFieldValue)"
+                            class="gap-2 border-dashed hover:bg-accent"
+                            :disabled="isLoading"
+                        >
+                            <PlusIcon class="h-4 w-4" />
+                            Add Another Variable
+                        </Button>
+                    </div>
 
-                <DialogFooter>
-                    <Button type="button" variant="outline" @click="closeDialog"> Cancel</Button>
-                    <Button type="submit" :disabled="isLoading">
-                        <Loader2Icon v-if="isLoading" class="h-4 w-4 animate-spin mr-2" />
-                        Add {{ variables.length }} Variable{{ variables.length > 1 ? 's' : '' }}
-                    </Button>
-                </DialogFooter>
-            </form>
+                    <!-- Footer -->
+                    <DialogFooter class="pt-6 border-t">
+                        <Button type="button" variant="outline" @click="closeDialog" :disabled="isLoading"> Cancel </Button>
+                        <Button type="submit" :disabled="isLoading">
+                            <Loader2Icon v-if="isLoading" class="h-4 w-4 animate-spin mr-2" />
+                            Add {{ variables.length }} Variable{{ variables.length > 1 ? 's' : '' }}
+                        </Button>
+                    </DialogFooter>
+                </Form>
+            </div>
         </DialogContent>
     </Dialog>
 </template>
@@ -107,77 +132,107 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/components/ui/toast';
-import { GlobeIcon, KeyIcon, Loader2Icon, PlusIcon, TrashIcon } from 'lucide-vue-next';
-import { reactive, ref } from 'vue';
+import { GlobeIcon, Loader2Icon, PlusIcon, TrashIcon } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import { AwsService } from '@/services/aws.service';
-import type { AddEnvironmentVariablesInput } from '@/views/AWS/Services/components/environment-variable.schema';
+import {
+    type AddEnvironmentVariablesInput,
+    addEnvironmentVariablesSchema,
+} from '@/views/AWS/Services/components/environment-variable.schema';
+import { toTypedSchema } from '@vee-validate/zod';
+import * as z from 'zod';
 
 interface VariableForm {
-    type: string;
     name: string;
     value: string;
-}
-
-interface VariableErrors {
-    name?: string;
-    value?: string;
-    type?: string;
 }
 
 const props = defineProps<{
     clusterName: string;
     serviceName: string;
     containerName: string;
+    open?: boolean;
 }>();
 
 const emit = defineEmits<{
     (e: 'variable-added'): void;
+    (e: 'update:open', value: boolean): void;
 }>();
 
 const { toast } = useToast();
 const awsService = new AwsService();
 
-const isOpen = ref(false);
+const isOpen = computed({
+    get: () => props.open ?? false,
+    set: (value) => emit('update:open', value),
+});
 const isLoading = ref(false);
 
 const variables = ref<VariableForm[]>([
     {
-        type: '',
         name: '',
         value: '',
     },
 ]);
 
-const errors = reactive<Record<number, VariableErrors>>({});
+const initialValues = computed(() => ({
+    environmentVariables: variables.value,
+}));
 
-const addVariable = () => {
+const formSchema = computed(() => {
+    return toTypedSchema(
+        z.object({
+            environmentVariables: z
+                .array(
+                    z.object({
+                        name: z.string().min(1, 'Environment variable name is required'),
+                        value: z.string(),
+                    }),
+                )
+                .min(1, 'At least one environment variable is required')
+                .refine(
+                    (vars) => {
+                        const names = vars.map((v) => v.name.trim()).filter((name) => name !== '');
+                        return names.length === new Set(names).size;
+                    },
+                    {
+                        message: 'Variable names must be unique',
+                        path: [0, 'name'],
+                    },
+                ),
+        }),
+    );
+});
+
+const updateVariable = (index: number, field: 'name' | 'value', value: string) => {
+    variables.value[index][field] = value;
+};
+
+const addVariable = (setFieldValue: any) => {
+    const newIndex = variables.value.length;
     variables.value.push({
-        type: '',
         name: '',
         value: '',
     });
+
+    // Update form values
+    setFieldValue(`environmentVariables.${newIndex}.name`, '');
+    setFieldValue(`environmentVariables.${newIndex}.value`, '');
 };
 
-const removeVariable = (index: number) => {
+const removeVariable = (index: number, setFieldValue: any) => {
     if (variables.value.length > 1) {
         variables.value.splice(index, 1);
-        delete errors[index];
 
-        // Reindex errors
-        const newErrors: Record<number, VariableErrors> = {};
-        Object.keys(errors).forEach((key) => {
-            const numKey = parseInt(key);
-            if (numKey > index) {
-                newErrors[numKey - 1] = errors[numKey];
-            } else if (numKey < index) {
-                newErrors[numKey] = errors[numKey];
-            }
+        // Update form field values after removal
+        variables.value.forEach((variable, i) => {
+            setFieldValue(`environmentVariables.${i}.name`, variable.name);
+            setFieldValue(`environmentVariables.${i}.value`, variable.value);
         });
-        Object.keys(errors).forEach((key) => delete errors[parseInt(key)]);
-        Object.assign(errors, newErrors);
+        setFieldValue(`environmentVariables.${variables.value.length}.name`, undefined);
+        setFieldValue(`environmentVariables.${variables.value.length}.value`, undefined);
     }
 };
 
@@ -185,67 +240,13 @@ const closeDialog = () => {
     isOpen.value = false;
     variables.value = [
         {
-            type: '',
             name: '',
             value: '',
         },
     ];
-    Object.keys(errors).forEach((key) => delete errors[parseInt(key)]);
 };
 
-const validateForm = () => {
-    Object.keys(errors).forEach((key) => delete errors[parseInt(key)]);
-    let isValid = true;
-
-    variables.value.forEach((variable, index) => {
-        const variableErrors: VariableErrors = {};
-
-        if (!variable.name.trim()) {
-            variableErrors.name = 'Name is required';
-            isValid = false;
-        } else if (!/^[A-Z_][A-Z0-9_]*$/.test(variable.name)) {
-            variableErrors.name = 'Name must contain only uppercase letters, numbers, and underscores';
-            isValid = false;
-        }
-
-        if (!variable.value.trim()) {
-            variableErrors.value = 'Value is required';
-            isValid = false;
-        }
-
-        if (!variable.type) {
-            variableErrors.type = 'Type is required';
-            isValid = false;
-        }
-
-        // Check for duplicate names
-        const duplicateIndex = variables.value.findIndex(
-            (v, i) => i !== index && v.name.trim() === variable.name.trim() && variable.name.trim() !== '',
-        );
-        if (duplicateIndex !== -1) {
-            variableErrors.name = 'Variable name must be unique';
-            isValid = false;
-        }
-
-        if (Object.keys(variableErrors).length > 0) {
-            errors[index] = variableErrors;
-        }
-    });
-
-    if (!isValid && variables.value.some((v) => !v.type)) {
-        toast({
-            variant: 'destructive',
-            title: 'Validation Error',
-            description: 'Please fill in all required fields and select types for all variables',
-        });
-    }
-
-    return isValid;
-};
-
-const handleSubmit = async () => {
-    if (!validateForm()) return;
-
+const handleSubmit = async (values: any) => {
     isLoading.value = true;
 
     try {
@@ -253,22 +254,27 @@ const handleSubmit = async () => {
             clusterName: props.clusterName,
             serviceName: props.serviceName,
             containerName: props.containerName,
-            environmentVariables: variables.value.map((variable) => ({
-                name: variable.name,
-                value: variable.value,
-            })),
+            environmentVariables: values.environmentVariables,
         };
+
+        const validationResult = addEnvironmentVariablesSchema.safeParse(payload);
+        if (!validationResult.success) {
+            toast({
+                variant: 'destructive',
+                title: 'Validation Error',
+                description: 'Please fill in all required fields correctly',
+            });
+            return;
+        }
 
         await awsService.addEnvironmentVariables(payload);
 
-        const variableCount = variables.value.length;
-        const variableTypes = variables.value.map((v) => (v.type === 'environment' ? 'Environment variable' : 'Secret'));
-        const uniqueTypes = [...new Set(variableTypes)];
+        const variableCount = values.environmentVariables.length;
 
         toast({
             variant: 'success',
-            title: `${variableCount} Variable${variableCount > 1 ? 's' : ''} added successfully`,
-            description: `${uniqueTypes.join(' and ')}${uniqueTypes.length > 1 ? 's' : ''} have been added to ${props.containerName}.`,
+            title: `${variableCount} Environment Variable${variableCount > 1 ? 's' : ''} added successfully`,
+            description: `Environment variable${variableCount > 1 ? 's' : ''} have been added to ${props.containerName}.`,
         });
 
         closeDialog();

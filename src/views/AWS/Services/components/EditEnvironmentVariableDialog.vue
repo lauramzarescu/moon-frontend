@@ -1,12 +1,12 @@
 <template>
-    <Dialog v-model:open="isOpen">
-        <DialogContent class="max-w-md">
+    <Dialog v-model:open="isOpen" :modal="true">
+        <DialogContent class="max-w-md pointer-events-auto">
             <DialogHeader>
-                <DialogTitle>Edit {{ type === 'environment' ? 'Environment Variable' : 'Secret' }}</DialogTitle>
-                <DialogDescription> Update the value for {{ variableName }} </DialogDescription>
+                <DialogTitle>Edit Environment Variable</DialogTitle>
+                <DialogDescription> Update the value for {{ variableName }}</DialogDescription>
             </DialogHeader>
 
-            <form @submit.prevent="handleSubmit" class="space-y-4">
+            <form @submit.prevent="handleSubmit" class="space-y-4 pointer-events-auto">
                 <div class="space-y-2">
                     <Label for="name">Name</Label>
                     <Input id="name" :value="variableName" disabled class="bg-muted" />
@@ -15,18 +15,21 @@
                 <div class="space-y-2">
                     <Label for="value">Value</Label>
                     <Textarea
+                        ref="textareaRef"
                         id="value"
                         v-model="form.value"
                         placeholder="Enter new value..."
                         required
                         :class="{ 'border-red-500': errors.value }"
+                        class="pointer-events-auto"
                         rows="3"
+                        autofocus
                     />
                     <p v-if="errors.value" class="text-sm text-red-500">{{ errors.value }}</p>
                 </div>
 
-                <DialogFooter>
-                    <Button type="button" variant="outline" @click="isOpen = false"> Cancel </Button>
+                <DialogFooter class="pointer-events-auto">
+                    <Button type="button" variant="outline" @click="isOpen = false"> Cancel</Button>
                     <Button type="submit" :disabled="isLoading">
                         <Loader2Icon v-if="isLoading" class="h-4 w-4 animate-spin mr-2" />
                         Update Variable
@@ -46,6 +49,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
 import { Loader2Icon } from 'lucide-vue-next';
 import { reactive, ref, watch } from 'vue';
+import type { UpdateEnvironmentVariablesInput } from '@/services/aws.service';
 import { AwsService } from '@/services/aws.service';
 
 const props = defineProps<{
@@ -55,7 +59,6 @@ const props = defineProps<{
     containerName: string;
     variableName: string;
     currentValue: string;
-    type: 'environment' | 'secret';
 }>();
 
 const emit = defineEmits<{
@@ -68,6 +71,7 @@ const awsService = new AwsService();
 
 const isOpen = ref(props.open);
 const isLoading = ref(false);
+const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
 const form = reactive({
     value: props.currentValue,
@@ -79,17 +83,14 @@ const errors = reactive({
 
 watch(
     () => props.open,
-    (newValue) => {
+    async (newValue) => {
         isOpen.value = newValue;
         if (newValue) {
             form.value = props.currentValue;
+            errors.value = '';
         }
     },
 );
-
-watch(isOpen, (newValue) => {
-    emit('update:open', newValue);
-});
 
 const validateForm = () => {
     errors.value = '';
@@ -108,28 +109,25 @@ const handleSubmit = async () => {
     isLoading.value = true;
 
     try {
-        // First remove the old variable, then add the new one
-        await awsService.removeEnvironmentVariable({
+        const payload: UpdateEnvironmentVariablesInput = {
             clusterName: props.clusterName,
             serviceName: props.serviceName,
             containerName: props.containerName,
-            type: props.type,
-            name: props.variableName,
-        });
+            environmentVariables: [],
+            secrets: [],
+        };
 
-        await awsService.addEnvironmentVariable({
-            clusterName: props.clusterName,
-            serviceName: props.serviceName,
-            containerName: props.containerName,
-            type: props.type,
+        payload.environmentVariables.push({
             name: props.variableName,
             value: form.value,
         });
 
+        await awsService.editEnvironmentVariables(payload);
+
         toast({
             variant: 'success',
-            title: 'Variable updated successfully',
-            description: `${props.type === 'environment' ? 'Environment variable' : 'Secret'} "${props.variableName}" has been updated.`,
+            title: 'Environment Variable updated successfully',
+            description: `Environment variable "${props.variableName}" has been updated.`,
         });
 
         isOpen.value = false;
