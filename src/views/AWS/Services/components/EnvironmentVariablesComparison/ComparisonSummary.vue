@@ -36,37 +36,37 @@ const getProgressBarColor = () => {
 </script>
 
 <template>
-    <div class="p-3 rounded-lg border">
-        <h3 class="text-base font-semibold mb-3">Comparison Summary</h3>
+    <div class="p-2 rounded-lg border">
+        <h3 class="text-sm font-semibold mb-2">Comparison Summary</h3>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
             <!-- Common Variables -->
-            <div class="text-center p-2.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.COMMON)">
-                <div class="text-lg font-bold leading-tight">{{ stats.commonVariables }}</div>
-                <div class="text-xs font-medium mt-0.5">Common</div>
+            <div class="text-center p-1.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.COMMON)">
+                <div class="text-base font-bold leading-tight">{{ stats.commonVariables }}</div>
+                <div class="text-xs font-medium">Common</div>
             </div>
 
             <!-- Unique Variables -->
-            <div class="text-center p-2.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.UNIQUE)">
-                <div class="text-lg font-bold leading-tight">{{ stats.uniqueVariables }}</div>
-                <div class="text-xs font-medium mt-0.5">Unique</div>
+            <div class="text-center p-1.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.UNIQUE)">
+                <div class="text-base font-bold leading-tight">{{ stats.uniqueVariables }}</div>
+                <div class="text-xs font-medium">Unique</div>
             </div>
 
             <!-- Conflicting Variables -->
-            <div class="text-center p-2.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.CONFLICT)">
-                <div class="text-lg font-bold leading-tight">{{ stats.conflictingVariables }}</div>
-                <div class="text-xs font-medium mt-0.5">Conflicts</div>
+            <div class="text-center p-1.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.CONFLICT)">
+                <div class="text-base font-bold leading-tight">{{ stats.conflictingVariables }}</div>
+                <div class="text-xs font-medium">Conflicts</div>
             </div>
 
             <!-- Total Variables -->
-            <div class="text-center p-2.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.TOTAL)">
-                <div class="text-lg font-bold leading-tight">{{ stats.totalVariables }}</div>
-                <div class="text-xs font-medium mt-0.5">Total</div>
+            <div class="text-center p-1.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.TOTAL)">
+                <div class="text-base font-bold leading-tight">{{ stats.totalVariables }}</div>
+                <div class="text-xs font-medium">Total</div>
             </div>
         </div>
 
         <!-- Summary Info -->
-        <div class="flex items-center justify-between text-sm mb-2">
+        <div class="flex items-center justify-between text-xs mb-1.5">
             <div class="text-slate-600">
                 Comparing <span class="font-medium">{{ stats.totalServices }}</span> services
             </div>
@@ -83,26 +83,26 @@ const getProgressBarColor = () => {
         </div>
 
         <!-- Progress bar for consistency -->
-        <div class="w-full rounded-full h-1.5">
+        <div class="w-full rounded-full h-1">
             <div
-                class="h-1.5 rounded-full transition-all duration-500 ease-out"
+                class="h-1 rounded-full transition-all duration-500 ease-out"
                 :class="getProgressBarColor()"
                 :style="{ width: `${consistencyPercentage}%` }"
             ></div>
         </div>
 
         <!-- Legend -->
-        <div class="flex flex-wrap gap-3 mt-3 text-xs">
+        <div class="flex flex-wrap gap-2 mt-2 text-xs">
             <div class="flex items-center gap-1">
-                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
                 <span class="text-slate-600">Same across all services</span>
             </div>
             <div class="flex items-center gap-1">
-                <div class="w-2 h-2 rounded-full bg-sky-500"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-sky-500"></div>
                 <span class="text-slate-600">Service-specific</span>
             </div>
             <div class="flex items-center gap-1">
-                <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
                 <span class="text-slate-600">Different values</span>
             </div>
         </div>

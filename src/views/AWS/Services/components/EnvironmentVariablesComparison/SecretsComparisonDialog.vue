@@ -3,7 +3,8 @@ import type { ServiceInterface } from '@/views/AWS/Services/types/service.interf
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { GitCompareIcon } from 'lucide-vue-next';
+import { Input } from '@/components/ui/input';
+import { GitCompareIcon, SearchIcon, XIcon } from 'lucide-vue-next';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Cross2Icon } from '@radix-icons/vue';
 import { computed, reactive, ref, watch } from 'vue';
@@ -32,6 +33,7 @@ const props = defineProps<{
 
 const isOpen = ref(false);
 const dialogState = reactive(createInitialDialogState());
+const searchQuery = ref('');
 
 // Maximum number of services that can be compared at once
 const MAX_SERVICES_TO_COMPARE = 8;
@@ -46,12 +48,28 @@ const filteredAvailableServices = computed(() => {
     return transformed.length > MAX_SERVICES_TO_COMPARE ? transformed.slice(0, MAX_SERVICES_TO_COMPARE) : transformed;
 });
 
-// Services to display in the selection area
-const displayedServices = computed(() => {
+// Services to display in the selection area (before search filtering)
+const baseDisplayedServices = computed(() => {
     if (dialogState.showAllServices) {
         return allAvailableServices.value;
     }
     return filteredAvailableServices.value.length > 0 ? filteredAvailableServices.value : allAvailableServices.value;
+});
+
+// Services after applying search filter
+const displayedServices = computed(() => {
+    if (!searchQuery.value.trim()) {
+        return baseDisplayedServices.value;
+    }
+
+    const query = searchQuery.value.toLowerCase().trim();
+    return baseDisplayedServices.value.filter((service) => {
+        const clusterName = service.clusterName.toLowerCase();
+        const serviceName = service.serviceName.toLowerCase();
+        const fullName = `${clusterName} / ${serviceName}`.toLowerCase();
+
+        return clusterName.includes(query) || serviceName.includes(query) || fullName.includes(query);
+    });
 });
 
 const hasFilteredServices = computed(() => {
@@ -64,6 +82,14 @@ const canAddMoreServices = computed(() => {
 
 const isMaxServicesReached = computed(() => {
     return dialogState.selectedServices.length >= MAX_SERVICES_TO_COMPARE;
+});
+
+const hasSearchQuery = computed(() => {
+    return searchQuery.value.trim().length > 0;
+});
+
+const searchResultsCount = computed(() => {
+    return displayedServices.value.length;
 });
 
 // Reset selected services when available services change
@@ -92,9 +118,11 @@ watch(isOpen, (newValue) => {
         resetDialogState(dialogState);
         initializeSelectedServices(dialogState, filteredAvailableServices.value, hasFilteredServices.value ?? false);
         dialogState.showAllServices = props.showAllServices ?? false;
+        searchQuery.value = ''; // Clear search when opening
     } else {
         // Dialog closed - clear all data
         resetDialogState(dialogState);
+        searchQuery.value = ''; // Clear search when closing
     }
 });
 
@@ -132,6 +160,7 @@ const handleIsServiceSelected = (service: any) => {
 
 const toggleServiceView = () => {
     dialogState.showAllServices = !dialogState.showAllServices;
+    searchQuery.value = ''; // Clear search when switching views
 };
 
 const handleGetServiceComparisonData = (service: any) => {
@@ -142,6 +171,10 @@ const handleGetServiceComparisonData = (service: any) => {
         dialogState.selectedServices.length,
         dialogState.compareByValue,
     );
+};
+
+const clearSearch = () => {
+    searchQuery.value = '';
 };
 
 // Always use flex layout for horizontal scrolling
@@ -193,7 +226,8 @@ const servicesWereTruncated = computed(() => {
                                       ? 'Filtered Services'
                                       : 'Available Services'
                             }}
-                            ({{ displayedServices.length }})
+                            <span v-if="hasSearchQuery"> ({{ searchResultsCount }} of {{ baseDisplayedServices.length }}) </span>
+                            <span v-else> ({{ displayedServices.length }}) </span>
                         </Label>
                         <div class="flex items-center gap-4">
                             <!-- Compare by value switch -->
@@ -207,8 +241,28 @@ const servicesWereTruncated = computed(() => {
                             </Button>
                         </div>
                     </div>
+
+                    <!-- Search input -->
+                    <div class="relative mb-2">
+                        <SearchIcon class="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            v-model="searchQuery"
+                            placeholder="Search services by cluster or service name..."
+                            class="pl-8 pr-8 h-8 text-sm"
+                        />
+                        <Button
+                            v-if="hasSearchQuery"
+                            variant="ghost"
+                            size="sm"
+                            @click="clearSearch"
+                            class="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-muted"
+                        >
+                            <XIcon class="h-3 w-3" />
+                        </Button>
+                    </div>
+
                     <div class="max-h-32 overflow-y-auto mt-2 p-2 border rounded-md">
-                        <div class="flex flex-wrap gap-2">
+                        <div v-if="displayedServices.length > 0" class="flex flex-wrap gap-2">
                             <Button
                                 v-for="service in displayedServices"
                                 :key="`${service.clusterName}-${service.serviceName}`"
@@ -222,7 +276,12 @@ const servicesWereTruncated = computed(() => {
                                 <span class="truncate block"> {{ service.clusterName }} / {{ service.serviceName }} </span>
                             </Button>
                         </div>
+                        <div v-else class="text-center py-4 text-sm text-muted-foreground">
+                            <span v-if="hasSearchQuery"> No services found matching "{{ searchQuery }}" </span>
+                            <span v-else> No services available </span>
+                        </div>
                     </div>
+
                     <!-- Warning message when max services reached -->
                     <div v-if="isMaxServicesReached" class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
                         <p class="text-xs text-yellow-800">
@@ -298,23 +357,5 @@ const servicesWereTruncated = computed(() => {
 <style scoped>
 .comparison-container {
     max-height: 100%; /* Ensure it respects the parent's height */
-}
-
-.comparison-container::-webkit-scrollbar {
-    height: 8px;
-}
-
-.comparison-container::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.comparison-container::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 4px;
-}
-
-.comparison-container::-webkit-scrollbar-thumb:hover {
-    background: #a8a8a8;
 }
 </style>
