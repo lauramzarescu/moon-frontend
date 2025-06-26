@@ -35,7 +35,7 @@ const isOpen = ref(false);
 const dialogState = reactive(createInitialDialogState());
 
 // Maximum number of services that can be compared at once
-const MAX_SERVICES_TO_COMPARE = 6;
+const MAX_SERVICES_TO_COMPARE = 4;
 
 const allAvailableServices = computed(() => {
     return transformServices(props.services || []);
