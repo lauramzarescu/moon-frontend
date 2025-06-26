@@ -152,20 +152,24 @@ export const getVariableStatus = (
     selectedServicesCount: number,
     compareByValue: boolean,
 ): VariableStatus => {
-    const key = compareByValue ? `${variable.name}:${variable.value}` : variable.name;
-    const occurrences = variableOccurrences.get(key) || [];
+    if (compareByValue) {
+        const key = `${variable.name}:${variable.value}`;
+        const occurrences = variableOccurrences.get(key) || [];
 
-    if (occurrences.length === 1) return VariableStatus.UNIQUE;
-    if (occurrences.length === selectedServicesCount) return VariableStatus.COMMON;
-
-    // Check for name conflicts (same name, different values)
-    if (!compareByValue) {
+        if (occurrences.length === 1) return VariableStatus.UNIQUE;
+        if (occurrences.length === selectedServicesCount) return VariableStatus.COMMON;
+        return VariableStatus.CONFLICT;
+    } else {
         const nameOccurrences = variableOccurrences.get(variable.name) || [];
+
+        if (nameOccurrences.length === 1) return VariableStatus.UNIQUE;
+
+        // Check for conflicts (same name, different values)
         const uniqueValues = new Set(nameOccurrences.map((v) => v.value));
         if (uniqueValues.size > 1) return VariableStatus.CONFLICT;
-    }
 
-    return VariableStatus.COMMON;
+        return VariableStatus.COMMON;
+    }
 };
 
 export const calculateComparisonStats = (

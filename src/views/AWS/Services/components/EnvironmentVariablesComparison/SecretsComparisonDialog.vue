@@ -191,7 +191,7 @@ const servicesWereTruncated = computed(() => {
                 </p>
             </div>
 
-            <div class="flex gap-4 mb-4">
+            <div class="flex gap-4 mb-2">
                 <div class="flex-1">
                     <div class="flex items-center justify-between mb-2">
                         <Label>
@@ -204,9 +204,17 @@ const servicesWereTruncated = computed(() => {
                             }}
                             ({{ displayedServices.length }})
                         </Label>
-                        <Button v-if="hasFilteredServices" variant="ghost" size="sm" @click="toggleServiceView" class="text-xs">
-                            {{ dialogState.showAllServices ? 'Show Filtered Only' : 'Show All Services' }}
-                        </Button>
+                        <div class="flex items-center gap-4">
+                            <!-- Compare by value switch -->
+                            <div class="flex items-center space-x-2">
+                                <Checkbox id="compare-values" v-model:checked="dialogState.compareByValue" />
+                                <Label for="compare-values" class="text-xs">Compare by value</Label>
+                            </div>
+                            <!-- Show all services button -->
+                            <Button v-if="hasFilteredServices" variant="ghost" size="sm" @click="toggleServiceView" class="text-xs">
+                                {{ dialogState.showAllServices ? 'Show Filtered Only' : 'Show All Services' }}
+                            </Button>
+                        </div>
                     </div>
                     <div class="max-h-32 overflow-y-auto mt-2 p-2 border rounded-md">
                         <div class="flex flex-wrap gap-2">
@@ -228,6 +236,16 @@ const servicesWereTruncated = computed(() => {
                     <div v-if="isMaxServicesReached" class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
                         <p class="text-xs text-yellow-800">
                             Maximum {{ MAX_SERVICES_TO_COMPARE }} services reached. Remove a service to add another one.
+                        </p>
+                    </div>
+                    <!-- Explanation for compare by value -->
+                    <div class="mt-2">
+                        <p class="text-xs text-muted-foreground">
+                            {{
+                                dialogState.compareByValue
+                                    ? 'Variables must have the same name AND value to be considered common'
+                                    : 'Variables with the same name will be considered common (values may differ)'
+                            }}
                         </p>
                     </div>
                 </div>
@@ -256,21 +274,7 @@ const servicesWereTruncated = computed(() => {
                 </div>
             </div>
 
-            <div class="mb-4 p-3 bg-muted/30 rounded-lg">
-                <div class="flex items-center space-x-2">
-                    <Checkbox id="compare-values" v-model:checked="dialogState.compareByValue" />
-                    <Label for="compare-values">Compare by value (strict comparison)</Label>
-                </div>
-                <p class="text-xs text-muted-foreground mt-1">
-                    {{
-                        dialogState.compareByValue
-                            ? 'Variables must have the same name AND value to be considered common'
-                            : 'Variables with the same name will be considered common (values may differ)'
-                    }}
-                </p>
-            </div>
-
-            <div v-if="dialogState.selectedServices.length > 1" class="overflow-auto max-h-[60%]">
+            <div v-if="dialogState.selectedServices.length > 1" class="overflow-auto max-h-[70%]">
                 <!-- Performance warning for too many services -->
                 <div v-if="dialogState.selectedServices.length > 4" class="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
                     <p class="text-xs text-blue-800">
@@ -306,11 +310,6 @@ const servicesWereTruncated = computed(() => {
 </template>
 
 <style scoped>
-.comparison-container {
-    /* Ensure smooth horizontal scrolling */
-    scroll-behavior: smooth;
-}
-
 .comparison-container::-webkit-scrollbar {
     height: 8px;
 }

@@ -47,10 +47,10 @@ const getVariableClass = (variable: ServiceVariable) => {
     switch (status) {
         case VariableStatus.COMMON:
             return 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800';
-        case VariableStatus.UNIQUE:
-            return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800';
         case VariableStatus.CONFLICT:
             return 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800';
+        case VariableStatus.UNIQUE:
+            return 'bg-blue-50 border-blue-200 dark:bg-blue-950 dark:border-blue-800';
         default:
             return 'bg-muted/50 border-border';
     }
