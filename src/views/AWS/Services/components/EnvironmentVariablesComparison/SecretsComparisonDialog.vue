@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { GitCompareIcon, SearchIcon, XIcon } from 'lucide-vue-next';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Cross2Icon } from '@radix-icons/vue';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, TransitionGroup, watch } from 'vue';
 import ServiceComparisonCard from './ServiceComparisonCard.vue';
 import ComparisonSummary from './ComparisonSummary.vue';
 
@@ -262,7 +262,7 @@ const servicesWereTruncated = computed(() => {
                     </div>
 
                     <div class="max-h-32 overflow-y-auto mt-2 p-2 border rounded-md">
-                        <div v-if="displayedServices.length > 0" class="flex flex-wrap gap-2">
+                        <TransitionGroup name="service-filter" tag="div" class="flex flex-wrap gap-2" v-if="displayedServices.length > 0">
                             <Button
                                 v-for="service in displayedServices"
                                 :key="`${service.clusterName}-${service.serviceName}`"
@@ -275,7 +275,7 @@ const servicesWereTruncated = computed(() => {
                             >
                                 <span class="truncate block"> {{ service.clusterName }} / {{ service.serviceName }} </span>
                             </Button>
-                        </div>
+                        </TransitionGroup>
                         <div v-else class="text-center py-4 text-sm text-muted-foreground">
                             <span v-if="hasSearchQuery"> No services found matching "{{ searchQuery }}" </span>
                             <span v-else> No services available </span>
@@ -357,5 +357,25 @@ const servicesWereTruncated = computed(() => {
 <style scoped>
 .comparison-container {
     max-height: 100%; /* Ensure it respects the parent's height */
+}
+
+/* Service filter animation */
+.service-filter-enter-active,
+.service-filter-leave-active {
+    transition: all 0.3s ease;
+}
+
+.service-filter-enter-from {
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.service-filter-leave-to {
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.service-filter-move {
+    transition: transform 0.3s ease;
 }
 </style>
