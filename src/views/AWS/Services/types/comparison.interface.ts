@@ -7,6 +7,7 @@ export enum VariableStatus {
     COMMON = 'common',
     UNIQUE = 'unique',
     CONFLICT = 'conflict',
+    TOTAL = 'total',
 }
 
 export enum IconType {
@@ -39,8 +40,9 @@ export interface ComparisonData {
 }
 
 export interface ComparisonStats {
-    common: number;
-    unique: number;
-    conflicts: number;
-    total: number;
+    totalServices: number;
+    commonVariables: number;
+    uniqueVariables: number;
+    conflictingVariables: number;
+    totalVariables: number;
 }

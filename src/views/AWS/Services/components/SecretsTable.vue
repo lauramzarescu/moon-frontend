@@ -16,11 +16,16 @@
                         </div>
                         <!-- Action Buttons -->
                         <div class="flex items-center gap-2">
-                            <SecretsComparisonDialog v-if="allServices" :services="allServices" />
+                            <SecretsComparisonDialog
+                                :services="services"
+                                :filteredServices="[service]"
+                                :is-filtered="true"
+                                :show-all-services="true"
+                            />
                             <AddEnvironmentVariableDialog
                                 v-model:open="addDialog.isOpen"
-                                :cluster-name="clusterName"
-                                :service-name="serviceName"
+                                :cluster-name="service.clusterName"
+                                :service-name="service.name"
                                 :container-name="container.name"
                                 @variable-added="handleRefresh"
                             />
@@ -72,11 +77,11 @@
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
-                                            <DropdownMenuItem @click="openEditDialog(env)">
+                                            <DropdownMenuItem disabled @click="openEditDialog(env)">
                                                 <EditIcon class="h-4 w-4 mr-2" />
                                                 Edit
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem @click="deleteVariable(env.name)" class="text-red-600">
+                                            <DropdownMenuItem disabled @click="deleteVariable(env.name)" class="text-red-600">
                                                 <TrashIcon class="h-4 w-4 mr-2" />
                                                 Delete
                                             </DropdownMenuItem>
@@ -136,8 +141,8 @@
     <!-- Edit Environment Variable Dialog -->
     <EditEnvironmentVariableDialog
         v-model:open="editDialog.isOpen"
-        :cluster-name="clusterName"
-        :service-name="serviceName"
+        :cluster-name="service.clusterName"
+        :service-name="service.name"
         :container-name="container.name"
         :variable-name="editDialog.variableName"
         :current-value="editDialog.currentValue"
@@ -155,19 +160,20 @@ import { useToast } from '@/components/ui/toast';
 import { CopyIcon, EditIcon, GlobeIcon, KeyIcon, MoreHorizontalIcon, SettingsIcon, TrashIcon } from 'lucide-vue-next';
 import { computed, reactive } from 'vue';
 import { AwsService } from '@/services/aws.service';
-import SecretsComparisonDialog from './EnvironmentVariablesComparison/SecretsComparisonDialog.vue';
 import AddEnvironmentVariableDialog from './AddEnvironmentVariableDialog.vue';
 import EditEnvironmentVariableDialog from './EditEnvironmentVariableDialog.vue';
 import type { RemoveEnvironmentVariablesInput } from '@/views/AWS/Services/components/environment-variable.schema';
+import SecretsComparisonDialog from '@/views/AWS/Services/components/EnvironmentVariablesComparison/SecretsComparisonDialog.vue';
+import { storeToRefs } from 'pinia';
+import { useDataStore } from '@/stores/dataStore.ts';
 
+const { services } = storeToRefs(useDataStore());
 const { toast } = useToast();
 const awsService = new AwsService();
 
 const props = defineProps<{
+    service: ServiceInterface;
     container: ContainerInterface;
-    clusterName: string;
-    serviceName: string;
-    allServices?: ServiceInterface[];
 }>();
 
 const emit = defineEmits<{
@@ -221,8 +227,8 @@ const openEditDialog = (variable: { name: string; value: string }) => {
 const deleteVariable = async (variableName: string) => {
     try {
         const payload: RemoveEnvironmentVariablesInput = {
-            clusterName: props.clusterName,
-            serviceName: props.serviceName,
+            clusterName: props.service.clusterName,
+            serviceName: props.service.name,
             containerName: props.container.name,
             variableNames: [variableName],
         };

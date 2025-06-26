@@ -72,8 +72,7 @@
                             <!-- Replace the old Environment Variables Card with SecretsTable -->
                             <SecretsTable
                                 :container="container"
-                                :cluster-name="props.row.clusterName"
-                                :service-name="props.row.name"
+                                :service="props.row"
                                 :all-services="services"
                                 @refresh="$emit('refresh')"
                             />

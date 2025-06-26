@@ -9,8 +9,8 @@
                 :variables="comparisonData.envVars"
                 :status-map="comparisonData.status"
                 :compare-by-value="compareByValue"
-                icon="globe"
-                color="green"
+                :icon="IconType.GLOBE"
+                :color="ColorType.GREEN"
             />
 
             <VariableSection
@@ -18,8 +18,8 @@
                 :variables="comparisonData.secrets"
                 :status-map="comparisonData.status"
                 :compare-by-value="compareByValue"
-                icon="key"
-                color="purple"
+                :icon="IconType.KEY"
+                :color="ColorType.PURPLE"
             />
         </div>
     </div>
@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import VariableSection from '@/views/AWS/Services/components/EnvironmentVariablesComparison/VariableSection.vue';
-import type { ComparisonData, ServiceData } from '@/views/AWS/Services/types/comparison.interface.ts';
+import { ColorType, type ComparisonData, IconType, type ServiceData } from '@/views/AWS/Services/types/comparison.interface.ts';
 
 defineProps<{
     service: ServiceData;

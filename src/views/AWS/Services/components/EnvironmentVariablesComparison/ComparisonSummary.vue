@@ -1,52 +1,110 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import { type ComparisonStats, VariableStatus } from '@/views/AWS/Services/types/comparison.interface.ts';
+
+const props = defineProps<{
+    stats: ComparisonStats;
+}>();
+
+const consistencyPercentage = computed(() => {
+    if (props.stats.totalVariables === 0) return 100;
+
+    const consistentVariables = props.stats.commonVariables;
+    return Math.round((consistentVariables / props.stats.totalVariables) * 100);
+});
+
+const getStatusColor = (type: VariableStatus.COMMON | VariableStatus.UNIQUE | VariableStatus.CONFLICT | VariableStatus.TOTAL) => {
+    switch (type) {
+        case VariableStatus.COMMON:
+            return 'text-green-700 bg-green-200 border-green-200';
+        case VariableStatus.UNIQUE:
+            return 'text-sky-700 bg-sky-50 border-sky-200';
+        case VariableStatus.CONFLICT:
+            return 'text-red-700 bg-red-50 border-red-200';
+        case VariableStatus.TOTAL:
+            return 'text-slate-700 bg-slate-50 border-slate-200';
+        default:
+            return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
+};
+
+const getProgressBarColor = () => {
+    if (consistencyPercentage.value >= 80) return 'bg-green-500';
+    if (consistencyPercentage.value >= 60) return 'bg-amber-500';
+    return 'bg-red-500';
+};
+</script>
+
 <template>
-    <div class="p-4 bg-muted/50 rounded-lg">
-        <h4 class="font-semibold mb-2">Comparison Summary</h4>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-green-500 rounded"></div>
-                <span>{{ compareByValue ? 'Exact matches' : 'Common names' }}: {{ comparisonStats.common }}</span>
+    <div class="p-3 rounded-lg border">
+        <h3 class="text-base font-semibold mb-3">Comparison Summary</h3>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <!-- Common Variables -->
+            <div class="text-center p-2.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.COMMON)">
+                <div class="text-lg font-bold leading-tight">{{ stats.commonVariables }}</div>
+                <div class="text-xs font-medium mt-0.5">Common</div>
             </div>
-            <div v-if="!compareByValue" class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-yellow-500 rounded"></div>
-                <span>Name conflicts: {{ comparisonStats.conflicts }}</span>
+
+            <!-- Unique Variables -->
+            <div class="text-center p-2.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.UNIQUE)">
+                <div class="text-lg font-bold leading-tight">{{ stats.uniqueVariables }}</div>
+                <div class="text-xs font-medium mt-0.5">Unique</div>
             </div>
-            <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-blue-500 rounded"></div>
-                <span>Unique variables: {{ comparisonStats.unique }}</span>
+
+            <!-- Conflicting Variables -->
+            <div class="text-center p-2.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.CONFLICT)">
+                <div class="text-lg font-bold leading-tight">{{ stats.conflictingVariables }}</div>
+                <div class="text-xs font-medium mt-0.5">Conflicts</div>
             </div>
-            <div class="flex items-center gap-2">
-                <div class="w-3 h-3 bg-gray-500 rounded"></div>
-                <span>Total variables: {{ comparisonStats.total }}</span>
+
+            <!-- Total Variables -->
+            <div class="text-center p-2.5 rounded-md border text-sm" :class="getStatusColor(VariableStatus.TOTAL)">
+                <div class="text-lg font-bold leading-tight">{{ stats.totalVariables }}</div>
+                <div class="text-xs font-medium mt-0.5">Total</div>
             </div>
         </div>
 
-        <!-- Coverage percentage for multi-service comparison -->
-        <div v-if="comparisonStats.total > 0" class="mt-3 pt-3 border-t">
-            <div class="text-xs text-muted-foreground mb-1">Configuration consistency: {{ consistencyPercentage }}%</div>
-            <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                <div
-                    class="bg-green-600 h-2 rounded-full transition-all duration-300"
-                    :style="{ width: `${consistencyPercentage}%` }"
-                ></div>
+        <!-- Summary Info -->
+        <div class="flex items-center justify-between text-sm mb-2">
+            <div class="text-slate-600">
+                Comparing <span class="font-medium">{{ stats.totalServices }}</span> services
+            </div>
+            <div class="font-medium text-slate-600">
+                Consistency:
+                <span
+                    :class="
+                        consistencyPercentage >= 80 ? 'text-green-600' : consistencyPercentage >= 60 ? 'text-amber-600' : 'text-red-600'
+                    "
+                >
+                    {{ consistencyPercentage }}%
+                </span>
+            </div>
+        </div>
+
+        <!-- Progress bar for consistency -->
+        <div class="w-full rounded-full h-1.5">
+            <div
+                class="h-1.5 rounded-full transition-all duration-500 ease-out"
+                :class="getProgressBarColor()"
+                :style="{ width: `${consistencyPercentage}%` }"
+            ></div>
+        </div>
+
+        <!-- Legend -->
+        <div class="flex flex-wrap gap-3 mt-3 text-xs">
+            <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <span class="text-slate-600">Same across all services</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-sky-500"></div>
+                <span class="text-slate-600">Service-specific</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-2 h-2 rounded-full bg-amber-500"></div>
+                <span class="text-slate-600">Different values</span>
             </div>
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { computed } from 'vue';
-import type { ComparisonStats } from '@/views/AWS/Services/types/comparison.interface.ts';
-
-const props = defineProps<{
-    comparisonStats: ComparisonStats;
-    compareByValue: boolean;
-}>();
-
-const consistencyPercentage = computed(() => {
-    if (props.comparisonStats.total === 0) return 0;
-
-    // Calculate consistency as the ratio of common variables to total
-    const consistency = (props.comparisonStats.common / props.comparisonStats.total) * 100;
-    return Math.round(consistency);
-});
-</script>

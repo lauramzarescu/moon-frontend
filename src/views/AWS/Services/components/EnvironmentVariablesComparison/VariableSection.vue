@@ -6,7 +6,7 @@
         </h4>
         <div class="space-y-1">
             <div v-for="variable in variables" :key="variable.name" :class="getVariableClass(variable)" class="p-2 rounded text-sm border">
-                <div class="font-mono font-medium">{{ variable.name }}</div>
+                <div class="font-mono font-medium truncate">{{ variable.name }}</div>
                 <div class="text-xs text-muted-foreground truncate">{{ variable.value }}</div>
                 <div v-if="shouldShowConflictWarning(variable)" class="text-xs text-orange-600 dark:text-orange-400 mt-1">
                     ⚠️ Same name, different value across services
@@ -24,10 +24,10 @@ import { ColorType, IconType, type ServiceVariable, VariableStatus } from '@/vie
 const props = defineProps<{
     title: string;
     variables: ServiceVariable[];
-    statusMap: Map<string, VariableStatus.COMMON | VariableStatus.UNIQUE | VariableStatus.CONFLICT>;
+    statusMap: Map<string, VariableStatus>;
     compareByValue: boolean;
-    icon: IconType.KEY | IconType.GLOBE;
-    color: ColorType.GREEN | ColorType.PURPLE;
+    icon: IconType;
+    color: ColorType;
 }>();
 
 const iconComponent = computed(() => {
