@@ -15,7 +15,6 @@ import {
     calculateComparisonStats,
     createInitialDialogState,
     getAllVariablesByService,
-    getGridClass,
     getServiceComparisonData,
     getVariableOccurrences,
     initializeSelectedServices,
@@ -42,9 +41,7 @@ const allAvailableServices = computed(() => {
 });
 
 const filteredAvailableServices = computed(() => {
-    const transformed = transformServices(props.filteredServices || []);
-    // Limit to MAX_SERVICES_TO_COMPARE if there are more filtered services
-    return transformed.length > MAX_SERVICES_TO_COMPARE ? transformed.slice(0, MAX_SERVICES_TO_COMPARE) : transformed;
+    return transformServices(props.filteredServices || []);
 });
 
 // Services to display in the selection area
@@ -57,24 +54,6 @@ const displayedServices = computed(() => {
 
 const hasFilteredServices = computed(() => {
     return props.filteredServices && props.filteredServices.length > 0;
-});
-
-const canAddMoreServices = computed(() => {
-    return dialogState.selectedServices.length < MAX_SERVICES_TO_COMPARE;
-});
-
-const isMaxServicesReached = computed(() => {
-    return dialogState.selectedServices.length >= MAX_SERVICES_TO_COMPARE;
-});
-
-// Check if filtered services were truncated
-const filteredServicesTruncated = computed(() => {
-    return props.filteredServices && props.filteredServices.length > MAX_SERVICES_TO_COMPARE;
-});
-
-// Check if we need horizontal scrolling (more than 4 services)
-const needsHorizontalScroll = computed(() => {
-    return dialogState.selectedServices.length > 4;
 });
 
 // Utility function to truncate long variable names
@@ -136,7 +115,7 @@ const comparisonStats = computed(() => {
 const handleToggleService = (service: any) => {
     // Check if we're trying to add a service and we've reached the limit
     const isCurrentlySelected = isServiceSelected(dialogState, service);
-    if (!isCurrentlySelected && !canAddMoreServices.value) {
+    if (!isCurrentlySelected) {
         return; // Don't add more services if limit is reached
     }
 
@@ -161,20 +140,14 @@ const handleGetServiceComparisonData = (service: any) => {
     );
 };
 
+// Always use flex layout for horizontal scrolling
 const gridClass = computed(() => {
-    if (needsHorizontalScroll.value) {
-        // Use flex layout for horizontal scrolling when more than 4 services
-        return 'flex gap-4';
-    }
-    return getGridClass(dialogState.selectedServices.length);
+    return 'flex gap-4';
 });
 
-// Calculate minimum width for each service card when using horizontal scroll
-const serviceCardMinWidth = computed(() => {
-    if (needsHorizontalScroll.value) {
-        return 'min-w-[300px] flex-shrink-0';
-    }
-    return '';
+// Fixed width for service cards
+const serviceCardWidth = computed(() => {
+    return 'w-[380px] flex-shrink-0';
 });
 </script>
 
@@ -186,30 +159,17 @@ const serviceCardMinWidth = computed(() => {
                 Compare Variables
             </Button>
         </DialogTrigger>
-        <DialogContent class="max-w-7xl max-h-[90vh] overflow-hidden">
+        <DialogContent class="max-w-7xl max-h-[100vh] overflow-hidden">
             <DialogHeader>
                 <DialogTitle>Compare Environment Variables & Secrets</DialogTitle>
                 <DialogDescription>
                     Multi-service comparison of environment variables and secrets
                     <span v-if="hasFilteredServices">
-                        ({{ filteredAvailableServices.length }} filtered services
-                        <span v-if="filteredServicesTruncated"> of {{ props.filteredServices?.length }} total filtered </span>,
-                        {{ allAvailableServices.length }} total services)
+                        ({{ filteredAvailableServices.length }} filtered services, {{ allAvailableServices.length }} total services)
                     </span>
                     <span v-else> ({{ allAvailableServices.length }} total services) </span>
                 </DialogDescription>
             </DialogHeader>
-
-            <!-- Show truncation warning -->
-            <div
-                v-if="filteredServicesTruncated && !dialogState.showAllServices"
-                class="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md"
-            >
-                <p class="text-xs text-blue-800">
-                    Showing first {{ MAX_SERVICES_TO_COMPARE }} of {{ props.filteredServices?.length }} filtered services. Use "Show All
-                    Services" to access remaining services.
-                </p>
-            </div>
 
             <div class="flex gap-4 mb-4">
                 <div class="flex-1">
@@ -234,7 +194,7 @@ const serviceCardMinWidth = computed(() => {
                                 v-for="service in displayedServices"
                                 :key="`${service.clusterName}-${service.serviceName}`"
                                 :variant="handleIsServiceSelected(service) ? 'default' : 'outline'"
-                                :disabled="!handleIsServiceSelected(service) && !canAddMoreServices"
+                                :disabled="!handleIsServiceSelected(service)"
                                 size="sm"
                                 @click="handleToggleService(service)"
                                 class="text-xs max-w-[200px] min-w-0"
@@ -243,12 +203,6 @@ const serviceCardMinWidth = computed(() => {
                                 <span class="truncate block"> {{ service.clusterName }} / {{ service.serviceName }} </span>
                             </Button>
                         </div>
-                    </div>
-                    <!-- Warning message when max services reached -->
-                    <div v-if="isMaxServicesReached" class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                        <p class="text-xs text-yellow-800">
-                            Maximum {{ MAX_SERVICES_TO_COMPARE }} services reached. Remove a service to add another one.
-                        </p>
                     </div>
                 </div>
             </div>
@@ -291,13 +245,6 @@ const serviceCardMinWidth = computed(() => {
             </div>
 
             <div v-if="dialogState.selectedServices.length > 1" class="overflow-auto max-h-[60vh]">
-                <!-- Horizontal scroll hint for many services -->
-                <div v-if="needsHorizontalScroll" class="mb-4 p-2 bg-green-50 border border-green-200 rounded-md">
-                    <p class="text-xs text-green-800">
-                        💡 Scroll horizontally to view all {{ dialogState.selectedServices.length }} services in the comparison.
-                    </p>
-                </div>
-
                 <!-- Performance warning for too many services -->
                 <div v-if="dialogState.selectedServices.length > 4" class="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
                     <p class="text-xs text-blue-800">
@@ -305,16 +252,16 @@ const serviceCardMinWidth = computed(() => {
                     </p>
                 </div>
 
-                <!-- Comparison container with conditional horizontal scrolling -->
-                <div :class="[needsHorizontalScroll ? 'overflow-x-auto pb-4' : '', 'comparison-container']">
-                    <div :class="[gridClass, serviceCardMinWidth]">
+                <!-- Comparison container with horizontal scrolling -->
+                <div class="overflow-x-auto pb-4 comparison-container">
+                    <div :class="gridClass">
                         <ServiceComparisonCard
                             v-for="service in dialogState.selectedServices"
                             :key="`${service.clusterName}-${service.serviceName}`"
                             :service="service"
                             :comparison-data="handleGetServiceComparisonData(service)"
                             :compare-by-value="dialogState.compareByValue"
-                            :class="serviceCardMinWidth"
+                            :class="serviceCardWidth"
                         />
                     </div>
                 </div>
