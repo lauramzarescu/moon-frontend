@@ -34,14 +34,18 @@ const isOpen = ref(false);
 const dialogState = reactive(createInitialDialogState());
 
 // Maximum number of services that can be compared at once
-const MAX_SERVICES_TO_COMPARE = 4;
+const MAX_SERVICES_TO_COMPARE = 8;
 
 const allAvailableServices = computed(() => {
-    return transformServices(props.services || []);
+    const transformed = transformServices(props.services || []);
+    // Strip to first MAX_SERVICES_TO_COMPARE if there are more services than the maximum
+    return transformed.length > MAX_SERVICES_TO_COMPARE ? transformed.slice(0, MAX_SERVICES_TO_COMPARE) : transformed;
 });
 
 const filteredAvailableServices = computed(() => {
-    return transformServices(props.filteredServices || []);
+    const transformed = transformServices(props.filteredServices || []);
+    // Strip to first MAX_SERVICES_TO_COMPARE if there are more services than the maximum
+    return transformed.length > MAX_SERVICES_TO_COMPARE ? transformed.slice(0, MAX_SERVICES_TO_COMPARE) : transformed;
 });
 
 // Services to display in the selection area
@@ -56,11 +60,13 @@ const hasFilteredServices = computed(() => {
     return props.filteredServices && props.filteredServices.length > 0;
 });
 
-// Utility function to truncate long variable names
-const truncateVariableName = (name: string, maxLength: number = 30) => {
-    if (name.length <= maxLength) return name;
-    return name.substring(0, maxLength - 3) + '...';
-};
+const canAddMoreServices = computed(() => {
+    return dialogState.selectedServices.length < MAX_SERVICES_TO_COMPARE;
+});
+
+const isMaxServicesReached = computed(() => {
+    return dialogState.selectedServices.length >= MAX_SERVICES_TO_COMPARE;
+});
 
 // Reset selected services when available services change
 watch(
@@ -115,7 +121,7 @@ const comparisonStats = computed(() => {
 const handleToggleService = (service: any) => {
     // Check if we're trying to add a service and we've reached the limit
     const isCurrentlySelected = isServiceSelected(dialogState, service);
-    if (!isCurrentlySelected) {
+    if (!isCurrentlySelected && !canAddMoreServices.value) {
         return; // Don't add more services if limit is reached
     }
 
@@ -149,6 +155,13 @@ const gridClass = computed(() => {
 const serviceCardWidth = computed(() => {
     return 'w-[380px] flex-shrink-0';
 });
+
+// Check if services were truncated
+const servicesWereTruncated = computed(() => {
+    const originalServices = transformServices(props.services || []);
+    const originalFiltered = transformServices(props.filteredServices || []);
+    return originalServices.length > MAX_SERVICES_TO_COMPARE || originalFiltered.length > MAX_SERVICES_TO_COMPARE;
+});
 </script>
 
 <template>
@@ -170,6 +183,13 @@ const serviceCardWidth = computed(() => {
                     <span v-else> ({{ allAvailableServices.length }} total services) </span>
                 </DialogDescription>
             </DialogHeader>
+
+            <!-- Warning message when services were truncated -->
+            <div v-if="servicesWereTruncated" class="mb-4 p-2 bg-orange-50 border border-orange-200 rounded-md">
+                <p class="text-xs text-orange-800">
+                    Only showing the first {{ MAX_SERVICES_TO_COMPARE }} services due to performance limitations.
+                </p>
+            </div>
 
             <div class="flex gap-4 mb-4">
                 <div class="flex-1">
@@ -194,7 +214,7 @@ const serviceCardWidth = computed(() => {
                                 v-for="service in displayedServices"
                                 :key="`${service.clusterName}-${service.serviceName}`"
                                 :variant="handleIsServiceSelected(service) ? 'default' : 'outline'"
-                                :disabled="!handleIsServiceSelected(service)"
+                                :disabled="!handleIsServiceSelected(service) && !canAddMoreServices"
                                 size="sm"
                                 @click="handleToggleService(service)"
                                 class="text-xs max-w-[200px] min-w-0"
@@ -203,6 +223,12 @@ const serviceCardWidth = computed(() => {
                                 <span class="truncate block"> {{ service.clusterName }} / {{ service.serviceName }} </span>
                             </Button>
                         </div>
+                    </div>
+                    <!-- Warning message when max services reached -->
+                    <div v-if="isMaxServicesReached" class="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <p class="text-xs text-yellow-800">
+                            Maximum {{ MAX_SERVICES_TO_COMPARE }} services reached. Remove a service to add another one.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -252,8 +278,7 @@ const serviceCardWidth = computed(() => {
                     </p>
                 </div>
 
-                <!-- Comparison container with horizontal scrolling -->
-                <div class="overflow-x-auto pb-4 comparison-container">
+                <div class="comparison-container overflow-x-auto">
                     <div :class="gridClass">
                         <ServiceComparisonCard
                             v-for="service in dialogState.selectedServices"
