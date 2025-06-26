@@ -305,18 +305,20 @@ const servicesWereTruncated = computed(() => {
                 <div class="flex-1">
                     <Label>Selected for Comparison ({{ dialogState.selectedServices.length }}/{{ MAX_SERVICES_TO_COMPARE }})</Label>
                     <div class="flex flex-wrap gap-2 mt-2 min-h-[2.5rem] p-2 border rounded-md bg-muted/20">
-                        <Button
-                            v-for="service in dialogState.selectedServices"
-                            :key="`selected-${service.clusterName}-${service.serviceName}`"
-                            variant="secondary"
-                            size="sm"
-                            @click="handleToggleService(service)"
-                            class="text-xs max-w-[250px] min-w-0 flex items-center"
-                            :title="`${service.clusterName} / ${service.serviceName}`"
-                        >
-                            <span class="truncate block mr-1"> {{ service.clusterName }} / {{ service.serviceName }} </span>
-                            <Cross2Icon class="h-3 w-3 flex-shrink-0" />
-                        </Button>
+                        <TransitionGroup name="service-filter" tag="div" class="flex flex-wrap gap-2">
+                            <Button
+                                v-for="service in dialogState.selectedServices"
+                                :key="`selected-${service.clusterName}-${service.serviceName}`"
+                                variant="secondary"
+                                size="sm"
+                                @click="handleToggleService(service)"
+                                class="text-xs max-w-[250px] min-w-0 flex items-center"
+                                :title="`${service.clusterName} / ${service.serviceName}`"
+                            >
+                                <span class="truncate block mr-1"> {{ service.clusterName }} / {{ service.serviceName }} </span>
+                                <Cross2Icon class="h-3 w-3 flex-shrink-0" />
+                            </Button>
+                        </TransitionGroup>
                         <span v-if="dialogState.selectedServices.length === 0" class="text-sm text-muted-foreground self-center">
                             Select services above to compare
                         </span>
