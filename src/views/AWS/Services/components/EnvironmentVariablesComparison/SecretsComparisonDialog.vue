@@ -42,7 +42,9 @@ const allAvailableServices = computed(() => {
 });
 
 const filteredAvailableServices = computed(() => {
-    return transformServices(props.filteredServices || []);
+    const transformed = transformServices(props.filteredServices || []);
+    // Limit to MAX_SERVICES_TO_COMPARE if there are more filtered services
+    return transformed.length > MAX_SERVICES_TO_COMPARE ? transformed.slice(0, MAX_SERVICES_TO_COMPARE) : transformed;
 });
 
 // Services to display in the selection area
@@ -63,6 +65,16 @@ const canAddMoreServices = computed(() => {
 
 const isMaxServicesReached = computed(() => {
     return dialogState.selectedServices.length >= MAX_SERVICES_TO_COMPARE;
+});
+
+// Check if filtered services were truncated
+const filteredServicesTruncated = computed(() => {
+    return props.filteredServices && props.filteredServices.length > MAX_SERVICES_TO_COMPARE;
+});
+
+// Check if we need horizontal scrolling (more than 4 services)
+const needsHorizontalScroll = computed(() => {
+    return dialogState.selectedServices.length > 4;
 });
 
 // Utility function to truncate long variable names
@@ -150,7 +162,19 @@ const handleGetServiceComparisonData = (service: any) => {
 };
 
 const gridClass = computed(() => {
+    if (needsHorizontalScroll.value) {
+        // Use flex layout for horizontal scrolling when more than 4 services
+        return 'flex gap-4';
+    }
     return getGridClass(dialogState.selectedServices.length);
+});
+
+// Calculate minimum width for each service card when using horizontal scroll
+const serviceCardMinWidth = computed(() => {
+    if (needsHorizontalScroll.value) {
+        return 'min-w-[300px] flex-shrink-0';
+    }
+    return '';
 });
 </script>
 
@@ -168,11 +192,24 @@ const gridClass = computed(() => {
                 <DialogDescription>
                     Multi-service comparison of environment variables and secrets
                     <span v-if="hasFilteredServices">
-                        ({{ filteredAvailableServices.length }} filtered services, {{ allAvailableServices.length }} total services)
+                        ({{ filteredAvailableServices.length }} filtered services
+                        <span v-if="filteredServicesTruncated"> of {{ props.filteredServices?.length }} total filtered </span>,
+                        {{ allAvailableServices.length }} total services)
                     </span>
                     <span v-else> ({{ allAvailableServices.length }} total services) </span>
                 </DialogDescription>
             </DialogHeader>
+
+            <!-- Show truncation warning -->
+            <div
+                v-if="filteredServicesTruncated && !dialogState.showAllServices"
+                class="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md"
+            >
+                <p class="text-xs text-blue-800">
+                    Showing first {{ MAX_SERVICES_TO_COMPARE }} of {{ props.filteredServices?.length }} filtered services. Use "Show All
+                    Services" to access remaining services.
+                </p>
+            </div>
 
             <div class="flex gap-4 mb-4">
                 <div class="flex-1">
@@ -254,6 +291,13 @@ const gridClass = computed(() => {
             </div>
 
             <div v-if="dialogState.selectedServices.length > 1" class="overflow-auto max-h-[60vh]">
+                <!-- Horizontal scroll hint for many services -->
+                <div v-if="needsHorizontalScroll" class="mb-4 p-2 bg-green-50 border border-green-200 rounded-md">
+                    <p class="text-xs text-green-800">
+                        💡 Scroll horizontally to view all {{ dialogState.selectedServices.length }} services in the comparison.
+                    </p>
+                </div>
+
                 <!-- Performance warning for too many services -->
                 <div v-if="dialogState.selectedServices.length > 4" class="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
                     <p class="text-xs text-blue-800">
@@ -261,14 +305,18 @@ const gridClass = computed(() => {
                     </p>
                 </div>
 
-                <div class="grid gap-4" :class="gridClass">
-                    <ServiceComparisonCard
-                        v-for="service in dialogState.selectedServices"
-                        :key="`${service.clusterName}-${service.serviceName}`"
-                        :service="service"
-                        :comparison-data="handleGetServiceComparisonData(service)"
-                        :compare-by-value="dialogState.compareByValue"
-                    />
+                <!-- Comparison container with conditional horizontal scrolling -->
+                <div :class="[needsHorizontalScroll ? 'overflow-x-auto pb-4' : '', 'comparison-container']">
+                    <div :class="[gridClass, serviceCardMinWidth]">
+                        <ServiceComparisonCard
+                            v-for="service in dialogState.selectedServices"
+                            :key="`${service.clusterName}-${service.serviceName}`"
+                            :service="service"
+                            :comparison-data="handleGetServiceComparisonData(service)"
+                            :compare-by-value="dialogState.compareByValue"
+                            :class="serviceCardMinWidth"
+                        />
+                    </div>
                 </div>
 
                 <ComparisonSummary :stats="comparisonStats" class="mt-4" />
@@ -284,3 +332,28 @@ const gridClass = computed(() => {
         </DialogContent>
     </Dialog>
 </template>
+
+<style scoped>
+.comparison-container {
+    /* Ensure smooth horizontal scrolling */
+    scroll-behavior: smooth;
+}
+
+.comparison-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.comparison-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.comparison-container::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.comparison-container::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
