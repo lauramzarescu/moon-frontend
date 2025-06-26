@@ -37,9 +37,7 @@ const dialogState = reactive(createInitialDialogState());
 const MAX_SERVICES_TO_COMPARE = 8;
 
 const allAvailableServices = computed(() => {
-    const transformed = transformServices(props.services || []);
-    // Strip to first MAX_SERVICES_TO_COMPARE if there are more services than the maximum
-    return transformed.length > MAX_SERVICES_TO_COMPARE ? transformed.slice(0, MAX_SERVICES_TO_COMPARE) : transformed;
+    return transformServices(props.services || []);
 });
 
 const filteredAvailableServices = computed(() => {
@@ -172,7 +170,7 @@ const servicesWereTruncated = computed(() => {
                 Compare Variables
             </Button>
         </DialogTrigger>
-        <DialogContent class="max-w-[80%] max-h-[90%] overflow-hidden">
+        <DialogContent class="max-w-[80%] min-h-[50%] h-[95%] overflow-hidden">
             <DialogHeader>
                 <DialogTitle>Compare Environment Variables & Secrets</DialogTitle>
                 <DialogDescription>
@@ -184,14 +182,7 @@ const servicesWereTruncated = computed(() => {
                 </DialogDescription>
             </DialogHeader>
 
-            <!-- Warning message when services were truncated -->
-            <div v-if="servicesWereTruncated" class="mb-4 p-2 bg-orange-50 border border-orange-200 rounded-md">
-                <p class="text-xs text-orange-800">
-                    Only showing the first {{ MAX_SERVICES_TO_COMPARE }} services due to performance limitations.
-                </p>
-            </div>
-
-            <div class="flex gap-4 mb-2">
+            <div class="flex gap-4 mb-2 h-full">
                 <div class="flex-1">
                     <div class="flex items-center justify-between mb-2">
                         <Label>
@@ -274,15 +265,9 @@ const servicesWereTruncated = computed(() => {
                 </div>
             </div>
 
-            <div v-if="dialogState.selectedServices.length > 1" class="overflow-auto max-h-[70%]">
-                <!-- Performance warning for too many services -->
-                <div v-if="dialogState.selectedServices.length > 4" class="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
-                    <p class="text-xs text-blue-800">
-                        Comparing {{ dialogState.selectedServices.length }} services. Performance may be slower with many services.
-                    </p>
-                </div>
-
-                <div class="comparison-container overflow-x-auto">
+            <div v-if="dialogState.selectedServices.length > 1" class="flex flex-col overflow-hidden">
+                <!-- Scrollable container for cards -->
+                <div class="comparison-container flex-grow overflow-y-auto">
                     <div :class="gridClass">
                         <ServiceComparisonCard
                             v-for="service in dialogState.selectedServices"
@@ -295,7 +280,8 @@ const servicesWereTruncated = computed(() => {
                     </div>
                 </div>
 
-                <ComparisonSummary :stats="comparisonStats" class="mt-4" />
+                <!-- Fixed ComparisonSummary -->
+                <ComparisonSummary :stats="comparisonStats" class="mt-4 flex-shrink-0" />
             </div>
 
             <div v-else-if="dialogState.selectedServices.length === 1" class="text-center py-8 text-muted-foreground">
@@ -310,6 +296,10 @@ const servicesWereTruncated = computed(() => {
 </template>
 
 <style scoped>
+.comparison-container {
+    max-height: 100%; /* Ensure it respects the parent's height */
+}
+
 .comparison-container::-webkit-scrollbar {
     height: 8px;
 }
