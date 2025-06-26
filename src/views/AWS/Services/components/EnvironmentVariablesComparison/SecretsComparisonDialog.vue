@@ -329,7 +329,7 @@ const servicesWereTruncated = computed(() => {
             <div v-if="dialogState.selectedServices.length > 1" class="flex flex-col overflow-hidden">
                 <!-- Scrollable container for cards -->
                 <div class="comparison-container flex-grow overflow-y-auto">
-                    <div :class="gridClass">
+                    <TransitionGroup name="service-card" tag="div" :class="gridClass">
                         <ServiceComparisonCard
                             v-for="service in dialogState.selectedServices"
                             :key="`${service.clusterName}-${service.serviceName}`"
@@ -338,7 +338,7 @@ const servicesWereTruncated = computed(() => {
                             :compare-by-value="dialogState.compareByValue"
                             :class="serviceCardWidth"
                         />
-                    </div>
+                    </TransitionGroup>
                 </div>
 
                 <!-- Fixed ComparisonSummary -->
@@ -359,11 +359,6 @@ const servicesWereTruncated = computed(() => {
 <style scoped>
 .comparison-container {
     max-height: 100%; /* Ensure it respects the parent's height */
-}
-
-/* Service filter animation */
-.service-filter-enter-active,
-.service-filter-leave-active {
     transition: all 0.3s ease;
 }
 
@@ -377,7 +372,32 @@ const servicesWereTruncated = computed(() => {
     transform: scale(0.8);
 }
 
+/* Ensure buttons maintain their position during transitions */
+.service-filter-enter-active,
+.service-filter-leave-active,
 .service-filter-move {
-    transition: transform 0.3s ease;
+    transition: all 0.3s ease;
+}
+
+/* Service card animations */
+.service-card-enter-from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+}
+
+.service-card-leave-to {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+}
+
+.service-card-enter-active,
+.service-card-leave-active,
+.service-card-move {
+    transition: all 0.4s ease;
+}
+
+/* Ensure smooth repositioning when cards are removed/added */
+.service-card-leave-active {
+    position: absolute;
 }
 </style>
