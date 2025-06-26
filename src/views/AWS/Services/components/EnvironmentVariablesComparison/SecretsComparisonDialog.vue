@@ -172,7 +172,7 @@ const servicesWereTruncated = computed(() => {
                 Compare Variables
             </Button>
         </DialogTrigger>
-        <DialogContent class="max-w-7xl max-h-[100vh] overflow-hidden">
+        <DialogContent class="max-w-[80%] max-h-[90%] overflow-hidden">
             <DialogHeader>
                 <DialogTitle>Compare Environment Variables & Secrets</DialogTitle>
                 <DialogDescription>
@@ -270,7 +270,7 @@ const servicesWereTruncated = computed(() => {
                 </p>
             </div>
 
-            <div v-if="dialogState.selectedServices.length > 1" class="overflow-auto max-h-[60vh]">
+            <div v-if="dialogState.selectedServices.length > 1" class="overflow-auto max-h-[60%]">
                 <!-- Performance warning for too many services -->
                 <div v-if="dialogState.selectedServices.length > 4" class="mb-4 p-2 bg-blue-50 border border-blue-200 rounded-md">
                     <p class="text-xs text-blue-800">
