@@ -382,22 +382,17 @@ const servicesWereTruncated = computed(() => {
 /* Service card animations */
 .service-card-enter-from {
     opacity: 0;
-    transform: translateX(-20px) scale(0.95);
+    transform: translateX(-5px) scale(0.01);
 }
 
 .service-card-leave-to {
     opacity: 0;
-    transform: translateX(20px) scale(0.95);
+    transform: translateX(5px) scale(0.01);
 }
 
 .service-card-enter-active,
 .service-card-leave-active,
 .service-card-move {
     transition: all 0.4s ease;
-}
-
-/* Ensure smooth repositioning when cards are removed/added */
-.service-card-leave-active {
-    position: absolute;
 }
 </style>
