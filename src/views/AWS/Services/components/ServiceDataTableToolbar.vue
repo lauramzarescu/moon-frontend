@@ -1,14 +1,17 @@
 <script setup lang="ts" generic="TData">
 import type { Table } from '@tanstack/vue-table';
 import { Button } from '@/components/ui/button';
-
 import { Input } from '@/components/ui/input';
 import { computed } from 'vue';
 import { Cross2Icon } from '@radix-icons/vue';
 import DataTableFacetedFilter from '@/components/ui/custom-table/DataTableFacetedFilter.vue';
 import DataTableViewOptions from '@/components/ui/custom-table/DataTableViewOptions.vue';
+import SecretsComparisonDialog from './EnvironmentVariablesComparison/SecretsComparisonDialog.vue';
 import type { DataTableOptionsArray } from '@/components/ui/drawer/interfaces/custom-table.interface.ts';
+import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import { TABLE_KEYS, useFilterStore } from '@/stores/filterStore.ts';
+import { storeToRefs } from 'pinia';
+import { useDataStore } from '@/stores/dataStore.ts';
 
 interface DataTableToolbarProps {
     table: Table<TData>;
@@ -16,11 +19,25 @@ interface DataTableToolbarProps {
     options: DataTableOptionsArray;
 }
 
+const { services } = storeToRefs(useDataStore());
 const filterStore = useFilterStore();
 const { clearFilters, setFilter } = filterStore;
 const props = defineProps<DataTableToolbarProps>();
 
 const isFiltered = computed(() => props.table.getState().columnFilters.length > 0);
+
+const servicesToCompare = computed(() => {
+    // Ensure allServices is defined and is an array
+    const allServices = services.value || [];
+
+    if (isFiltered.value) {
+        // Return filtered rows
+        return props.table.getFilteredRowModel().rows.map((row) => row.original as ServiceInterface);
+    } else {
+        // Return all services if no filter is applied
+        return allServices;
+    }
+});
 
 const handleFilterChange = (columnId: string, value: any) => {
     props.table.getColumn(columnId)?.setFilterValue(value);
@@ -76,6 +93,9 @@ const handleFilterChange = (columnId: string, value: any) => {
                 <Cross2Icon class="ml-2 h-4 w-4" />
             </Button>
         </div>
-        <DataTableViewOptions :table="table" />
+        <div class="flex items-center space-x-2">
+            <SecretsComparisonDialog :services="services" :filteredServices="servicesToCompare" :is-filtered="isFiltered" />
+            <DataTableViewOptions :table="table" />
+        </div>
     </div>
 </template>
