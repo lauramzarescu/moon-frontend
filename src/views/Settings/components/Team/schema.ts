@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { LoginType, UserRole } from '@/enums/user/user.enum.ts';
 
-/** ================================ */
-/** ======== User schema =========== */
-/** ================================ */
+export const userDeviceInfoSchema = z.object({
+    fingerprint: z.string(),
+    lastVerified: z.string(),
+    userAgent: z.string().optional(),
+});
+
 export const userSchema = z.object({
-    id: z.string(),
     name: z.string().optional().nullable(),
     email: z.string().email(),
     organizationId: z.string(),
@@ -18,19 +20,28 @@ export const userSchema = z.object({
     sessionIndex: z.string().optional().nullable(),
     twoFactorSecret: z.string().optional().nullable(),
     twoFactorVerified: z.boolean().default(false),
+    verifiedDevices: z.array(userDeviceInfoSchema).optional(),
+    resetToken: z.string().optional().nullable(),
+    resetTokenExpiry: z.date().optional().nullable(),
+    twoFactorResetToken: z.string().optional().nullable(),
+    twoFactorResetTokenExpiry: z.date().optional().nullable(),
 });
 
 export const userDetailsResponseSchema = userSchema.omit({
     lastLogin: true,
+    password: true,
     nameID: true,
     nameIDFormat: true,
     sessionIndex: true,
     twoFactorSecret: true,
+    resetToken: true,
+    resetTokenExpiry: true,
+    twoFactorResetToken: true,
+    twoFactorResetTokenExpiry: true,
 });
 
 export const userCreateSchema = userSchema
     .omit({
-        id: true,
         loginType: true,
         nameID: true,
         nameIDFormat: true,
@@ -38,14 +49,64 @@ export const userCreateSchema = userSchema
         sessionIndex: true,
         twoFactorSecret: true,
         twoFactorVerified: true,
+        resetToken: true,
+        resetTokenExpiry: true,
+        twoFactorResetToken: true,
+        twoFactorResetTokenExpiry: true,
     })
     .partial({
         organizationId: true,
     });
 
 export const userUpdateSchema = userCreateSchema;
+
+// Password schemas
+export const changePasswordSchema = z.object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+});
+
+export const changePasswordWith2FASchema = z.object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+    code: z.string().length(6, '2FA code must be 6 digits'),
+});
+
+export const forgotPasswordSchema = z.object({
+    email: z.string().email('Valid email is required'),
+});
+
+export const resetPasswordSchema = z.object({
+    token: z.string().min(1, 'Reset token is required'),
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+});
+
+export const adminResetPasswordSchema = z.object({
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+});
+
+// 2FA schemas
+export const twoFactorVerifySchema = z.object({
+    code: z.string().min(6).max(6),
+});
+
+export const twoFactorDisableSchema = twoFactorVerifySchema;
+
+export const reset2FASchema = z.object({
+    email: z.string().email('Valid email is required'),
+});
+
 export type UserInput = z.infer<typeof userSchema>;
+export type TwoFactorVerifyInput = z.infer<typeof twoFactorVerifySchema>;
+export type TwoFactorDisableInput = z.infer<typeof twoFactorDisableSchema>;
+export type UserDeviceInfo = z.infer<typeof userDeviceInfoSchema>;
 export type UserCreateInput = z.infer<typeof userCreateSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type AdminResetPasswordInput = z.infer<typeof adminResetPasswordSchema>;
+export type Reset2FAInput = z.infer<typeof reset2FASchema>;
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type ChangePasswordWith2FAInput = z.infer<typeof changePasswordWith2FASchema>;
 export type UserDetailsResponseInput = z.infer<typeof userDetailsResponseSchema>;
 
 /** ================================ */

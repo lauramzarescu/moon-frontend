@@ -107,10 +107,13 @@ const handleSAMLLogin = async () => {
     window.location.href = `${config.BACKEND_URL}/auth/saml/login`;
 };
 
-// Placeholder function for forgot password - implementation needed
-const handleForgotPassword = () => {
-    console.log('Forgot Password clicked');
-    // TODO: Implement forgot password logic (e.g., navigate to forgot password page)
+// Navigation to separate password reset pages
+const goToForgotPassword = () => {
+    router.push('/forgot-password');
+};
+
+const goToResetPassword = () => {
+    router.push('/reset-password');
 };
 </script>
 
@@ -131,6 +134,7 @@ const handleForgotPassword = () => {
                         auto-correct="off"
                         :disabled="isLoading"
                     />
+
                     <Input
                         class="mt-1"
                         v-model="formData.password"
@@ -148,23 +152,15 @@ const handleForgotPassword = () => {
                     Sign In with Email
                 </Button>
 
-                <!-- Forgot Password Separator and Link -->
-                <!--                <div class="relative mt-4">-->
-                <!--                    <div class="absolute inset-0 flex items-center">-->
-                <!--                        <span class="w-full border-t" />-->
-                <!--                    </div>-->
-                <!--                    <div class="relative flex justify-center text-xs uppercase">-->
-                <!--                        <Button-->
-                <!--                            variant="link"-->
-                <!--                            type="button"-->
-                <!--                            class="!px-2 !text-foreground uppercase text-xs"-->
-                <!--                            :disabled="isLoading"-->
-                <!--                            @click="handleForgotPassword"-->
-                <!--                        >-->
-                <!--                            Forgot Password?-->
-                <!--                        </Button>-->
-                <!--                    </div>-->
-                <!--                </div>-->
+                <!-- Password Help Buttons -->
+                <div class="flex flex-col space-y-2 pt-4 border-t">
+                    <p class="text-sm text-gray-600 text-center">Need help with your password?</p>
+                    <div class="flex justify-center flex-col sm:flex-row gap-2">
+                        <Button variant="link" size="sm" type="button" @click="goToForgotPassword" :disabled="isLoading" class="text-xs">
+                            Forgot Password?
+                        </Button>
+                    </div>
+                </div>
             </div>
         </form>
 

@@ -2,9 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Cookies from 'js-cookie';
 import { AuthService } from '@/services/auth.service.ts';
 import { ActionService } from '@/services/action.service.ts';
+import { UserService } from '@/services/user.service.ts';
+import { useAuthStore } from '@/stores/authStore.ts';
 
 const authService = new AuthService();
 const actionService = new ActionService();
+const userService = new UserService();
 
 const router = createRouter({
     history: createWebHistory(),
@@ -14,6 +17,7 @@ const router = createRouter({
             redirect: '/aws/clusters',
             meta: {
                 title: 'AWS Clusters',
+                requiresAuth: true,
             },
         },
         {
@@ -22,6 +26,28 @@ const router = createRouter({
             component: () => import('@/views/Login/LoginView.vue'),
             meta: {
                 title: 'Login',
+                requiresAuth: false,
+                layout: 'auth',
+            },
+        },
+        {
+            path: '/forgot-password',
+            name: 'ForgotPassword',
+            component: () => import('@/views/Login/ForgotPasswordView.vue'),
+            meta: {
+                title: 'Forgot Password',
+                requiresAuth: false,
+                layout: 'auth',
+            },
+        },
+        {
+            path: '/reset-password',
+            name: 'ResetPassword',
+            component: () => import('@/views/Login/ResetPasswordView.vue'),
+            meta: {
+                title: 'Reset Password',
+                requiresAuth: false,
+                layout: 'auth',
             },
         },
         {
@@ -95,35 +121,61 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-    // Make the guard async
     document.title = to.meta.title ? `${to.meta.title} - Moon` : 'Moon';
 
     const token = Cookies.get('token');
     const isTokenExpired = authService.isTokenExpired(token || '');
     const isAuthenticated = !!token && !isTokenExpired;
+    const requiresAuth = to.meta.requiresAuth !== false; // Default to true if not specified
 
     // If token is expired, remove it
     if (token && isTokenExpired) {
         Cookies.remove('token');
+        const authStore = useAuthStore();
+        authStore.clearUser();
     }
 
-    if (to.path === '/login' && isAuthenticated) {
-        // If trying to go to login but already authenticated, redirect to home
-        next('/');
-    } else if (to.path !== '/login' && !isAuthenticated) {
+    // Handle authentication logic
+    if (requiresAuth && !isAuthenticated) {
         // If trying to go to a protected route but not authenticated, redirect to login
         next('/login');
-    } else {
-        next();
+        return;
+    } else if (!requiresAuth && isAuthenticated) {
+        // If trying to go to public route but already authenticated, redirect to home
+        next('/');
+        return;
+    }
 
-        // If authenticated and not going to login, or going to login and not authenticated, proceed
-        // Execute the global refresh request if authenticated
-        if (isAuthenticated) {
+    // If authenticated and going to a protected route, set user data
+    if (isAuthenticated && requiresAuth) {
+        try {
+            const authStore = useAuthStore();
+
+            // Only fetch user data if not already set
+            if (!authStore.user) {
+                const me = await userService.getDetails();
+                const decodedToken = authService.decodeToken(token!);
+
+                authStore.setUser(me);
+                authStore.setPermissions(decodedToken.permissions);
+            }
+
+            // Execute the global refresh request
             actionService.refresh().catch((error) => {
                 console.error('Failed to refresh actions:', error);
             });
+        } catch (error) {
+            console.error('Error setting user from token:', error);
+            // If there's an error getting user data, clear auth and redirect to login
+            Cookies.remove('token');
+            const authStore = useAuthStore();
+            authStore.clearUser();
+            next('/login');
+            return;
         }
     }
+
+    next();
 });
 
 export default router;

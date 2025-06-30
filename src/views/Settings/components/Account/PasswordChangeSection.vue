@@ -14,6 +14,7 @@ import VerificationCodeInput from '@/components/ui/verification-code-input/Verif
 import { LoginType } from '@/enums/user/user.enum.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-vue-next';
+import { changePasswordSchema, changePasswordWith2FASchema } from '@/views/Settings/components/Team/schema.ts';
 
 const showPasswordModal = ref(false);
 const step = ref(1); // 1: Password form, 2: 2FA verification (if enabled)
@@ -61,7 +62,8 @@ async function onPasswordSubmit(values: any) {
         if (is2FAEnabled.value) {
             step.value = 2;
         } else {
-            await userService.changePassword(values.currentPassword, values.newPassword);
+            const data = changePasswordSchema.parse(values);
+            await userService.changePassword(data);
 
             toast({
                 title: 'Password changed successfully',
@@ -89,7 +91,11 @@ const confirmWithTwoFactor = async () => {
 
     try {
         const code = verificationCode.value.join('');
-        await userService.changePasswordWith2FA(formValues.value.currentPassword, formValues.value.newPassword, code);
+        const data = changePasswordWith2FASchema.parse({
+            ...formValues.value,
+            code,
+        });
+        await userService.changePasswordWith2FA(data);
 
         toast({
             title: 'Password changed successfully',

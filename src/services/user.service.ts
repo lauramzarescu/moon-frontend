@@ -1,5 +1,13 @@
 import { ApiService } from '@/services/generic.service.ts';
-import type { UserCreateInput, UserDetailsResponseInput, UserInput } from '@/views/Settings/components/Team/schema.ts';
+import type {
+    ChangePasswordInput,
+    ChangePasswordWith2FAInput,
+    ForgotPasswordInput,
+    ResetPasswordInput,
+    UserCreateInput,
+    UserDetailsResponseInput,
+    UserInput,
+} from '@/views/Settings/components/Team/schema.ts';
 import type { PaginatedResult, PaginationParams } from '@/types/pagination/pagination.interface.ts';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/views/Settings/components/Account/schema.ts';
 
@@ -40,16 +48,24 @@ export class UserService extends ApiService {
         return this.put(`${this.resource}/${userId}`, data);
     }
 
-    async changePassword(currentPassword: string, newPassword: string) {
-        return this.post(`${this.resource}/change-password`, { currentPassword, newPassword });
+    async changePassword(data: ChangePasswordInput) {
+        return this.post(`${this.resource}/change-password`, data);
     }
 
-    async changePasswordWith2FA(currentPassword: string, newPassword: string, code: string) {
-        return this.post(`${this.resource}/2fa/change-password`, {
-            currentPassword,
-            newPassword,
-            code,
-        });
+    async changePasswordWith2FA(data: ChangePasswordWith2FAInput) {
+        return this.post(`${this.resource}/2fa/change-password`, data);
+    }
+
+    async triggerResetPasswordAsAdmin(userId: string) {
+        return this.post(`${this.resource}/admin/reset-password/${userId}`, {});
+    }
+
+    async forgotPassword(data: ForgotPasswordInput) {
+        return this.post(`${this.resource}/forgot-password`, data);
+    }
+
+    async resetPassword(data: ResetPasswordInput) {
+        return this.post(`${this.resource}/reset-password`, data);
     }
 
     // 2FA Methods
@@ -109,6 +125,14 @@ export class UserService extends ApiService {
      */
     async disable2FA(code: string): Promise<any> {
         return this.post(`${this.resource}/2fa/disable`, { code });
+    }
+
+    async triggerReset2FAAsAdmin(userId: string) {
+        return this.post(`${this.resource}/admin/2fa/reset/${userId}`, {});
+    }
+
+    async confirmReset2FA(token: string) {
+        return this.post(`${this.resource}/2fa/reset/confirm/${token}`, {});
     }
 
     async create(data: UserCreateInput): Promise<UserDetailsResponseInput> {

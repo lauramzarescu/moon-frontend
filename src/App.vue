@@ -1,89 +1,60 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useDataStore } from '@/stores/dataStore.ts';
 import UserNav from '@/components/ui/custom-table/UserNav.vue';
 import { Toaster } from '@/components/ui/toast';
 import { useAuthStore } from '@/stores/authStore.ts';
 import Cookies from 'js-cookie';
 import { AuthService } from '@/services/auth.service.ts';
-import { UserService } from '@/services/user.service.ts';
 import AppSidebar from '@/components/Sidebar/components/AppSidebar.vue';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
+import AuthLayout from '@/layouts/AuthLayout.vue';
 
 const store = useDataStore();
 const authStore = useAuthStore();
 const route = useRoute();
-const router = useRouter();
 const authService = new AuthService();
-const userService = new UserService();
 
-onMounted(async () => {
+onMounted(() => {
     store.initializeData();
-    await checkAndSetUserFromToken();
 });
 
-const checkAndSetUserFromToken = async () => {
-    const token = Cookies.get('token');
-
-    if (!token || authService.isTokenExpired(token)) {
-        // Clear auth state if token is missing or expired
-        authStore.clearUser();
-        Cookies.remove('token');
-        if (route.path !== '/login') {
-            router.push('/login');
-        }
-        return;
-    }
-
-    try {
-        const me = await userService.getDetails();
-        const decodedToken = authService.decodeToken(token);
-
-        authStore.setUser(me);
-        authStore.setPermissions(decodedToken.permissions);
-    } catch (error) {
-        // authStore.clearUser();
-        //
-        // Cookies.remove('token');
-        //
-        // if (route.path !== '/login') {
-        //     router.push('/login');
-        // }
-
-        console.log('Error checking and setting user from token:', error);
-    }
-};
-
+// Periodic token validation (every minute)
 setInterval(() => {
     const token = Cookies.get('token');
+    const requiresAuth = route.meta.requiresAuth !== false;
 
     if (token && authService.isTokenExpired(token)) {
         authStore.clearUser();
         Cookies.remove('token');
 
-        if (route.path !== '/login') {
-            router.push('/login');
+        // Only redirect to login if the route requires authentication
+        if (requiresAuth) {
+            window.location.href = '/login';
         }
     }
-}, 60000); // Check every minute
+}, 60000);
 
-const isLoginPage = computed(() => route.path === '/login');
+// Check if current route uses auth layout
+const isAuthLayout = computed(() => {
+    return route.meta.layout === 'auth';
+});
 
 // Computed property to get the current page title from route meta
 const currentPageTitle = computed(() => {
-    // Access the title from the route's meta property
-    // Fallback to a default title if meta.title is not defined
-    return route.meta.title || 'Dashboard'; // Using 'Dashboard' as a common fallback
+    return route.meta.title || 'Dashboard';
 });
 </script>
 
 <template>
     <main vaul-drawer-wrapper autofocus class="h-screen w-screen overflow-hidden">
-        <!-- Login page without layout -->
-        <router-view v-if="isLoginPage"></router-view>
+        <!-- Auth layout for login, forgot-password, reset-password -->
+        <AuthLayout v-if="isAuthLayout">
+            <router-view />
+        </AuthLayout>
 
         <!-- Main layout with sidebar for other routes -->
         <div v-else id="app" class="flex h-full">
