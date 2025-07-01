@@ -84,7 +84,7 @@ const handleSubmit = async () => {
         // Optionally redirect back to login after a delay
         setTimeout(() => {
             router.push('/login');
-        }, 2000);
+        }, 500);
     } catch (error: any) {
         if (error.errors) {
             // Zod validation errors

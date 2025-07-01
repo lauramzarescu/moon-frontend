@@ -41,6 +41,16 @@ const router = createRouter({
             },
         },
         {
+            path: '/confirm-reset-2fa',
+            name: 'Confirm2FAReset',
+            component: () => import('@/views/Login/ConfirmReset2FAView.vue'),
+            meta: {
+                title: 'Confirm 2FA Reset',
+                requiresAuth: false,
+                layout: 'auth',
+            },
+        },
+        {
             path: '/reset-password',
             name: 'ResetPassword',
             component: () => import('@/views/Login/ResetPasswordView.vue'),
@@ -117,6 +127,16 @@ const router = createRouter({
                 title: 'Account',
             },
         },
+        {
+            path: '/:pathMatch(.*)*',
+            name: 'NotFound',
+            component: () => import('@/views/NotFoundView.vue'),
+            meta: {
+                title: '404 - Page Not Found',
+                requiresAuth: false,
+                layout: 'auth',
+            },
+        },
     ],
 });
 
@@ -140,8 +160,9 @@ router.beforeEach(async (to, from, next) => {
         // If trying to go to a protected route but not authenticated, redirect to login
         next('/login');
         return;
-    } else if (!requiresAuth && isAuthenticated) {
+    } else if (!requiresAuth && isAuthenticated && to.name !== 'NotFound') {
         // If trying to go to public route but already authenticated, redirect to home
+        // Exception: Allow access to 404 page even when authenticated
         next('/');
         return;
     }
