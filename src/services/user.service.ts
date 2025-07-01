@@ -4,6 +4,7 @@ import type {
     ChangePasswordWith2FAInput,
     ForgotPasswordInput,
     ResetPasswordInput,
+    UserCreateByInvitationInput,
     UserCreateInput,
     UserDetailsResponseInput,
     UserInput,
@@ -40,6 +41,14 @@ export class UserService extends ApiService {
         return this.post(`${this.resource}/${userId}/inactivate`, {});
     }
 
+    async create(data: UserCreateInput): Promise<UserDetailsResponseInput> {
+        return this.post(`${this.resource}`, data);
+    }
+
+    async createByInvitation(data: UserCreateByInvitationInput): Promise<UserDetailsResponseInput> {
+        return this.post(`${this.resource}/invitation`, data);
+    }
+
     async deleteUser(userId: string): Promise<any> {
         return this.delete(`${this.resource}/${userId}`);
     }
@@ -66,6 +75,31 @@ export class UserService extends ApiService {
 
     async resetPassword(data: ResetPasswordInput) {
         return this.post(`${this.resource}/reset-password`, data);
+    }
+
+    async importUsers(file: File): Promise<any> {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const base64String = (reader.result as string).split(',')[1]; // Remove data:application/json;base64, prefix
+
+                this.post(`${this.resource}/import/json`, {
+                    file: base64String,
+                    filename: file.name,
+                    mimetype: file.type,
+                })
+                    .then(resolve)
+                    .catch(reject);
+            };
+
+            reader.onerror = () => reject(new Error('Failed to read file'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    async exportUsers(): Promise<any> {
+        return this.get(`${this.resource}/export/json`);
     }
 
     // 2FA Methods
@@ -133,9 +167,5 @@ export class UserService extends ApiService {
 
     async confirmReset2FA(token: string) {
         return this.post(`${this.resource}/2fa/reset/confirm/${token}`, {});
-    }
-
-    async create(data: UserCreateInput): Promise<UserDetailsResponseInput> {
-        return this.post(`${this.resource}`, data);
     }
 }

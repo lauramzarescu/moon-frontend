@@ -40,7 +40,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    userDeleted: [userId: string];
+    (e: 'userDeleted'): void;
 }>();
 
 const userRoles = ref<Record<string, UserRole>>({});
@@ -108,7 +108,7 @@ const handleDeleteUser = async (user: UserInput) => {
             description: `${user.name || user.nameIDFormat} has been successfully deleted.`,
             variant: 'success',
         });
-        emit('userDeleted', user.id);
+        emit('userDeleted');
     } catch (error) {
         console.error(error);
         toast({

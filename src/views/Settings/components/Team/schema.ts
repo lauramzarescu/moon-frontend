@@ -43,6 +43,7 @@ export const userDetailsResponseSchema = userSchema.omit({
 
 export const userCreateSchema = userSchema
     .omit({
+        id: true,
         loginType: true,
         nameID: true,
         nameIDFormat: true,
@@ -59,7 +60,31 @@ export const userCreateSchema = userSchema
         organizationId: true,
     });
 
+export const userCreateByInvitationSchema = userCreateSchema.omit({
+    password: true,
+});
+
 export const userUpdateSchema = userCreateSchema;
+
+export const userImportSchema = z.object({
+    name: z.string().optional().nullable(),
+    email: z.string().email(),
+    role: z.nativeEnum(UserRole).default(UserRole.user),
+});
+
+export const userExportSchema = z.object({
+    name: z.string().optional().nullable(),
+    email: z.string().email(),
+    role: z.nativeEnum(UserRole),
+    loginType: z.nativeEnum(LoginType),
+    twoFactorVerified: z.boolean(),
+    createdAt: z.date(),
+    updatedAt: z.date(),
+});
+
+export const usersImportRequestSchema = z.object({
+    users: z.array(userImportSchema).min(1, 'At least one user is required'),
+});
 
 // Password schemas
 export const changePasswordSchema = z.object({
@@ -102,6 +127,7 @@ export type TwoFactorVerifyInput = z.infer<typeof twoFactorVerifySchema>;
 export type TwoFactorDisableInput = z.infer<typeof twoFactorDisableSchema>;
 export type UserDeviceInfo = z.infer<typeof userDeviceInfoSchema>;
 export type UserCreateInput = z.infer<typeof userCreateSchema>;
+export type UserCreateByInvitationInput = z.infer<typeof userCreateByInvitationSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type AdminResetPasswordInput = z.infer<typeof adminResetPasswordSchema>;
@@ -109,6 +135,9 @@ export type Reset2FAInput = z.infer<typeof reset2FASchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type ChangePasswordWith2FAInput = z.infer<typeof changePasswordWith2FASchema>;
 export type UserDetailsResponseInput = z.infer<typeof userDetailsResponseSchema>;
+export type UserImportInput = z.infer<typeof userImportSchema>;
+export type UserExportInput = z.infer<typeof userExportSchema>;
+export type UsersImportRequestInput = z.infer<typeof usersImportRequestSchema>;
 
 /** ================================ */
 /** ===== Access control schema ==== */
@@ -151,4 +180,11 @@ export const createUserFormSchema = z
         path: ['confirmPassword'],
     });
 
+export const createUserByInvitationFormSchema = z.object({
+    username: z.string().min(3, 'Username must be at least 3 characters'),
+    email: z.string().email('Invalid email address'),
+    role: z.string().min(1, 'Role is required'),
+});
+
 export type CreateUserFormInput = z.infer<typeof createUserFormSchema>;
+export type CreateUserByInvitationFormInput = z.infer<typeof createUserByInvitationFormSchema>;

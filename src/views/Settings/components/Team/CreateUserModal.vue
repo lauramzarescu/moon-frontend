@@ -1,5 +1,5 @@
 <template>
-    <Dialog :open="isOpen">
+    <Dialog :open="isOpen" @update:open="$emit('update:isOpen', $event)">
         <DialogContent class="sm:max-w-[425px]">
             <DialogHeader>
                 <DialogTitle>Create New User</DialogTitle>
@@ -146,6 +146,7 @@ const onCreateUserSubmit = async (values: any) => {
         toast({
             title: 'User created successfully',
             description: `User ${values.username} has been created.`,
+            variant: 'success',
         });
     } catch (error) {
         toast({
