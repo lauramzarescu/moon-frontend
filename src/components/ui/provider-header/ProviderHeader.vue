@@ -7,6 +7,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { ChevronDownIcon } from '@radix-icons/vue';
 import { useSocket } from '@/composables/useSocket.ts';
 import StuckDeploymentBanner from '@/components/ui/stuck-deployment/StuckDeploymentBanner.vue';
+import InProgressDeploymentBanner from '@/components/ui/in-progress-deployment/InProgressDeploymentBanner.vue';
 
 const store = useDataStore();
 const { setRefreshInterval } = useSocket();
@@ -170,5 +171,14 @@ onUnmounted(() => {
         <!--            </label>-->
         <!--        </div>-->
     </div>
-    <StuckDeploymentBanner />
+
+    <!-- Banners Row -->
+    <div class="flex gap-4 w-full">
+        <div class="flex-1">
+            <InProgressDeploymentBanner />
+        </div>
+        <div class="flex-1">
+            <StuckDeploymentBanner />
+        </div>
+    </div>
 </template>
