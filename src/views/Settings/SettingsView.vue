@@ -31,6 +31,7 @@ import TeamView from '@/views/Settings/TeamView.vue';
 import SAMLView from '@/views/Settings/SAMLView.vue';
 import WorkspaceView from '@/views/Settings/WorkspaceView.vue';
 import ActionsView from '@/views/Settings/ActionView.vue';
+import OrganizationView from '@/views/Settings/OrganizationView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -39,6 +40,7 @@ const tabs = [
     { label: 'Account', value: 'account', badge: 0, component: AccountView },
     { label: 'Team', value: 'team', badge: 0, component: TeamView },
     { label: 'Workspace', value: 'workspace', badge: 0, component: WorkspaceView },
+    { label: 'Organization', value: 'organization', badge: 0, component: OrganizationView },
     { label: 'Authentication', value: 'saml', badge: 0, component: SAMLView },
     { label: 'Actions', value: 'actions', badge: 0, component: ActionsView },
 ];

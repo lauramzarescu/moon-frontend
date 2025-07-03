@@ -18,6 +18,7 @@ import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
 import VerificationCodeInput from '@/components/ui/verification-code-input/VerificationCodeInput.vue';
 import Cookies from 'js-cookie';
 import { config } from '../../../../app.config.ts';
+import TwoFactorSetupModal from '@/views/Settings/components/Account/TwoFactorSetupModal.vue';
 
 const authService = new AuthService();
 const userService = new UserService();
@@ -25,8 +26,12 @@ const router = useRouter();
 
 const isLoading = ref(false);
 const requires2FAVerification = ref(false);
+const requires2FASetup = ref(false);
 const verificationCode = ref(['', '', '', '', '', '']);
 const sessionToken = ref(''); // Store the temporary session token
+
+const show2FAModal = ref(false);
+const qrCodeUrl = ref('');
 
 const formData = ref<LoginWithEmailAndPassword>({
     email: '',
@@ -49,8 +54,25 @@ async function onSubmit(event: Event) {
 
             requires2FAVerification.value = true;
             isLoading.value = false;
+        } else if (response.requires2FASetup && response.qrCodeUrl) {
+            const tempToken = Cookies.get('token');
+            if (tempToken) {
+                sessionToken.value = tempToken;
+            }
+
+            requires2FASetup.value = true;
+            qrCodeUrl.value = response.qrCodeUrl;
+            show2FAModal.value = true;
+            isLoading.value = false;
         } else if (response.status === 'success') {
             window.location.href = '/';
+        } else {
+            toast({
+                title: 'Login Failed',
+                description: 'An unexpected error occurred. Please try again.',
+                variant: 'destructive',
+            });
+            isLoading.value = false;
         }
     } catch (error) {
         toast({
@@ -96,6 +118,11 @@ async function verifyTwoFactorCode() {
         isLoading.value = false;
     }
 }
+
+const onSetupComplete = (enabled: boolean, verified: boolean) => {
+    show2FAModal.value = false;
+    window.location.href = '/';
+};
 
 function cancelTwoFactorVerification() {
     requires2FAVerification.value = false;
@@ -180,6 +207,18 @@ const goToResetPassword = () => {
                     <span v-else>Verify</span>
                 </Button>
             </div>
+        </div>
+
+        <!-- Step 3: 2FA Setup (Optional) -->
+        <div v-if="requires2FASetup" class="flex flex-col space-y-4">
+            <TwoFactorSetupModal
+                v-model:open="show2FAModal"
+                :qr-code-url="qrCodeUrl"
+                :is-loading="isLoading"
+                :verify-session="true"
+                :session-token="sessionToken"
+                @setup-complete="onSetupComplete"
+            />
         </div>
 
         <!-- SAML Login Option -->

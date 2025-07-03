@@ -1,3 +1,7 @@
+import { twoFactorSetupResponseSchema } from '@/views/Settings/components/Account/schema.ts';
+import { toast } from '@/components/ui/toast';
+import type { UserService } from '@/services/user.service.ts';
+
 /**
  * Handles input for verification code fields
  * @param index Current input field index
@@ -60,3 +64,26 @@ export function resetVerificationCode(codeArray: string[], prefix: string = '2fa
         }
     }, 0);
 }
+
+/**
+ * Handles the 2FA setup process
+ */
+export const generate2FAQR = async (isLoading: boolean, qrCodeUrl: string, show2FAModal: boolean, userService: UserService) => {
+    isLoading = true;
+    try {
+        const response = await userService.setup2FA();
+
+        const validatedResponse = twoFactorSetupResponseSchema.parse(response);
+        qrCodeUrl = validatedResponse.qrCode;
+
+        show2FAModal = true;
+    } catch (error) {
+        toast({
+            title: 'Error generating 2FA QR code',
+            description: 'There was an error setting up two-factor authentication. Please try again.',
+            variant: 'destructive',
+        });
+    } finally {
+        isLoading = false;
+    }
+};

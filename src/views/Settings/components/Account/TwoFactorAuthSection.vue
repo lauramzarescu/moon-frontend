@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Switch } from '@/components/ui/switch';
-import { toast } from '@/components/ui/toast';
 import { UserService } from '@/services/user.service.ts';
 import { useAuthStore } from '@/stores/authStore.ts';
-import { twoFactorSetupResponseSchema } from '@/views/Settings/components/Account/schema.ts';
 import TwoFactorSetupModal from './TwoFactorSetupModal.vue';
 import TwoFactorDisableModal from './TwoFactorDisableModal.vue';
 import { LoginType } from '@/enums/user/user.enum.ts';
+import { generate2FAQR } from '@/utils/twoFactorUtils.ts';
 
 const props = defineProps({
     twoFactorEnabled: {
@@ -42,31 +41,11 @@ watch(
     },
 );
 
-const generate2FAQR = async () => {
-    isLoading.value = true;
-    try {
-        const response = await userService.setup2FA();
-
-        const validatedResponse = twoFactorSetupResponseSchema.parse(response);
-        qrCodeUrl.value = validatedResponse.qrCode;
-
-        show2FAModal.value = true;
-    } catch (error) {
-        toast({
-            title: 'Error generating 2FA QR code',
-            description: 'There was an error setting up two-factor authentication. Please try again.',
-            variant: 'destructive',
-        });
-    } finally {
-        isLoading.value = false;
-    }
-};
-
 const handleToggle = (value: boolean) => {
     if (!value && props.twoFactorEnabled && props.twoFactorVerified) {
         showDisable2FAModal.value = true;
     } else if (value) {
-        generate2FAQR();
+        generate2FAQR(isLoading.value, qrCodeUrl.value, show2FAModal.value, userService);
     }
 };
 

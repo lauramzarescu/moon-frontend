@@ -20,13 +20,20 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    // Used for verifying the code entered by the user after the QR code has been scanned on login
+    verifySession: {
+        type: Boolean,
+        required: false,
+    },
+    sessionToken: {
+        type: String,
+        required: false,
+    },
 });
 
 const emit = defineEmits(['update:open', 'setup-complete']);
 
-// Initialize services and stores
 const userService = new UserService();
-
 const verificationCode = ref(['', '', '', '', '', '']);
 const localIsLoading = ref(false);
 
@@ -44,7 +51,7 @@ const verify2FACode = async () => {
 
     localIsLoading.value = true;
     try {
-        await userService.verify2FACode(code);
+        props.verifySession ? await userService.verify2FASession(code, props.sessionToken) : await userService.verify2FACode(code);
 
         toast({
             title: 'Two-factor authentication enabled',

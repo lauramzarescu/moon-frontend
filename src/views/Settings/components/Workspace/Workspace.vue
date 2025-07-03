@@ -11,7 +11,7 @@ import { ServicesConfigService } from '@/services/services-config.service.ts';
 import { type ServicesConfigInput, ServiceType } from '@/views/Settings/components/Workspace/schema.ts';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'; // Import Card components
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export interface AWSConfig {
     accessKeyId: string;
