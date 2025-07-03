@@ -43,12 +43,12 @@ const confirmDisable2FA = async () => {
         });
 
         emit('disable-complete', false, false);
-    } catch (error) {
+    } catch (error: any) {
         resetVerificationCode(disableVerificationCode.value, 'disable-2fa-code');
 
         toast({
             title: 'Invalid verification code',
-            description: 'The verification code you entered is incorrect. Please try again.',
+            description: error.message || 'The verification code you entered is incorrect. Please try again.',
             variant: 'destructive',
         });
     } finally {
