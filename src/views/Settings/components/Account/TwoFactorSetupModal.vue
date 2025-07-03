@@ -72,11 +72,26 @@ const verify2FACode = async () => {
         localIsLoading.value = false;
     }
 };
+
+const handleOpenChange = (open: boolean) => {
+    if (!open && !props.isLoading && !localIsLoading.value) {
+        emit('update:open', false);
+    }
+};
+
+const handleContentClick = (event: Event) => {
+    event.stopPropagation();
+};
 </script>
 
 <template>
-    <Dialog :open="open" @update:open="emit('update:open', $event)">
-        <DialogContent class="sm:max-w-md">
+    <Dialog :open="open" @update:open="handleOpenChange">
+        <DialogContent
+            class="sm:max-w-md dialog-no-close-on-outside-click"
+            @click="handleContentClick"
+            @pointer-down-outside.prevent
+            @interact-outside.prevent
+        >
             <DialogHeader>
                 <DialogTitle>Set Up Two-Factor Authentication</DialogTitle>
             </DialogHeader>
@@ -102,7 +117,7 @@ const verify2FACode = async () => {
             </div>
 
             <DialogFooter>
-                <Button variant="outline" @click="emit('update:open', false)" :disabled="isLoading || localIsLoading"> Cancel </Button>
+                <Button variant="outline" @click="handleOpenChange(false)" :disabled="isLoading || localIsLoading"> Cancel </Button>
                 <Button @click="verify2FACode" :disabled="isLoading || localIsLoading || verificationCode.join('').length !== 6">
                     <span v-if="isLoading || localIsLoading">Verifying...</span>
                     <span v-else>Verify</span>
@@ -111,3 +126,17 @@ const verify2FACode = async () => {
         </DialogContent>
     </Dialog>
 </template>
+
+<style scoped>
+:deep([data-radix-dialog-overlay]) {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+:deep(.dialog-no-close-on-outside-click) {
+    pointer-events: auto;
+}
+
+:deep([data-radix-dialog-overlay][data-state='open']) {
+    pointer-events: auto;
+}
+</style>

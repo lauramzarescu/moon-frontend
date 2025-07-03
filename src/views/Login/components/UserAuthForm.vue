@@ -14,11 +14,11 @@ import {
 } from '@/views/Login/components/schema.ts';
 import { toast } from '@/components/ui/toast';
 import { useRouter } from 'vue-router';
-import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
 import VerificationCodeInput from '@/components/ui/verification-code-input/VerificationCodeInput.vue';
 import Cookies from 'js-cookie';
 import { config } from '../../../../app.config.ts';
 import TwoFactorSetupModal from '@/views/Settings/components/Account/TwoFactorSetupModal.vue';
+import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
 
 const authService = new AuthService();
 const userService = new UserService();
@@ -121,7 +121,18 @@ async function verifyTwoFactorCode() {
 
 const onSetupComplete = (enabled: boolean, verified: boolean) => {
     show2FAModal.value = false;
+    requires2FASetup.value = false;
     window.location.href = '/';
+};
+
+const handle2FAModalClose = (open: boolean) => {
+    if (!open && !isLoading.value) {
+        show2FAModal.value = false;
+        requires2FASetup.value = false;
+        // Reset form state
+        formData.value = { email: '', password: '' };
+        sessionToken.value = '';
+    }
 };
 
 function cancelTwoFactorVerification() {
@@ -209,17 +220,16 @@ const goToResetPassword = () => {
             </div>
         </div>
 
-        <!-- Step 3: 2FA Setup (Optional) -->
-        <div v-if="requires2FASetup" class="flex flex-col space-y-4">
-            <TwoFactorSetupModal
-                v-model:open="show2FAModal"
-                :qr-code-url="qrCodeUrl"
-                :is-loading="isLoading"
-                :verify-session="true"
-                :session-token="sessionToken"
-                @setup-complete="onSetupComplete"
-            />
-        </div>
+        <!-- Step 3: 2FA Setup Modal -->
+        <TwoFactorSetupModal
+            v-model:open="show2FAModal"
+            :qr-code-url="qrCodeUrl"
+            :is-loading="isLoading"
+            :verify-session="true"
+            :session-token="sessionToken"
+            @setup-complete="onSetupComplete"
+            @update:open="handle2FAModalClose"
+        />
 
         <!-- SAML Login Option -->
         <div v-if="!requires2FAVerification" class="relative">
