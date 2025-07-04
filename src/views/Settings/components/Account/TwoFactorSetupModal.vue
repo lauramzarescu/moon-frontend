@@ -20,13 +20,20 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    // Used for verifying the code entered by the user after the QR code has been scanned on login
+    verifySession: {
+        type: Boolean,
+        required: false,
+    },
+    sessionToken: {
+        type: String,
+        required: false,
+    },
 });
 
 const emit = defineEmits(['update:open', 'setup-complete']);
 
-// Initialize services and stores
 const userService = new UserService();
-
 const verificationCode = ref(['', '', '', '', '', '']);
 const localIsLoading = ref(false);
 
@@ -44,7 +51,7 @@ const verify2FACode = async () => {
 
     localIsLoading.value = true;
     try {
-        await userService.verify2FACode(code);
+        props.verifySession ? await userService.verify2FASession(code, props.sessionToken) : await userService.verify2FACode(code);
 
         toast({
             title: 'Two-factor authentication enabled',
@@ -65,11 +72,26 @@ const verify2FACode = async () => {
         localIsLoading.value = false;
     }
 };
+
+const handleOpenChange = (open: boolean) => {
+    if (!open && !props.isLoading && !localIsLoading.value) {
+        emit('update:open', false);
+    }
+};
+
+const handleContentClick = (event: Event) => {
+    event.stopPropagation();
+};
 </script>
 
 <template>
-    <Dialog :open="open" @update:open="emit('update:open', $event)">
-        <DialogContent class="sm:max-w-md">
+    <Dialog :open="open" @update:open="handleOpenChange">
+        <DialogContent
+            class="sm:max-w-md dialog-no-close-on-outside-click"
+            @click="handleContentClick"
+            @pointer-down-outside.prevent
+            @interact-outside.prevent
+        >
             <DialogHeader>
                 <DialogTitle>Set Up Two-Factor Authentication</DialogTitle>
             </DialogHeader>
@@ -95,7 +117,7 @@ const verify2FACode = async () => {
             </div>
 
             <DialogFooter>
-                <Button variant="outline" @click="emit('update:open', false)" :disabled="isLoading || localIsLoading"> Cancel </Button>
+                <Button variant="outline" @click="handleOpenChange(false)" :disabled="isLoading || localIsLoading"> Cancel </Button>
                 <Button @click="verify2FACode" :disabled="isLoading || localIsLoading || verificationCode.join('').length !== 6">
                     <span v-if="isLoading || localIsLoading">Verifying...</span>
                     <span v-else>Verify</span>
@@ -104,3 +126,17 @@ const verify2FACode = async () => {
         </DialogContent>
     </Dialog>
 </template>
+
+<style scoped>
+:deep([data-radix-dialog-overlay]) {
+    background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+:deep(.dialog-no-close-on-outside-click) {
+    pointer-events: auto;
+}
+
+:deep([data-radix-dialog-overlay][data-state='open']) {
+    pointer-events: auto;
+}
+</style>

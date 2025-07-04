@@ -7,6 +7,10 @@ import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ChevronDown, Filter, Search } from 'lucide-vue-next';
 
+defineProps<{
+    actionsCount: number;
+}>();
+
 const searchQuery = ref('');
 const selectedFilter = ref<string | null>(null);
 
@@ -56,7 +60,7 @@ watch([searchQuery, selectedFilter], () => {
 <template>
     <div class="flex flex-col gap-4">
         <div class="flex items-center justify-between">
-            <h3 class="text-lg font-medium">Defined Actions</h3>
+            <h3 class="text-lg font-medium">Defined Actions ({{ actionsCount }})</h3>
             <div class="flex items-center gap-2">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

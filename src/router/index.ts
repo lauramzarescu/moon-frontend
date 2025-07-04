@@ -121,6 +121,20 @@ const router = createRouter({
             },
         },
         {
+            path: '/settings/workspace',
+            component: () => import('@/views/Settings/WorkspaceView.vue'),
+            meta: {
+                title: 'Workspace',
+            },
+        },
+        {
+            path: '/settings/organization',
+            component: () => import('@/views/Settings/OrganizationView.vue'),
+            meta: {
+                title: 'Organization',
+            },
+        },
+        {
             path: '/settings/account',
             component: () => import('@/views/Settings/AccountView.vue'),
             meta: {

@@ -2,7 +2,6 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     DropdownMenu,
@@ -225,27 +224,27 @@ watch(
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent class="p-0" align="end">
-                            <Command>
-                                <CommandInput placeholder="Select new role..." />
-                                <CommandList>
-                                    <CommandEmpty>No roles found.</CommandEmpty>
-                                    <CommandGroup>
-                                        <CommandItem
-                                            v-for="role in Object.values(UserRole)"
-                                            :key="role"
-                                            :value="role"
-                                            :disabled="!hasPermission(PermissionEnum.USER_WRITE)"
-                                            @select="() => handleRoleChange(user, role)"
-                                            class="space-y-1 flex flex-col items-start px-4 py-2"
-                                        >
-                                            <p>{{ role }}</p>
-                                            <p class="text-sm text-foreground">
-                                                {{ getRoleDescription(role) }}
-                                            </p>
-                                        </CommandItem>
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
+                            <div class="max-h-60 overflow-auto">
+                                <div
+                                    v-for="role in Object.values(UserRole)"
+                                    :key="role"
+                                    :class="{
+                                        'bg-accent text-accent-foreground': userRoles[user.id] === role,
+                                        'font-medium': userRoles[user.id] === role,
+                                        'opacity-50 cursor-not-allowed': !hasPermission(PermissionEnum.USER_WRITE),
+                                    }"
+                                    class="space-y-1 flex flex-col items-start px-4 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+                                    @click="hasPermission(PermissionEnum.USER_WRITE) && handleRoleChange(user, role)"
+                                >
+                                    <div class="flex items-center justify-between w-full">
+                                        <p>{{ role }}</p>
+                                        <span v-if="userRoles[user.id] === role" class="ml-2 text-xs">✓</span>
+                                    </div>
+                                    <p class="text-sm text-muted-foreground">
+                                        {{ getRoleDescription(role) }}
+                                    </p>
+                                </div>
+                            </div>
                         </PopoverContent>
                     </Popover>
 

@@ -5,12 +5,7 @@
 
             <div class="flex items-center gap-2">
                 <!-- Export Button -->
-                <Button
-                    variant="outline"
-                    size="sm"
-                    :disabled="!hasPermission(PermissionEnum.USER_READ) || isExporting"
-                    @click="handleExportUsers"
-                >
+                <Button variant="outline" :disabled="!hasPermission(PermissionEnum.USER_READ) || isExporting" @click="handleExportUsers">
                     <Loader2 v-if="isExporting" class="mr-2 h-4 w-4 animate-spin" />
                     <Download v-else class="mr-2 h-4 w-4" />
                     Export
@@ -19,7 +14,7 @@
                 <!-- Add User Dropdown -->
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button :disabled="!hasPermission(PermissionEnum.USER_WRITE)" class="flex items-center gap-2">
+                        <Button variant="outline" :disabled="!hasPermission(PermissionEnum.USER_WRITE)" class="flex items-center gap-2">
                             <UserPlus class="h-4 w-4" />
                             Add User
                             <ChevronDown class="h-4 w-4 ml-1" />

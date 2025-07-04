@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { Switch } from '@/components/ui/switch';
-import { toast } from '@/components/ui/toast';
 import { UserService } from '@/services/user.service.ts';
 import { useAuthStore } from '@/stores/authStore.ts';
-import { twoFactorSetupResponseSchema } from '@/views/Settings/components/Account/schema.ts';
 import TwoFactorSetupModal from './TwoFactorSetupModal.vue';
 import TwoFactorDisableModal from './TwoFactorDisableModal.vue';
 import { LoginType } from '@/enums/user/user.enum.ts';
+import { toast } from '@/components/ui/toast';
+import { twoFactorSetupResponseSchema } from '@/views/Settings/components/Account/schema.ts';
 
 const props = defineProps({
     twoFactorEnabled: {

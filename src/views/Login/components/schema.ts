@@ -7,6 +7,8 @@ export const loginWithEmailAndPasswordSchema = z.object({
 
 export const loginWithEmailAndPasswordResponseSchema = z.object({
     requires2FAVerification: z.boolean(),
+    requires2FASetup: z.boolean().optional(),
+    qrCodeUrl: z.string().optional(),
     status: z.string(),
 });
 

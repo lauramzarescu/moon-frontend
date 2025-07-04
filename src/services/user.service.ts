@@ -134,7 +134,6 @@ export class UserService extends ApiService {
      * @param code
      * @param sessionToken
      */
-    // Add this method to the UserService class
     async verify2FASession(code: string, sessionToken?: string): Promise<any> {
         const headers: Record<string, string> = {};
 

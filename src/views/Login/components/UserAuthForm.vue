@@ -14,10 +14,11 @@ import {
 } from '@/views/Login/components/schema.ts';
 import { toast } from '@/components/ui/toast';
 import { useRouter } from 'vue-router';
-import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
 import VerificationCodeInput from '@/components/ui/verification-code-input/VerificationCodeInput.vue';
 import Cookies from 'js-cookie';
 import { config } from '../../../../app.config.ts';
+import TwoFactorSetupModal from '@/views/Settings/components/Account/TwoFactorSetupModal.vue';
+import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
 
 const authService = new AuthService();
 const userService = new UserService();
@@ -25,8 +26,12 @@ const router = useRouter();
 
 const isLoading = ref(false);
 const requires2FAVerification = ref(false);
+const requires2FASetup = ref(false);
 const verificationCode = ref(['', '', '', '', '', '']);
 const sessionToken = ref(''); // Store the temporary session token
+
+const show2FAModal = ref(false);
+const qrCodeUrl = ref('');
 
 const formData = ref<LoginWithEmailAndPassword>({
     email: '',
@@ -49,8 +54,25 @@ async function onSubmit(event: Event) {
 
             requires2FAVerification.value = true;
             isLoading.value = false;
+        } else if (response.requires2FASetup && response.qrCodeUrl) {
+            const tempToken = Cookies.get('token');
+            if (tempToken) {
+                sessionToken.value = tempToken;
+            }
+
+            requires2FASetup.value = true;
+            qrCodeUrl.value = response.qrCodeUrl;
+            show2FAModal.value = true;
+            isLoading.value = false;
         } else if (response.status === 'success') {
             window.location.href = '/';
+        } else {
+            toast({
+                title: 'Login Failed',
+                description: 'An unexpected error occurred. Please try again.',
+                variant: 'destructive',
+            });
+            isLoading.value = false;
         }
     } catch (error) {
         toast({
@@ -96,6 +118,22 @@ async function verifyTwoFactorCode() {
         isLoading.value = false;
     }
 }
+
+const onSetupComplete = (enabled: boolean, verified: boolean) => {
+    show2FAModal.value = false;
+    requires2FASetup.value = false;
+    window.location.href = '/';
+};
+
+const handle2FAModalClose = (open: boolean) => {
+    if (!open && !isLoading.value) {
+        show2FAModal.value = false;
+        requires2FASetup.value = false;
+        // Reset form state
+        formData.value = { email: '', password: '' };
+        sessionToken.value = '';
+    }
+};
 
 function cancelTwoFactorVerification() {
     requires2FAVerification.value = false;
@@ -181,6 +219,17 @@ const goToResetPassword = () => {
                 </Button>
             </div>
         </div>
+
+        <!-- Step 3: 2FA Setup Modal -->
+        <TwoFactorSetupModal
+            v-model:open="show2FAModal"
+            :qr-code-url="qrCodeUrl"
+            :is-loading="isLoading"
+            :verify-session="true"
+            :session-token="sessionToken"
+            @setup-complete="onSetupComplete"
+            @update:open="handle2FAModalClose"
+        />
 
         <!-- SAML Login Option -->
         <div v-if="!requires2FAVerification" class="relative">

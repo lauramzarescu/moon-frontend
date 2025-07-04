@@ -1,22 +1,36 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { type ActionDefinition } from './schema';
+import { type ActionDefinition, type ActionExportInput } from './schema';
 import { ActionService } from '@/services/action.service.ts';
 import { toast } from '@/components/ui/toast';
 import ActionBuilder from './ActionBuilder.vue';
 import ActionList from './ActionList.vue';
+import ImportActionsModal from './ImportActionsModal.vue';
 import { Card, CardContent } from '@/components/ui/card';
-import { InfoIcon, Plus } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown, Download, InfoIcon, Loader2, Plus, Upload } from 'lucide-vue-next';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const actionService = new ActionService();
 const configuredActions = ref<ActionDefinition[]>([]);
 const isLoading = ref(true);
 const showActionBuilder = ref(false);
+const showImportModal = ref(false);
+const isExporting = ref(false);
 
 const handleActionCreated = async (newAction: ActionDefinition) => {
     try {
         await actionService.create(newAction);
+
+        configuredActions.value.push(newAction);
+        showActionBuilder.value = false;
 
         toast({
             title: 'Action created',
@@ -32,11 +46,6 @@ const handleActionCreated = async (newAction: ActionDefinition) => {
         });
         return;
     }
-
-    configuredActions.value.push(newAction);
-    showActionBuilder.value = false;
-
-    configuredActions.value = await actionService.getAll();
 };
 
 const handleUpdateActionStatus = async (actionId: string, newStatus: boolean) => {
@@ -44,8 +53,9 @@ const handleUpdateActionStatus = async (actionId: string, newStatus: boolean) =>
 
     try {
         if (actionIndex !== -1) {
-            configuredActions.value[actionIndex].enabled = newStatus;
             await actionService.updateOne(actionId, configuredActions.value[actionIndex]);
+
+            configuredActions.value[actionIndex].enabled = newStatus;
 
             toast({
                 title: 'Action status updated',
@@ -62,13 +72,22 @@ const handleUpdateActionStatus = async (actionId: string, newStatus: boolean) =>
         });
         return;
     }
-
-    configuredActions.value = await actionService.getAll();
 };
 
 const handleDeleteAction = async (actionId: string) => {
     try {
         await actionService.deleteOne(actionId);
+
+        const actionIndex = configuredActions.value.findIndex((a) => a.id === actionId);
+        if (actionIndex === -1) {
+            toast({
+                title: 'Action not found',
+                description: 'The action you are trying to delete does not exist.',
+                variant: 'destructive',
+            });
+            return;
+        }
+        configuredActions.value.splice(actionIndex, 1);
 
         toast({
             title: 'Action deleted',
@@ -84,9 +103,6 @@ const handleDeleteAction = async (actionId: string) => {
         });
         return;
     }
-
-    configuredActions.value = configuredActions.value.filter((a) => a.id !== actionId);
-    configuredActions.value = await actionService.getAll();
 };
 
 const handleEditAction = async (updatedAction: ActionDefinition) => {
@@ -94,8 +110,8 @@ const handleEditAction = async (updatedAction: ActionDefinition) => {
 
     try {
         if (index !== -1) {
-            configuredActions.value[index] = updatedAction;
             await actionService.updateOne(updatedAction.id, updatedAction);
+            configuredActions.value[index] = updatedAction;
 
             toast({
                 title: 'Action updated',
@@ -112,13 +128,12 @@ const handleEditAction = async (updatedAction: ActionDefinition) => {
         });
         return;
     }
-
-    configuredActions.value = await actionService.getAll();
 };
 
 const handleCopyAction = async (copiedAction: ActionDefinition) => {
     try {
         await actionService.create(copiedAction);
+        configuredActions.value.push(copiedAction);
 
         toast({
             title: 'Action copied',
@@ -134,9 +149,54 @@ const handleCopyAction = async (copiedAction: ActionDefinition) => {
         });
         return;
     }
+};
 
-    configuredActions.value.push(copiedAction);
-    configuredActions.value = await actionService.getAll();
+const downloadJsonFile = (data: any, filename: string) => {
+    const jsonString = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+};
+
+const handleExportActions = async () => {
+    isExporting.value = true;
+    try {
+        const exportData: ActionExportInput[] = await actionService.exportActions();
+
+        // Generate filename with current date
+        const currentDate = new Date().toISOString().split('T')[0];
+        const filename = `actions-export-${currentDate}.json`;
+
+        // Download the file
+        downloadJsonFile(exportData, filename);
+
+        toast({
+            title: 'Export successful',
+            description: `${exportData.length} actions exported successfully.`,
+            variant: 'success',
+        });
+    } catch (error) {
+        console.error('Failed to export actions:', error);
+        toast({
+            title: 'Export failed',
+            description: error instanceof Error ? error.message : 'Failed to export actions. Please try again.',
+            variant: 'destructive',
+        });
+    } finally {
+        isExporting.value = false;
+    }
+};
+
+const handleActionsImported = async () => {
+    await loadActions();
 };
 
 const toggleActionBuilder = () => {
@@ -147,7 +207,7 @@ const handleBuilderCancel = () => {
     showActionBuilder.value = false;
 };
 
-onMounted(async () => {
+const loadActions = async () => {
     try {
         configuredActions.value = await actionService.getAll();
     } catch (error) {
@@ -157,6 +217,12 @@ onMounted(async () => {
             description: 'There was an error loading your actions. Please refresh the page.',
             variant: 'destructive',
         });
+    }
+};
+
+onMounted(async () => {
+    try {
+        await loadActions();
     } finally {
         isLoading.value = false;
     }
@@ -165,14 +231,47 @@ onMounted(async () => {
 
 <template>
     <div class="mx-auto py-6 space-y-8">
-        <Alert variant="info" class="bg-blue-50 dark:bg-blue-950/30">
+        <div class="flex justify-between items-center">
+            <Alert variant="info" class="bg-blue-50 dark:bg-blue-950/30 flex-1 mr-4">
+                <div class="flex items-center gap-2">
+                    <InfoIcon class="h-4 w-4" />
+                    <AlertDescription class="text-foreground">
+                        Define automated actions triggered by specific events in your system.
+                    </AlertDescription>
+                </div>
+            </Alert>
+
             <div class="flex items-center gap-2">
-                <InfoIcon class="h-4 w-4" />
-                <AlertDescription class="text-foreground">
-                    Define automated actions triggered by specific events in your system.
-                </AlertDescription>
+                <!-- Export Button -->
+                <Button variant="outline" :disabled="isExporting || configuredActions.length === 0" @click="handleExportActions">
+                    <Loader2 v-if="isExporting" class="mr-2 h-4 w-4 animate-spin" />
+                    <Download v-else class="mr-2 h-4 w-4" />
+                    Export
+                </Button>
+
+                <!-- Add Action Dropdown -->
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button class="flex items-center gap-2" variant="outline">
+                            <Plus class="h-4 w-4" />
+                            Add Action
+                            <ChevronDown class="h-4 w-4 ml-1" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="w-56">
+                        <DropdownMenuItem @click="toggleActionBuilder">
+                            <Plus class="mr-2 h-4 w-4" />
+                            <span>Create new action</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem @click="showImportModal = true">
+                            <Upload class="mr-2 h-4 w-4" />
+                            <span>Import actions</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
-        </Alert>
+        </div>
 
         <div class="grid gap-8">
             <ActionList
@@ -197,5 +296,8 @@ onMounted(async () => {
                 </CardContent>
             </Card>
         </div>
+
+        <!-- Import Actions Modal -->
+        <ImportActionsModal v-model:isOpen="showImportModal" @actions-imported="handleActionsImported" />
     </div>
 </template>
