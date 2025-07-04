@@ -33,7 +33,7 @@ const filteredActions = computed(() => {
     let result = props.actions;
 
     // Apply search filter
-    if (searchQuery.value) {
+    if (searchQuery.value && result) {
         const query = searchQuery.value.toLowerCase();
         result = result.filter(
             (action) =>
@@ -94,7 +94,7 @@ const saveEdit = (updatedAction: ActionDefinition) => {
 
 <template>
     <div class="space-y-6 w-full">
-        <ActionFilter @filter-change="handleFilterChange" />
+        <ActionFilter @filter-change="handleFilterChange" :actions-count="filteredActions.length" />
 
         <!-- Loading state -->
         <div v-if="loading" class="flex justify-center py-12">
@@ -131,7 +131,7 @@ const saveEdit = (updatedAction: ActionDefinition) => {
         <!-- Action list -->
         <div v-else class="grid gap-4 w-full">
             <TransitionGroup name="action-list" tag="div" class="grid gap-4 w-full">
-                <template v-for="action in filteredActions" :key="action.id">
+                <template v-for="action in filteredActions" :key="action?.id">
                     <!-- Edit mode -->
                     <ActionEditForm v-if="editingActionId === action.id" :action="action" @save="saveEdit" @cancel="cancelEditing" />
 
