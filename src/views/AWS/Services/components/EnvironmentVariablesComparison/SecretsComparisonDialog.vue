@@ -11,7 +11,6 @@ import { computed, reactive, ref, TransitionGroup, watch } from 'vue';
 import ServiceComparisonCard from './ServiceComparisonCard.vue';
 import ComparisonSummary from './ComparisonSummary.vue';
 
-// Helper imports
 import {
     calculateComparisonStats,
     createInitialDialogState,
@@ -26,8 +25,8 @@ import {
 } from './helpers/comparisonHelpers';
 
 const props = defineProps<{
-    services: ServiceInterface[]; // All services
-    filteredServices?: ServiceInterface[]; // Filtered services (optional)
+    services: ServiceInterface[];
+    filteredServices?: ServiceInterface[];
     showAllServices?: boolean;
 }>();
 
@@ -35,7 +34,6 @@ const isOpen = ref(false);
 const dialogState = reactive(createInitialDialogState());
 const searchQuery = ref('');
 
-// Maximum number of services that can be compared at once
 const MAX_SERVICES_TO_COMPARE = 8;
 
 const allAvailableServices = computed(() => {
@@ -111,18 +109,15 @@ watch(
     { deep: true },
 );
 
-// Handle dialog open/close
 watch(isOpen, (newValue) => {
     if (newValue) {
-        // Dialog opened - reset and initialize
         resetDialogState(dialogState);
         initializeSelectedServices(dialogState, filteredAvailableServices.value, hasFilteredServices.value ?? false);
         dialogState.showAllServices = props.showAllServices ?? false;
-        searchQuery.value = ''; // Clear search when opening
+        searchQuery.value = '';
     } else {
-        // Dialog closed - clear all data
         resetDialogState(dialogState);
-        searchQuery.value = ''; // Clear search when closing
+        searchQuery.value = '';
     }
 });
 
@@ -143,12 +138,11 @@ const comparisonStats = computed(() => {
     );
 });
 
-// Component methods
 const handleToggleService = (service: any) => {
     // Check if we're trying to add a service and we've reached the limit
     const isCurrentlySelected = isServiceSelected(dialogState, service);
     if (!isCurrentlySelected && !canAddMoreServices.value) {
-        return; // Don't add more services if limit is reached
+        return;
     }
 
     toggleService(dialogState, service);
@@ -160,7 +154,7 @@ const handleIsServiceSelected = (service: any) => {
 
 const toggleServiceView = () => {
     dialogState.showAllServices = !dialogState.showAllServices;
-    searchQuery.value = ''; // Clear search when switching views
+    searchQuery.value = '';
 };
 
 const handleGetServiceComparisonData = (service: any) => {
@@ -177,21 +171,12 @@ const clearSearch = () => {
     searchQuery.value = '';
 };
 
-// Always use flex layout for horizontal scrolling
 const gridClass = computed(() => {
     return 'flex gap-4';
 });
 
-// Fixed width for service cards
 const serviceCardWidth = computed(() => {
     return 'w-[380px] flex-shrink-0';
-});
-
-// Check if services were truncated
-const servicesWereTruncated = computed(() => {
-    const originalServices = transformServices(props.services || []);
-    const originalFiltered = transformServices(props.filteredServices || []);
-    return originalServices.length > MAX_SERVICES_TO_COMPARE || originalFiltered.length > MAX_SERVICES_TO_COMPARE;
 });
 </script>
 
