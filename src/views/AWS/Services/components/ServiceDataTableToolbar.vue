@@ -28,14 +28,11 @@ const props = defineProps<DataTableToolbarProps>();
 const isFiltered = computed(() => props.table.getState().columnFilters.length > 0);
 
 const servicesToCompare = computed(() => {
-    // Ensure allServices is defined and is an array
     const allServices = services.value || [];
 
     if (isFiltered.value) {
-        // Return filtered rows
         return props.table.getFilteredRowModel().rows.map((row) => row.original as ServiceInterface);
     } else {
-        // Return all services if no filter is applied
         return allServices;
     }
 });
@@ -99,12 +96,7 @@ const handleDeploymentCompleted = () => {
             </Button>
         </div>
         <div class="flex items-center space-x-2">
-            <MultipleServicesDeploymentDialog
-                :services="services"
-                :filteredServices="servicesToCompare"
-                :is-filtered="isFiltered"
-                @deployment-completed="handleDeploymentCompleted"
-            />
+            <MultipleServicesDeploymentDialog :services="services" @deployment-completed="handleDeploymentCompleted" />
             <SecretsComparisonDialog :services="services" :filteredServices="servicesToCompare" :is-filtered="isFiltered" />
             <DataTableViewOptions :table="table" />
         </div>
