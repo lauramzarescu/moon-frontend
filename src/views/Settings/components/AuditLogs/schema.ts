@@ -85,6 +85,8 @@ export const auditLogSchema = z.object({
         info: z
             .object({
                 email: z.string().email().optional(),
+                objectOld: z.unknown().optional(),
+                objectNew: z.unknown().optional(),
             })
             .and(z.record(z.string(), z.unknown()))
             .optional(),

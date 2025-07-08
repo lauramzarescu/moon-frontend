@@ -175,7 +175,7 @@
 
         <!-- Audit Log Details Sheet -->
         <Sheet v-model:open="isSheetOpen">
-            <SheetContent side="right" class="w-[1200px] sm:w-[1200px]">
+            <SheetContent side="right" class="w-[1400px] sm:w-[1400px] max-w-[90vw]">
                 <SheetHeader class="border-b pb-4">
                     <SheetTitle class="flex items-center gap-3">
                         <span class="font-bold text-xl">Audit Log Details</span>
@@ -185,82 +185,187 @@
 
                 <div class="mt-6 overflow-auto h-[calc(100vh-120px)]">
                     <div v-if="selectedLog" class="space-y-6">
-                        <!-- Action -->
-                        <div>
-                            <label class="text-sm font-medium text-foreground">Action</label>
-                            <div class="mt-2">
-                                <div
-                                    :class="[
-                                        'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium',
-                                        getActionBadgeClass(selectedLog.action),
-                                    ]"
-                                >
-                                    {{ formatActionName(selectedLog.action) }}
-                                </div>
-                            </div>
+                        <!-- Navigation Tabs -->
+                        <div v-if="hasDiffData" class="flex space-x-1 bg-muted p-1 rounded-lg">
+                            <button
+                                @click="activeSection = 'overview'"
+                                :class="[
+                                    'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                                    activeSection === 'overview'
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                ]"
+                            >
+                                Overview
+                            </button>
+                            <button
+                                @click="activeSection = 'diff'"
+                                :class="[
+                                    'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                                    activeSection === 'diff'
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                ]"
+                            >
+                                Changes
+                            </button>
                         </div>
 
-                        <!-- User ID -->
-                        <div>
-                            <label class="text-sm font-medium text-foreground">User ID</label>
-                            <div class="mt-2 flex items-center justify-between p-3 bg-muted rounded-lg">
-                                <span class="text-sm font-mono">{{ selectedLog.userId }}</span>
-                                <Button variant="ghost" size="sm" @click="copyUserId(selectedLog.userId)"> Copy</Button>
-                            </div>
-                        </div>
-
-                        <!-- Organization ID -->
-                        <div>
-                            <label class="text-sm font-medium text-foreground">Organization ID</label>
-                            <div class="mt-2 flex items-center justify-between p-3 bg-muted rounded-lg">
-                                <span class="text-sm font-mono">{{ selectedLog.organizationId }}</span>
-                                <Button variant="ghost" size="sm" @click="copyOrganizationId(selectedLog.organizationId)"> Copy </Button>
-                            </div>
-                        </div>
-
-                        <!-- Created At -->
-                        <div>
-                            <label class="text-sm font-medium text-foreground">Created At</label>
-                            <p class="text-sm text-muted-foreground mt-2 p-3 bg-muted rounded-lg">
-                                {{ formatDate(selectedLog.createdAt) }}
-                            </p>
-                        </div>
-
-                        <!-- Updated At -->
-                        <div v-if="selectedLog.updatedAt && selectedLog.updatedAt !== selectedLog.createdAt">
-                            <label class="text-sm font-medium text-foreground">Updated At</label>
-                            <p class="text-sm text-muted-foreground mt-2 p-3 bg-muted rounded-lg">
-                                {{ formatDate(selectedLog.updatedAt) }}
-                            </p>
-                        </div>
-
-                        <!-- IP Address -->
-                        <div v-if="selectedLog.details?.ip">
-                            <label class="text-sm font-medium text-foreground">IP Address</label>
-                            <p class="text-sm font-mono mt-2 p-3 bg-muted rounded-lg">
-                                {{ selectedLog.details.ip }}
-                            </p>
-                        </div>
-
-                        <!-- Additional Information -->
-                        <div v-if="selectedLog.details?.info && Object.keys(selectedLog.details.info).length > 0">
-                            <label class="text-sm font-medium text-foreground">Additional Information</label>
-                            <div class="mt-2 space-y-3">
-                                <div v-for="(value, key) in selectedLog.details.info" :key="key" class="space-y-2">
-                                    <label class="text-xs font-medium text-muted-foreground">{{ key }}</label>
-                                    <div class="p-3 bg-muted rounded-lg">
-                                        <pre class="text-xs font-mono whitespace-pre-wrap break-all">{{ formatInfoValue(value) }}</pre>
+                        <!-- Overview Section -->
+                        <div v-if="activeSection === 'overview'" class="space-y-6">
+                            <!-- Action -->
+                            <div>
+                                <label class="text-sm font-medium text-foreground">Action</label>
+                                <div class="mt-2">
+                                    <div
+                                        :class="[
+                                            'inline-flex items-center rounded-full px-3 py-1 text-sm font-medium',
+                                            getActionBadgeClass(selectedLog.action),
+                                        ]"
+                                    >
+                                        {{ formatActionName(selectedLog.action) }}
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- User ID -->
+                            <div>
+                                <label class="text-sm font-medium text-foreground">User ID</label>
+                                <div class="mt-2 flex items-center justify-between p-3 bg-muted rounded-lg">
+                                    <span class="text-sm font-mono">{{ selectedLog.userId }}</span>
+                                    <Button variant="ghost" size="sm" @click="copyUserId(selectedLog.userId)"> Copy </Button>
+                                </div>
+                            </div>
+
+                            <!-- Organization ID -->
+                            <div>
+                                <label class="text-sm font-medium text-foreground">Organization ID</label>
+                                <div class="mt-2 flex items-center justify-between p-3 bg-muted rounded-lg">
+                                    <span class="text-sm font-mono">{{ selectedLog.organizationId }}</span>
+                                    <Button variant="ghost" size="sm" @click="copyOrganizationId(selectedLog.organizationId)">
+                                        Copy
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <!-- Created At -->
+                            <div>
+                                <label class="text-sm font-medium text-foreground">Created At</label>
+                                <p class="text-sm text-muted-foreground mt-2 p-3 bg-muted rounded-lg">
+                                    {{ formatDate(selectedLog.createdAt) }}
+                                </p>
+                            </div>
+
+                            <!-- Updated At -->
+                            <div v-if="selectedLog.updatedAt && selectedLog.updatedAt !== selectedLog.createdAt">
+                                <label class="text-sm font-medium text-foreground">Updated At</label>
+                                <p class="text-sm text-muted-foreground mt-2 p-3 bg-muted rounded-lg">
+                                    {{ formatDate(selectedLog.updatedAt) }}
+                                </p>
+                            </div>
+
+                            <!-- IP Address -->
+                            <div v-if="selectedLog.details?.ip">
+                                <label class="text-sm font-medium text-foreground">IP Address</label>
+                                <p class="text-sm font-mono mt-2 p-3 bg-muted rounded-lg">
+                                    {{ selectedLog.details.ip }}
+                                </p>
+                            </div>
+
+                            <!-- Additional Information -->
+                            <div v-if="selectedLog.details?.info && Object.keys(selectedLog.details.info).length > 0">
+                                <label class="text-sm font-medium text-foreground">Additional Information</label>
+                                <div class="mt-2 space-y-3">
+                                    <div v-for="(value, key) in selectedLog.details.info" :key="key" class="space-y-2">
+                                        <label class="text-xs font-medium text-muted-foreground">{{ key }}</label>
+                                        <div class="p-3 bg-muted rounded-lg">
+                                            <pre class="text-xs font-mono whitespace-pre-wrap break-all">{{ formatInfoValue(value) }}</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Log ID -->
+                            <div>
+                                <label class="text-sm font-medium text-foreground">Log ID</label>
+                                <div class="mt-2 flex items-center justify-between p-3 bg-muted rounded-lg">
+                                    <span class="text-xs font-mono break-all">{{ selectedLog.id }}</span>
+                                    <Button variant="ghost" size="sm" @click="copyLogId(selectedLog.id)"> Copy</Button>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Log ID -->
-                        <div>
-                            <label class="text-sm font-medium text-foreground">Log ID</label>
-                            <div class="mt-2 flex items-center justify-between p-3 bg-muted rounded-lg">
-                                <span class="text-xs font-mono break-all">{{ selectedLog.id }}</span>
-                                <Button variant="ghost" size="sm" @click="copyLogId(selectedLog.id)"> Copy</Button>
+                        <!-- Diff Section -->
+                        <div v-if="activeSection === 'diff' && hasDiffData" class="space-y-6">
+                            <div>
+                                <label class="text-sm font-medium text-foreground mb-4 block">Object Changes</label>
+
+                                <!-- GitHub-style Diff View -->
+                                <div class="border rounded-lg overflow-hidden bg-background">
+                                    <div class="bg-muted px-4 py-2 border-b">
+                                        <h4 class="text-sm font-medium text-foreground">Changes</h4>
+                                    </div>
+                                    <div class="max-h-96 overflow-auto">
+                                        <div
+                                            v-for="line in getDiffLines()"
+                                            :key="line.key"
+                                            :class="[
+                                                'flex text-xs font-mono leading-5',
+                                                line.type === 'removed' && 'bg-red-50 dark:bg-red-950/20',
+                                                line.type === 'added' && 'bg-green-50 dark:bg-green-950/20',
+                                                line.type === 'unchanged' && 'bg-background',
+                                            ]"
+                                        >
+                                            <div
+                                                :class="[
+                                                    'w-12 px-2 py-1 text-right border-r select-none flex-shrink-0',
+                                                    line.type === 'removed' &&
+                                                        'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
+                                                    line.type === 'added' &&
+                                                        'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+                                                    line.type === 'unchanged' && 'bg-muted/50 text-muted-foreground',
+                                                ]"
+                                            >
+                                                <span v-if="line.type === 'removed'">-</span>
+                                                <span v-else-if="line.type === 'added'">+</span>
+                                                <span v-else>&nbsp;</span>
+                                            </div>
+                                            <div
+                                                :class="[
+                                                    'flex-1 px-3 py-1 whitespace-pre-wrap break-all',
+                                                    line.type === 'removed' && 'text-red-800 dark:text-red-200',
+                                                    line.type === 'added' && 'text-green-800 dark:text-green-200',
+                                                    line.type === 'unchanged' && 'text-foreground',
+                                                ]"
+                                            >
+                                                {{ line.content }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Diff Summary -->
+                                <div class="mt-4 p-4 bg-muted rounded-lg">
+                                    <h4 class="text-sm font-medium text-foreground mb-2">Change Summary</h4>
+                                    <div class="space-y-2">
+                                        <div v-for="change in getDiffSummary()" :key="change.field" class="flex items-center gap-2 text-xs">
+                                            <span
+                                                :class="[
+                                                    'w-2 h-2 rounded-full',
+                                                    change.type === 'added'
+                                                        ? 'bg-green-500'
+                                                        : change.type === 'removed'
+                                                          ? 'bg-red-500'
+                                                          : 'bg-yellow-500',
+                                                ]"
+                                            ></span>
+                                            <span class="font-mono text-muted-foreground">{{ change.field }}</span>
+                                            <span class="text-muted-foreground">
+                                                {{ change.type === 'added' ? 'added' : change.type === 'removed' ? 'removed' : 'changed' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -278,7 +383,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { DotsHorizontalIcon } from '@radix-icons/vue';
 import { toast } from '@/components/ui/toast';
 import { AuditLogService } from '@/services/audit-log.service.ts';
-import { type AuditLog, AuditLogEnum, type PaginationMeta, type PaginationParams } from './schema.ts';
+import { type AuditLog, AuditLogEnum, type PaginationMeta, type PaginationParams } from './schema.ts'; // Service instance
 
 // Service instance
 const auditLogService = new AuditLogService();
@@ -321,6 +426,10 @@ const debouncedSearch = () => {
 // Computed properties
 const hasActiveFilters = computed(() => {
     return filters.userId.trim() !== '' || filters.action !== '';
+});
+
+const hasDiffData = computed(() => {
+    return selectedLog.value?.details?.info?.objectOld && selectedLog.value?.details?.info?.objectNew;
 });
 
 const visiblePages = computed(() => {
@@ -416,7 +525,7 @@ const formatDate = (date: Date | string) => {
 
 const formatActionName = (action: AuditLogEnum) => {
     return action
-        .replace(/:/g, ' ')
+        .replace(/_/g, ' ')
         .toLowerCase()
         .replace(/\b\w/g, (l) => l.toUpperCase());
 };
@@ -439,6 +548,128 @@ const formatInfoValue = (value: unknown): string => {
         return JSON.stringify(value, null, 2);
     }
     return String(value);
+};
+
+const formatDiffValue = (value: unknown): string => {
+    if (typeof value === 'object' && value !== null) {
+        return JSON.stringify(value, null, 2);
+    }
+    return String(value);
+};
+
+const getDiffLines = () => {
+    if (!selectedLog.value?.details?.info?.objectOld || !selectedLog.value?.details?.info.objectNew) {
+        return [];
+    }
+
+    const oldObj =
+        typeof selectedLog.value.details.info.objectOld === 'object'
+            ? (selectedLog.value.details.info.objectOld as Record<string, any>)
+            : {};
+    const newObj =
+        typeof selectedLog.value.details.info.objectNew === 'object'
+            ? (selectedLog.value.details.info.objectNew as Record<string, any>)
+            : {};
+
+    const lines: Array<{ key: string; content: string; type: 'added' | 'removed' | 'unchanged' }> = [];
+    const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+
+    // Sort keys for consistent display
+    const sortedKeys = Array.from(allKeys).sort();
+
+    sortedKeys.forEach((key) => {
+        const oldValue = oldObj[key];
+        const newValue = newObj[key];
+        const oldValueStr = oldValue !== undefined ? JSON.stringify(oldValue, null, 2) : undefined;
+        const newValueStr = newValue !== undefined ? JSON.stringify(newValue, null, 2) : undefined;
+
+        if (oldValue === undefined && newValue !== undefined) {
+            // Added
+            const lines_to_add = newValueStr!.split('\n');
+            lines_to_add.forEach((line, index) => {
+                lines.push({
+                    key: `${key}-added-${index}`,
+                    content: index === 0 ? `"${key}": ${line}` : line,
+                    type: 'added',
+                });
+            });
+        } else if (oldValue !== undefined && newValue === undefined) {
+            // Removed
+            const lines_to_remove = oldValueStr!.split('\n');
+            lines_to_remove.forEach((line, index) => {
+                lines.push({
+                    key: `${key}-removed-${index}`,
+                    content: index === 0 ? `"${key}": ${line}` : line,
+                    type: 'removed',
+                });
+            });
+        } else if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+            // Changed - show both old and new
+            const old_lines = oldValueStr!.split('\n');
+            const new_lines = newValueStr!.split('\n');
+
+            old_lines.forEach((line, index) => {
+                lines.push({
+                    key: `${key}-old-${index}`,
+                    content: index === 0 ? `"${key}": ${line}` : line,
+                    type: 'removed',
+                });
+            });
+
+            new_lines.forEach((line, index) => {
+                lines.push({
+                    key: `${key}-new-${index}`,
+                    content: index === 0 ? `"${key}": ${line}` : line,
+                    type: 'added',
+                });
+            });
+        } else {
+            // Unchanged - show context
+            const unchanged_lines = oldValueStr!.split('\n');
+            unchanged_lines.forEach((line, index) => {
+                lines.push({
+                    key: `${key}-unchanged-${index}`,
+                    content: index === 0 ? `"${key}": ${line}` : line,
+                    type: 'unchanged',
+                });
+            });
+        }
+    });
+
+    return lines;
+};
+
+const getDiffSummary = () => {
+    if (!selectedLog.value?.details?.info?.objectOld || !selectedLog.value?.details?.info.objectNew) {
+        return [];
+    }
+
+    const oldObj =
+        typeof selectedLog.value.details.info.objectOld === 'object'
+            ? (selectedLog.value.details.info.objectOld as Record<string, any>)
+            : {};
+    const newObj =
+        typeof selectedLog.value.details.info.objectNew === 'object'
+            ? (selectedLog.value.details.info.objectNew as Record<string, any>)
+            : {};
+
+    const changes: Array<{ field: string; type: 'added' | 'removed' | 'changed' }> = [];
+    const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+
+    allKeys.forEach((key) => {
+        const oldValue = oldObj[key];
+        const newValue = newObj[key];
+
+        if (oldValue === undefined && newValue !== undefined) {
+            changes.push({ field: key, type: 'added' });
+        } else if (oldValue !== undefined && newValue === undefined) {
+            changes.push({ field: key, type: 'removed' });
+        } else if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+            changes.push({ field: key, type: 'changed' });
+        }
+    });
+
+    return changes;
 };
 
 const copyToClipboard = async (text: string, label: string) => {
@@ -471,7 +702,6 @@ const copyOrganizationId = (organizationId: string) => {
     copyToClipboard(organizationId, 'Organization ID');
 };
 
-// Lifecycle
 onMounted(() => {
     fetchAuditLogs();
 });
