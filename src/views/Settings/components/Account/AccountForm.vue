@@ -2,15 +2,12 @@
 import { onMounted, ref } from 'vue';
 import { Separator } from '@/components/ui/separator';
 import { UserService } from '@/services/user.service.ts';
-import { useAuthStore } from '@/stores/authStore.ts';
 import PasswordChangeSection from './PasswordChangeSection.vue';
 import TwoFactorAuthSection from './TwoFactorAuthSection.vue';
+import AuthorizedDevicesSection from './AuthorizedDevicesSection.vue';
 
-// Initialize services and stores
 const userService = new UserService();
-const authStore = useAuthStore();
 
-// State for 2FA
 const twoFactorEnabled = ref(false);
 const twoFactorVerified = ref(false);
 
@@ -48,5 +45,8 @@ onMounted(async () => {
             @update:two-factor-enabled="twoFactorEnabled = $event"
             @update:two-factor-verified="twoFactorVerified = $event"
         />
+
+        <!-- Authorized Devices Section -->
+        <AuthorizedDevicesSection :two-factor-enabled="twoFactorEnabled && twoFactorVerified" />
     </div>
 </template>
