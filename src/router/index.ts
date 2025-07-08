@@ -142,6 +142,13 @@ const router = createRouter({
             },
         },
         {
+            path: '/settings/audit-logs',
+            component: () => import('@/views/Settings/AuditLogsView.vue'),
+            meta: {
+                title: 'Audit Logs',
+            },
+        },
+        {
             path: '/:pathMatch(.*)*',
             name: 'NotFound',
             component: () => import('@/views/NotFoundView.vue'),
