@@ -93,6 +93,14 @@ const router = createRouter({
             },
         },
         {
+            path: '/aws/timeline',
+            name: 'timeline',
+            component: () => import('@/views/AWS/TimelineView.vue'),
+            meta: {
+                title: 'Timeline',
+            },
+        },
+        {
             path: '/settings',
             component: () => import('@/views/Settings/SettingsView.vue'),
             meta: {

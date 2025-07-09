@@ -38,6 +38,11 @@ const data = {
             icon: CalendarClockIcon,
             badge: '10',
         },
+        {
+            title: 'Timeline',
+            url: '/aws/timeline',
+            icon: PackageIcon,
+        },
     ],
     navDigitalOcean: [],
     navGCP: [],
