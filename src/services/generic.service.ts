@@ -44,6 +44,29 @@ export class ApiService {
         }
     }
 
+    protected buildQueryString(params?: Record<string, any>): string {
+        if (!params) return '';
+
+        const queryParams = new URLSearchParams();
+
+        Object.entries(params).forEach(([key, value]) => {
+            if (value === null || value === undefined) return;
+
+            if (key === 'filters' && typeof value === 'object') {
+                // Handle nested filters object
+                Object.entries(value).forEach(([filterKey, filterValue]) => {
+                    if (filterValue !== null && filterValue !== undefined && filterValue !== '') {
+                        queryParams.append(`filter_${filterKey}`, String(filterValue));
+                    }
+                });
+            } else if (value !== '' && value !== null && value !== undefined) {
+                queryParams.append(key, String(value));
+            }
+        });
+
+        return queryParams.toString();
+    }
+
     async request<T>(url: string, options: RequestInit = {}): Promise<T> {
         // Check if the token exists and is expired before making the request
         if (this.jwt && this.isTokenExpired(this.jwt)) {
@@ -96,8 +119,11 @@ export class ApiService {
         return await response?.json();
     }
 
-    async get<T>(url: string, options: RequestInit = {}): Promise<T> {
-        return this.request<T>(url, { ...options, method: 'GET' });
+    async get<T>(url: string, params?: Record<string, any>, options: RequestInit = {}): Promise<T> {
+        const queryString = this.buildQueryString(params);
+        const fullUrl = queryString ? `${url}?${queryString}` : url;
+
+        return this.request<T>(fullUrl, { ...options, method: 'GET' });
     }
 
     async post<D, T>(url: string, data: D, options: RequestInit = {}): Promise<T> {

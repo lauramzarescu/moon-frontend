@@ -1,7 +1,7 @@
 import { computed, reactive, ref } from 'vue';
-import { toast } from '@/components/ui/toast';
 import { AuditLogService } from '@/services/audit-log.service.ts';
 import { type AuditLog, AuditLogEnum, type PaginationMeta, type PaginationParams } from '../schema.ts';
+import { toast } from '@/components/ui/toast';
 
 export function useAuditLogs() {
     // Service instance
@@ -18,9 +18,15 @@ export function useAuditLogs() {
     const selectedLog = ref<AuditLog | null>(null);
     const activeSection = ref('overview');
 
+    // Pagination state
+    const pagination = reactive({
+        limit: 10,
+    });
+
     // Filters
     const filters = reactive({
         userId: '',
+        userEmail: '',
         action: '',
     });
 
@@ -44,7 +50,7 @@ export function useAuditLogs() {
 
     // Computed properties
     const hasActiveFilters = computed(() => {
-        return filters.userId.trim() !== '' || filters.action !== '';
+        return filters.userId.trim() !== '' || filters.userEmail.trim() !== '' || filters.action !== '';
     });
 
     const hasDiffData = computed(() => {
@@ -73,23 +79,22 @@ export function useAuditLogs() {
         error.value = null;
 
         try {
-            const params: PaginationParams & {
-                userId?: string;
-                action?: string;
-            } = {
+            const activeFilters: Record<string, any> = {};
+            Object.entries(filters).forEach(([key, value]) => {
+                if (typeof value === 'string' && value.trim()) {
+                    activeFilters[key] = value.trim();
+                } else if (value && typeof value !== 'string') {
+                    activeFilters[key] = value;
+                }
+            });
+
+            const params: PaginationParams & { filters?: Record<string, any> } = {
                 page,
-                limit: 20,
+                limit: pagination.limit,
                 orderBy: sorting.orderBy,
                 order: sorting.order,
+                filters: activeFilters,
             };
-
-            if (filters.userId.trim()) {
-                params.userId = filters.userId.trim();
-            }
-
-            if (filters.action) {
-                params.action = filters.action;
-            }
 
             const response = await auditLogService.getAll(params);
 
@@ -114,11 +119,18 @@ export function useAuditLogs() {
         }
     };
 
+    const handleItemsPerPageChange = () => {
+        // Reset to first page when changing items per page
+        fetchAuditLogs(1);
+    };
+
     const clearFilters = () => {
         filters.userId = '';
+        filters.userEmail = '';
         filters.action = '';
         sorting.orderBy = 'createdAt';
         sorting.order = 'desc';
+        pagination.limit = 20;
         fetchAuditLogs(1);
     };
 
@@ -172,6 +184,7 @@ export function useAuditLogs() {
         loading,
         error,
         paginationMeta,
+        pagination,
         isSheetOpen,
         selectedLog,
         activeSection,
@@ -187,6 +200,7 @@ export function useAuditLogs() {
         // Methods
         fetchAuditLogs,
         goToPage,
+        handleItemsPerPageChange,
         clearFilters,
         handleSortChange,
         toggleSortOrder,

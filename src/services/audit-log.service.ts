@@ -10,52 +10,10 @@ export class AuditLogService extends ApiService {
             userId?: string;
             organizationId?: string;
             action?: AuditLogEnum | string;
+            filters?: Record<string, any>;
         },
     ) {
-        const queryParams = new URLSearchParams();
-
-        if (params?.page) {
-            queryParams.append('page', params.page.toString());
-        }
-
-        if (params?.limit) {
-            queryParams.append('limit', params.limit.toString());
-        }
-
-        if (params?.orderBy) {
-            queryParams.append('orderBy', params.orderBy);
-        }
-
-        if (params?.order) {
-            queryParams.append('order', params.order);
-        }
-
-        // Handle filters
-        if (params?.filters) {
-            Object.entries(params.filters).forEach(([key, value]) => {
-                if (value) {
-                    queryParams.append(`filter_${key}`, value);
-                }
-            });
-        }
-
-        // Handle specific audit log filters
-        if (params?.userId) {
-            queryParams.append('filter_userId', params.userId);
-        }
-
-        if (params?.organizationId) {
-            queryParams.append('filter_organizationId', params.organizationId);
-        }
-
-        if (params?.action) {
-            queryParams.append('filter_action', params.action);
-        }
-
-        const queryString = queryParams.toString();
-        const url = queryString ? `${this.resource}?${queryString}` : this.resource;
-
-        return this.get<AuditLogsResponse>(url);
+        return this.get<AuditLogsResponse>(this.resource, params);
     }
 
     async getById(id: string) {
