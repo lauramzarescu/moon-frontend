@@ -7,6 +7,7 @@ import type {
     UserCreateByInvitationInput,
     UserCreateInput,
     UserDetailsResponseInput,
+    UserDeviceInfo,
     UserInput,
 } from '@/views/Settings/components/Team/schema.ts';
 import type { PaginatedResult, PaginationParams } from '@/types/pagination/pagination.interface.ts';
@@ -166,5 +167,24 @@ export class UserService extends ApiService {
 
     async confirmReset2FA(token: string) {
         return this.post(`${this.resource}/2fa/reset/confirm/${token}`, {});
+    }
+
+    // Device Management Methods
+
+    /**
+     * Get all authorized devices for the current user
+     * @returns Promise with the list of authorized devices
+     */
+    async getAuthorizedDevices(): Promise<UserDeviceInfo[]> {
+        return this.get(`${this.resource}/devices`);
+    }
+
+    /**
+     * Remove an authorized device
+     * @param deviceId The device ID to remove
+     * @returns Promise with the result
+     */
+    async removeDevice(deviceId: string): Promise<any> {
+        return this.delete(`${this.resource}/devices/${deviceId}`);
     }
 }

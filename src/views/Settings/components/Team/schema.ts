@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { LoginType, UserRole } from '@/enums/user/user.enum.ts';
 
 export const userDeviceInfoSchema = z.object({
+    id: z.string(),
     fingerprint: z.string(),
     lastVerified: z.string(),
     userAgent: z.string().optional(),

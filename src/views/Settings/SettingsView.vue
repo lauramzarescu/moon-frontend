@@ -32,6 +32,7 @@ import SAMLView from '@/views/Settings/SAMLView.vue';
 import WorkspaceView from '@/views/Settings/WorkspaceView.vue';
 import ActionsView from '@/views/Settings/ActionView.vue';
 import OrganizationView from '@/views/Settings/OrganizationView.vue';
+import AuditLogsView from '@/views/Settings/AuditLogsView.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -43,6 +44,7 @@ const tabs = [
     { label: 'Organization', value: 'organization', badge: 0, component: OrganizationView },
     { label: 'Authentication', value: 'saml', badge: 0, component: SAMLView },
     { label: 'Actions', value: 'actions', badge: 0, component: ActionsView },
+    { label: 'Audit Logs', value: 'audit-logs', badge: 0, component: AuditLogsView },
 ];
 
 const selectedTab = ref('account');

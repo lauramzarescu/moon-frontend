@@ -7,6 +7,7 @@ import { Cross2Icon } from '@radix-icons/vue';
 import DataTableFacetedFilter from '@/components/ui/custom-table/DataTableFacetedFilter.vue';
 import DataTableViewOptions from '@/components/ui/custom-table/DataTableViewOptions.vue';
 import SecretsComparisonDialog from './EnvironmentVariablesComparison/SecretsComparisonDialog.vue';
+import MultipleServicesDeploymentDialog from './MultipleServicesDeploymentDialog.vue';
 import type { DataTableOptionsArray } from '@/components/ui/drawer/interfaces/custom-table.interface.ts';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import { TABLE_KEYS, useFilterStore } from '@/stores/filterStore.ts';
@@ -27,14 +28,11 @@ const props = defineProps<DataTableToolbarProps>();
 const isFiltered = computed(() => props.table.getState().columnFilters.length > 0);
 
 const servicesToCompare = computed(() => {
-    // Ensure allServices is defined and is an array
     const allServices = services.value || [];
 
     if (isFiltered.value) {
-        // Return filtered rows
         return props.table.getFilteredRowModel().rows.map((row) => row.original as ServiceInterface);
     } else {
-        // Return all services if no filter is applied
         return allServices;
     }
 });
@@ -47,6 +45,10 @@ const handleFilterChange = (columnId: string, value: any) => {
     } else {
         filterStore.setFilter(TABLE_KEYS.SERVICES, columnId, value);
     }
+};
+
+const handleDeploymentCompleted = () => {
+    console.log('Deployment completed, refreshing data...');
 };
 </script>
 
@@ -94,6 +96,7 @@ const handleFilterChange = (columnId: string, value: any) => {
             </Button>
         </div>
         <div class="flex items-center space-x-2">
+            <MultipleServicesDeploymentDialog :services="services" @deployment-completed="handleDeploymentCompleted" />
             <SecretsComparisonDialog :services="services" :filteredServices="servicesToCompare" :is-filtered="isFiltered" />
             <DataTableViewOptions :table="table" />
         </div>
