@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -23,12 +24,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { ref, watch } from 'vue';
 import { ChevronDownIcon, DotsHorizontalIcon } from '@radix-icons/vue';
-import { PermissionEnum, UserRole } from '@/enums/user/user.enum';
+import { LoginType, PermissionEnum, UserRole } from '@/enums/user/user.enum';
 import type { UserInput } from './schema';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import { UserService } from '@/services/user.service.ts';
 import { toast } from '@/components/ui/toast';
 import { useAuthStore } from '@/stores/authStore.ts';
+import { LockIcon, ShieldCheckIcon } from 'lucide-vue-next';
 
 const { hasPermission } = usePermissions();
 const userService = new UserService();
@@ -66,6 +68,14 @@ const getRoleDescription = (role: UserRole) => {
 
 const isCurrentUser = (user: UserInput) => {
     return authStore.user?.email === user.email;
+};
+
+const has2FAEnabled = (user: UserInput) => {
+    return user.twoFactorVerified;
+};
+
+const isSamlUser = (user: UserInput) => {
+    return user.loginType === LoginType.saml;
 };
 
 const handleRoleChange = (user: UserInput, newRole: UserRole) => {
@@ -206,10 +216,28 @@ watch(
                         <AvatarFallback>{{ getInitials(user?.name || user?.nameIDFormat || 'NA') }}</AvatarFallback>
                     </Avatar>
                     <div>
-                        <p class="text-sm font-medium leading-none">
-                            {{ user?.name || user?.nameIDFormat }}
-                            <span v-if="isCurrentUser(user)" class="text-xs text-muted-foreground ml-2">(You)</span>
-                        </p>
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm font-medium leading-none">
+                                {{ user?.name || user?.nameIDFormat }}
+                                <span v-if="isCurrentUser(user)" class="text-xs text-muted-foreground ml-2">(You)</span>
+                            </p>
+                            <Badge
+                                v-if="has2FAEnabled(user)"
+                                variant="secondary"
+                                class="text-xs bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400"
+                            >
+                                <ShieldCheckIcon class="w-4 h-4 mr-2" />
+                                2FA
+                            </Badge>
+                            <Badge
+                                v-if="isSamlUser(user)"
+                                variant="secondary"
+                                class="text-xs bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400"
+                            >
+                                <LockIcon class="w-3 h-3 mr-2" />
+                                SSO
+                            </Badge>
+                        </div>
                         <p class="text-sm text-foreground">
                             {{ user.email }}
                         </p>
@@ -289,7 +317,10 @@ watch(
                                 <AlertDialogTrigger as-child>
                                     <DropdownMenuItem
                                         :disabled="
-                                            isCurrentUser(user) || !hasPermission(PermissionEnum.USER_WRITE) || isResetting2FA[user.id]
+                                            isCurrentUser(user) ||
+                                            !hasPermission(PermissionEnum.USER_WRITE) ||
+                                            isResetting2FA[user.id] ||
+                                            !has2FAEnabled(user)
                                         "
                                         @select="(e) => e.preventDefault()"
                                     >
