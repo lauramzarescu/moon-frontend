@@ -53,9 +53,8 @@ const handleUpdateActionStatus = async (actionId: string, newStatus: boolean) =>
 
     try {
         if (actionIndex !== -1) {
-            await actionService.updateOne(actionId, configuredActions.value[actionIndex]);
-
             configuredActions.value[actionIndex].enabled = newStatus;
+            await actionService.updateOne(actionId, configuredActions.value[actionIndex]);
 
             toast({
                 title: 'Action status updated',
@@ -110,8 +109,8 @@ const handleEditAction = async (updatedAction: ActionDefinition) => {
 
     try {
         if (index !== -1) {
-            await actionService.updateOne(updatedAction.id, updatedAction);
             configuredActions.value[index] = updatedAction;
+            await actionService.updateOne(updatedAction.id, updatedAction);
 
             toast({
                 title: 'Action updated',
