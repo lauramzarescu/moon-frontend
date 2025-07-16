@@ -4,6 +4,7 @@ export interface TransformedService {
     image: string;
     status: string;
     containerName: string;
+    isClusterProduction: boolean;
 }
 
 export interface ServiceDeploymentData {

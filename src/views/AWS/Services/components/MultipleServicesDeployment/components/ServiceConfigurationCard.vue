@@ -1,11 +1,20 @@
 <template>
-    <div class="border rounded-lg p-6 bg-card">
+    <div
+        :class="[
+            'border rounded-lg p-6 bg-card',
+            service.isClusterProduction && 'border-red-300 bg-red-50/30 dark:bg-red-950/10 dark:border-red-700',
+        ]"
+    >
         <div class="flex items-center justify-between mb-4">
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
+                    <ShieldAlertIcon v-if="service.isClusterProduction" class="h-4 w-4 text-red-600" />
                     <h4 class="font-semibold text-base truncate">{{ service.serviceName }}</h4>
                     <Badge :variant="getStatusVariant(service.status)" class="text-xs">
                         {{ service.status }}
+                    </Badge>
+                    <Badge v-if="service.isClusterProduction" variant="destructive" class="text-xs bg-red-100 text-red-800 border-red-300">
+                        Production
                     </Badge>
                 </div>
                 <p class="text-sm text-muted-foreground truncate">
@@ -135,6 +144,7 @@ import {
     PlusIcon,
     RotateCcwIcon,
     ServerIcon,
+    ShieldAlertIcon,
     Trash2Icon,
 } from 'lucide-vue-next';
 import type { ServiceDeploymentData, TransformedService } from '../types';

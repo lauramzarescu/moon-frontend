@@ -55,6 +55,7 @@
                                             :container-name="container.name"
                                             :cluster-name="props.row.clusterName"
                                             :service-name="props.row.name"
+                                            :is-cluster-production="props.row.isClusterProduction"
                                             @image-updated="$emit('refresh')"
                                             @dialog-open="handleDialogToggle(true)"
                                             @dialog-close="handleDialogToggle(false)"

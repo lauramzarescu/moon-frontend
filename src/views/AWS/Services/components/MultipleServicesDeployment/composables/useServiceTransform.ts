@@ -9,6 +9,7 @@ export function useServiceTransform() {
             image: service.containers[0]?.image || 'No image',
             status: service.status,
             containerName: service.containers[0]?.name || 'No container',
+            isClusterProduction: service.isClusterProduction,
         }));
     };
 
