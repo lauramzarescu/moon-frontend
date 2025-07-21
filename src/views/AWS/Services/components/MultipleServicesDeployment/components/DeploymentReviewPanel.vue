@@ -113,7 +113,7 @@
             <!-- Deploy Button -->
             <Button
                 @click="$emit('deploy')"
-                :disabled="isDeploying"
+                :disabled="isDeploying || !hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
                 :variant="hasProductionServices ? 'destructive' : 'default'"
                 :class="['w-full h-12 text-base', hasProductionServices && 'bg-red-600 hover:bg-red-700 border-red-600']"
                 size="lg"
@@ -146,6 +146,8 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangleIcon, InfoIcon, Loader2Icon, RocketIcon, ShieldAlertIcon } from 'lucide-vue-next';
 import type { ServiceDeploymentData, TransformedService } from '../types';
 import { useServiceTransform } from '../composables/useServiceTransform';
+import { usePermissions } from '@/composables/usePermissions.ts';
+import { PermissionEnum } from '@/enums/user/user.enum.ts';
 
 const props = defineProps<{
     selectedServices: TransformedService[];
@@ -157,6 +159,7 @@ const emit = defineEmits<{
     (e: 'deploy'): void;
 }>();
 
+const { hasPermission } = usePermissions();
 const { getStatusVariant } = useServiceTransform();
 
 const getServiceKey = (service: TransformedService): string => {

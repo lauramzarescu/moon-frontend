@@ -1,7 +1,7 @@
 <template>
     <Dialog v-model:open="isOpen">
         <DialogTrigger as-child>
-            <Button variant="outline" size="sm" class="h-8">
+            <Button variant="outline" size="sm" class="h-8" :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)">
                 <RocketIcon class="h-4 w-4" />
                 Deploy Multiple Services
             </Button>
@@ -35,6 +35,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { RocketIcon } from 'lucide-vue-next';
 import DeploymentWorkflow from './MultipleServicesDeployment/DeploymentWorkflow.vue';
+import { PermissionEnum } from '@/enums/user/user.enum.ts';
+import { usePermissions } from '@/composables/usePermissions.ts';
 
 const props = defineProps<{
     services: ServiceInterface[];
@@ -42,6 +44,7 @@ const props = defineProps<{
     showAllServices?: boolean;
 }>();
 
+const { hasPermission } = usePermissions();
 const emit = defineEmits<{
     (e: 'deployment-completed'): void;
 }>();
