@@ -36,6 +36,9 @@
             <p v-else class="text-sm text-yellow-600 dark:text-yellow-400">
                 Two-factor authentication is optional for organization members.
             </p>
+            <p v-if="requires2FAVerification" class="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                🔒 Changes to this setting require 2FA verification for security.
+            </p>
         </div>
 
         <!-- Success/Error Messages -->
@@ -55,6 +58,18 @@
             </AlertDescription>
         </Alert>
     </div>
+
+    <!-- 2FA Verification Modal -->
+    <TwoFactorVerificationModal
+        ref="verificationModalRef"
+        v-model:open="show2FAVerificationModal"
+        title="Verify Organization Settings Change"
+        description="For security reasons, please verify your identity to change MFA enforcement settings."
+        :two-factor-method="twoFactorMethod"
+        input-prefix="org-settings-2fa"
+        @verify="handle2FAVerification"
+        @cancel="handle2FACancel"
+    />
 </template>
 
 <script setup lang="ts">
@@ -63,16 +78,28 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-vue-next';
 import { OrganizationService } from '@/services/organization.service.ts';
+import { UserService } from '@/services/user.service.ts';
+import { TwoFactorMethod } from '@/enums/user/user.enum.ts';
+import TwoFactorVerificationModal from '@/components/ui/two-factor-verification-modal/TwoFactorVerificationModal.vue';
 import type { OrganizationDetailsResponse, OrganizationInput, UpdateOrganizationInput } from './schema.ts';
 import { organizationPageConfig } from './schema.ts';
 import { toast } from '@/components/ui/toast';
 
 const organizationService = new OrganizationService();
+const userService = new UserService();
 const organizationDetails = ref<OrganizationDetailsResponse | null>(null);
 const pageConfig = organizationPageConfig;
 const isLoading = ref(false);
 const successMessage = ref('');
 const errorMessage = ref('');
+
+// 2FA verification state
+const show2FAVerificationModal = ref(false);
+const twoFactorMethod = ref<TwoFactorMethod | null>(null);
+const twoFactorEnabled = ref(false);
+const twoFactorVerified = ref(false);
+const pendingEnforce2FAValue = ref<boolean | null>(null);
+const verificationModalRef = ref<InstanceType<typeof TwoFactorVerificationModal> | null>(null);
 
 const formData = reactive<OrganizationInput>({
     name: '',
@@ -88,22 +115,30 @@ const hasChanges = computed(() => {
     return formData.enforce2FA !== originalData.value.enforce2FA;
 });
 
+const requires2FAVerification = computed(() => {
+    return twoFactorEnabled.value && twoFactorVerified.value;
+});
+
 // Methods
 const loadOrganizationData = async () => {
     try {
         isLoading.value = true;
         errorMessage.value = '';
 
-        const response = await organizationService.getDetails();
-        organizationDetails.value = response;
+        const [orgResponse, twoFactorStatus] = await Promise.all([organizationService.getDetails(), userService.get2FAStatus()]);
 
-        formData.name = response.name;
-        formData.enforce2FA = response.enforce2FA;
+        organizationDetails.value = orgResponse;
 
-        // Store original data for comparison
+        twoFactorMethod.value = twoFactorStatus.method ?? null;
+        twoFactorEnabled.value = twoFactorStatus.enabled;
+        twoFactorVerified.value = twoFactorStatus.verified;
+
+        formData.name = orgResponse.name;
+        formData.enforce2FA = orgResponse.enforce2FA;
+
         originalData.value = {
-            name: response.name,
-            enforce2FA: response.enforce2FA,
+            name: orgResponse.name,
+            enforce2FA: orgResponse.enforce2FA,
         };
     } catch (error) {
         console.error('Failed to load organization data:', error);
@@ -116,6 +151,15 @@ const loadOrganizationData = async () => {
 const handleToggle = async (value: boolean) => {
     if (isLoading.value) return;
 
+    if (requires2FAVerification.value) {
+        pendingEnforce2FAValue.value = value;
+        show2FAVerificationModal.value = true;
+    } else {
+        await updateEnforce2FA(value);
+    }
+};
+
+const updateEnforce2FA = async (value: boolean) => {
     try {
         isLoading.value = true;
         errorMessage.value = '';
@@ -136,7 +180,6 @@ const handleToggle = async (value: boolean) => {
 
         const response = await organizationService.updateSettings(organizationDetails.value.id, updateData);
 
-        // Update form data and original data
         formData.enforce2FA = response.enforce2FA;
         originalData.value.enforce2FA = response.enforce2FA;
 
@@ -146,7 +189,6 @@ const handleToggle = async (value: boolean) => {
             variant: 'success',
         });
 
-        // Clear success message after 5 seconds
         setTimeout(() => {
             successMessage.value = '';
         }, 5000);
@@ -159,11 +201,38 @@ const handleToggle = async (value: boolean) => {
             variant: 'destructive',
         });
 
-        // Revert the toggle state on error
         formData.enforce2FA = originalData.value.enforce2FA;
     } finally {
         isLoading.value = false;
     }
+};
+
+const handle2FAVerification = async (code: string) => {
+    if (!verificationModalRef.value || pendingEnforce2FAValue.value === null) return;
+
+    verificationModalRef.value.setLoading(true);
+    verificationModalRef.value.clearError();
+
+    try {
+        await userService.verify2FACode(code);
+
+        await updateEnforce2FA(pendingEnforce2FAValue.value);
+
+        show2FAVerificationModal.value = false;
+        pendingEnforce2FAValue.value = null;
+    } catch (error: any) {
+        verificationModalRef.value.setError('The verification code you entered is incorrect. Please try again.');
+        formData.enforce2FA = originalData.value.enforce2FA;
+    } finally {
+        verificationModalRef.value.setLoading(false);
+    }
+};
+
+const handle2FACancel = () => {
+    show2FAVerificationModal.value = false;
+    pendingEnforce2FAValue.value = null;
+    // Revert the toggle state
+    formData.enforce2FA = originalData.value.enforce2FA;
 };
 
 onMounted(() => {

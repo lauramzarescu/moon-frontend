@@ -2,9 +2,9 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { cn } from '@/utils.ts';
-import { BriefcaseIcon, Loader2 } from 'lucide-vue-next';
+import { BriefcaseIcon, Loader2, ShieldCheckIcon, SmartphoneIcon } from 'lucide-vue-next';
 import { AuthService } from '@/services/auth.service.ts';
 import { UserService } from '@/services/user.service.ts';
 import {
@@ -19,6 +19,7 @@ import Cookies from 'js-cookie';
 import { config } from '../../../../app.config.ts';
 import TwoFactorSetupModal from '@/views/Settings/components/Account/TwoFactorSetupModal.vue';
 import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
+import { TwoFactorMethod } from '@/enums/user/user.enum.ts';
 
 const authService = new AuthService();
 const userService = new UserService();
@@ -29,6 +30,9 @@ const requires2FAVerification = ref(false);
 const requires2FASetup = ref(false);
 const verificationCode = ref(['', '', '', '', '', '']);
 const sessionToken = ref(''); // Store the temporary session token
+const twoFactorMethod = ref<TwoFactorMethod | null>(null);
+const yubikeyOtp = ref('');
+const useYubikey = ref(false);
 
 const show2FAModal = ref(false);
 const qrCodeUrl = ref('');
@@ -51,6 +55,12 @@ async function onSubmit(event: Event) {
             if (tempToken) {
                 sessionToken.value = tempToken;
             }
+
+            // Set the 2FA method if provided in response
+            twoFactorMethod.value = response.twoFactorMethod || null;
+
+            // Determine initial verification method
+            setInitialVerificationMethod();
 
             requires2FAVerification.value = true;
             isLoading.value = false;
@@ -85,20 +95,35 @@ async function onSubmit(event: Event) {
 }
 
 async function verifyTwoFactorCode() {
-    if (verificationCode.value.join('').length !== 6) {
-        toast({
-            title: 'Verification Error',
-            description: 'Please enter a valid 6-digit verification code',
-            variant: 'destructive',
-        });
-        return;
+    let code = '';
+
+    if (useYubikey.value) {
+        // YubiKey OTP validation
+        if (!yubikeyOtp.value || yubikeyOtp.value.length < 32) {
+            toast({
+                title: 'Verification Error',
+                description: 'Please provide a valid YubiKey OTP',
+                variant: 'destructive',
+            });
+            return;
+        }
+        code = yubikeyOtp.value;
+    } else {
+        // TOTP validation
+        if (verificationCode.value.join('').length !== 6) {
+            toast({
+                title: 'Verification Error',
+                description: 'Please enter a valid 6-digit verification code',
+                variant: 'destructive',
+            });
+            return;
+        }
+        code = verificationCode.value.join('');
     }
 
     isLoading.value = true;
 
     try {
-        const code = verificationCode.value.join('');
-
         if (sessionToken.value) {
             await userService.verify2FASession(code, sessionToken.value);
         } else {
@@ -107,7 +132,11 @@ async function verifyTwoFactorCode() {
 
         window.location.href = '/';
     } catch (error) {
-        resetVerificationCode(verificationCode.value, 'login-2fa');
+        if (useYubikey.value) {
+            yubikeyOtp.value = '';
+        } else {
+            resetVerificationCode(verificationCode.value, 'login-2fa');
+        }
 
         toast({
             title: 'Verification Failed',
@@ -138,8 +167,58 @@ const handle2FAModalClose = (open: boolean) => {
 function cancelTwoFactorVerification() {
     requires2FAVerification.value = false;
     resetVerificationCode(verificationCode.value, 'login-2fa');
+    yubikeyOtp.value = '';
     sessionToken.value = ''; // Clear the session token
 }
+
+function setInitialVerificationMethod() {
+    // Set the initial verification method based on user's preference
+    switch (twoFactorMethod.value) {
+        case TwoFactorMethod.YUBIKEY:
+            useYubikey.value = true;
+            break;
+        case TwoFactorMethod.TOTP:
+            useYubikey.value = false;
+            break;
+        case TwoFactorMethod.ANY:
+            // Default to TOTP for BOTH, but allow switching
+            useYubikey.value = false;
+            break;
+        default:
+            useYubikey.value = false;
+    }
+}
+
+function switchToTotp() {
+    useYubikey.value = false;
+    yubikeyOtp.value = '';
+    resetVerificationCode(verificationCode.value, 'login-2fa');
+}
+
+function switchToYubikey() {
+    useYubikey.value = true;
+    resetVerificationCode(verificationCode.value, 'login-2fa');
+    yubikeyOtp.value = '';
+    // Focus on YubiKey input after switching
+    setTimeout(() => {
+        const yubikeyInput = document.getElementById('yubikey-otp');
+        if (yubikeyInput) {
+            yubikeyInput.focus();
+        }
+    }, 100);
+}
+
+const canSwitchMethods = computed(() => {
+    return twoFactorMethod.value === TwoFactorMethod.ANY;
+});
+
+const isVerificationReady = computed(() => {
+    if (useYubikey.value) {
+        return yubikeyOtp.value.length >= 32;
+    } else {
+        return verificationCode.value.join('').length === 6;
+    }
+});
 
 const handleSAMLLogin = async () => {
     window.location.href = `${config.BACKEND_URL}/auth/saml/login`;
@@ -204,16 +283,60 @@ const goToResetPassword = () => {
 
         <!-- Step 2: 2FA Verification -->
         <div v-if="requires2FAVerification" class="flex flex-col space-y-4">
-            <div class="text-sm text-center mb-2">
-                <p class="font-medium mb-2">Two-Factor Authentication Required</p>
-                <p class="text-foreground">Please enter the 6-digit verification code from your authenticator app to complete login.</p>
+            <div class="text-center">
+                <h3 class="text-lg font-semibold flex items-center justify-center gap-2 mb-2">
+                    <ShieldCheckIcon v-if="useYubikey" class="h-5 w-5 text-blue-600" />
+                    <SmartphoneIcon v-else class="h-5 w-5 text-green-600" />
+                    Two-Factor Authentication
+                </h3>
+                <p class="text-sm text-muted-foreground">
+                    {{
+                        useYubikey ? 'Insert your YubiKey and touch the gold contact' : 'Enter the 6-digit code from your authenticator app'
+                    }}
+                </p>
             </div>
 
-            <VerificationCodeInput v-model:code="verificationCode" prefix="login-2fa" :disabled="isLoading" @submit="verifyTwoFactorCode" />
+            <!-- Method Switching (only show if BOTH methods are available) -->
+            <div v-if="canSwitchMethods" class="flex justify-center">
+                <div class="flex items-center gap-2 p-1 bg-muted rounded-lg">
+                    <Button :variant="!useYubikey ? 'default' : 'ghost'" size="sm" @click="switchToTotp" class="h-8 px-3">
+                        <SmartphoneIcon class="h-3 w-3 mr-1" />
+                        Authenticator
+                    </Button>
+                    <Button :variant="useYubikey ? 'default' : 'ghost'" size="sm" @click="switchToYubikey" class="h-8 px-3">
+                        <ShieldCheckIcon class="h-3 w-3 mr-1" />
+                        YubiKey
+                    </Button>
+                </div>
+            </div>
+
+            <!-- YubiKey Input -->
+            <div v-if="useYubikey" class="space-y-2">
+                <Label for="yubikey-otp" class="sr-only">YubiKey OTP</Label>
+                <Input
+                    id="yubikey-otp"
+                    v-model="yubikeyOtp"
+                    placeholder="Touch your YubiKey to generate OTP..."
+                    :disabled="isLoading"
+                    class="font-mono text-center"
+                    @keydown.enter="verifyTwoFactorCode"
+                />
+                <p class="text-xs text-muted-foreground text-center">The OTP will be automatically entered when you touch your YubiKey</p>
+            </div>
+
+            <!-- TOTP Input -->
+            <div v-else>
+                <VerificationCodeInput
+                    v-model:code="verificationCode"
+                    prefix="login-2fa"
+                    :disabled="isLoading"
+                    @submit="verifyTwoFactorCode"
+                />
+            </div>
 
             <div class="flex space-x-2 mt-4">
                 <Button variant="outline" class="flex-1" @click="cancelTwoFactorVerification" :disabled="isLoading"> Back </Button>
-                <Button class="flex-1" @click="verifyTwoFactorCode" :disabled="isLoading || verificationCode.join('').length !== 6">
+                <Button class="flex-1" @click="verifyTwoFactorCode" :disabled="isLoading || !isVerificationReady">
                     <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
                     <span v-else>Verify</span>
                 </Button>

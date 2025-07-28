@@ -9,6 +9,12 @@ export enum UserRole {
     user = 'user',
 }
 
+export enum TwoFactorMethod {
+    TOTP = 'TOTP',
+    YUBIKEY = 'YUBIKEY',
+    ANY = 'ANY',
+}
+
 export enum PermissionEnum {
     USER_CREATE = 'user:create',
     USER_READ = 'user:read',

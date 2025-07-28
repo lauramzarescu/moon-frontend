@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, type PropType } from 'vue';
 import { Switch } from '@/components/ui/switch';
 import { UserService } from '@/services/user.service.ts';
 import { useAuthStore } from '@/stores/authStore.ts';
 import TwoFactorSetupModal from './TwoFactorSetupModal.vue';
-import TwoFactorDisableModal from './TwoFactorDisableModal.vue';
-import { LoginType } from '@/enums/user/user.enum.ts';
+import TwoFactorVerificationModal from '@/components/ui/two-factor-verification-modal/TwoFactorVerificationModal.vue';
+import TwoFactorMethodSelection from './TwoFactorMethodSelection.vue';
+import YubikeyManagement from './YubikeyManagement.vue';
+import { LoginType, TwoFactorMethod } from '@/enums/user/user.enum.ts';
 import { toast } from '@/components/ui/toast';
 import { twoFactorSetupResponseSchema } from '@/views/Settings/components/Account/schema.ts';
 
@@ -18,9 +20,17 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
+    twoFactorMethod: {
+        type: String as PropType<TwoFactorMethod | null>,
+        default: null,
+    },
+    yubikeyCount: {
+        type: Number,
+        default: 0,
+    },
 });
 
-const emit = defineEmits(['update:two-factor-enabled', 'update:two-factor-verified']);
+const emit = defineEmits(['update:two-factor-enabled', 'update:two-factor-verified', 'status-updated']);
 
 // Initialize services and stores
 const userService = new UserService();
@@ -33,8 +43,8 @@ const showDisable2FAModal = ref(false);
 const qrCodeUrl = ref('');
 const isLoading = ref(false);
 const is2FASetupComplete = ref(false);
+const verificationModalRef = ref<InstanceType<typeof TwoFactorVerificationModal> | null>(null);
 
-// Watch for changes in props to update local state
 watch(
     () => [props.twoFactorEnabled, props.twoFactorVerified],
     ([enabled, verified]) => {
@@ -70,17 +80,56 @@ const handleToggle = (value: boolean) => {
     }
 };
 
-const onSetupComplete = (enabled: boolean, verified: boolean) => {
+const onSetupComplete = async (enabled: boolean, verified: boolean) => {
     emit('update:two-factor-enabled', enabled);
     emit('update:two-factor-verified', verified);
     show2FAModal.value = false;
+
+    emit('status-updated');
 };
 
-const onDisableComplete = (enabled: boolean, verified: boolean) => {
-    emit('update:two-factor-enabled', enabled);
-    emit('update:two-factor-verified', verified);
+const handle2FADisableVerification = async (code: string) => {
+    if (!verificationModalRef.value) return;
+
+    verificationModalRef.value.setLoading(true);
+    verificationModalRef.value.clearError();
+
+    try {
+        await userService.disable2FA(code);
+
+        toast({
+            title: 'Two-factor authentication disabled',
+            description: 'Two-factor authentication has been disabled for your account.',
+            variant: 'success',
+        });
+
+        emit('update:two-factor-enabled', false);
+        emit('update:two-factor-verified', false);
+        showDisable2FAModal.value = false;
+
+        emit('status-updated');
+    } catch (error: any) {
+        verificationModalRef.value.setError('The verification code you entered is incorrect. Please try again.');
+    } finally {
+        verificationModalRef.value.setLoading(false);
+    }
+};
+
+const handle2FADisableCancel = () => {
     showDisable2FAModal.value = false;
 };
+
+const onMethodUpdated = (method: TwoFactorMethod) => {
+    emit('status-updated');
+};
+
+const onYubikeysUpdated = async (count: number) => {
+    console.log('TwoFactorAuthSection: Received yubikeys-updated with count:', count);
+    console.log('TwoFactorAuthSection: Emitting status-updated');
+    emit('status-updated');
+};
+
+
 </script>
 
 <template>
@@ -103,9 +152,34 @@ const onDisableComplete = (enabled: boolean, verified: boolean) => {
         </p>
     </div>
 
+    <!-- 2FA Method Selection (only show when 2FA is enabled) -->
+    <div v-if="twoFactorEnabled && twoFactorVerified">
+        <TwoFactorMethodSelection
+            :key="`method-selection-${props.yubikeyCount}`"
+            :current-method="twoFactorMethod"
+            :totp-enabled="twoFactorEnabled && twoFactorVerified"
+            :yubikey-count="props.yubikeyCount"
+            @method-updated="onMethodUpdated"
+        />
+    </div>
+
+    <!-- YubiKey Management (only show when 2FA is enabled) -->
+    <div v-if="twoFactorEnabled && twoFactorVerified">
+        <YubikeyManagement @yubikeys-updated="onYubikeysUpdated" />
+    </div>
+
     <!-- 2FA Setup Modal -->
     <TwoFactorSetupModal v-model:open="show2FAModal" :qr-code-url="qrCodeUrl" :is-loading="isLoading" @setup-complete="onSetupComplete" />
 
-    <!-- 2FA Disable Modal -->
-    <TwoFactorDisableModal v-model:open="showDisable2FAModal" @disable-complete="onDisableComplete" />
+    <!-- 2FA Disable Verification Modal -->
+    <TwoFactorVerificationModal
+        ref="verificationModalRef"
+        v-model:open="showDisable2FAModal"
+        title="Disable Two-Factor Authentication"
+        description="For security reasons, please verify your identity to disable 2FA."
+        :two-factor-method="twoFactorMethod"
+        input-prefix="disable-2fa"
+        @verify="handle2FADisableVerification"
+        @cancel="handle2FADisableCancel"
+    />
 </template>

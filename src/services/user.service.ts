@@ -4,11 +4,16 @@ import type {
     ChangePasswordWith2FAInput,
     ForgotPasswordInput,
     ResetPasswordInput,
+    TwoFactorMethodSelectInput,
     UserCreateByInvitationInput,
     UserCreateInput,
     UserDetailsResponseInput,
     UserDeviceInfo,
     UserInput,
+    YubikeyListInput,
+    YubikeyRemoveInput,
+    YubikeySetupInput,
+    YubikeyVerifyInput,
 } from '@/views/Settings/components/Team/schema.ts';
 import type { PaginatedResult, PaginationParams } from '@/types/pagination/pagination.interface.ts';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/views/Settings/components/Account/schema.ts';
@@ -186,5 +191,51 @@ export class UserService extends ApiService {
      */
     async removeDevice(deviceId: string): Promise<any> {
         return this.delete(`${this.resource}/devices/${deviceId}`);
+    }
+
+    // YubiKey Methods
+
+    /**
+     * Set up YubiKey 2FA for a user
+     * @param data YubiKey setup data containing OTP
+     * @returns Promise with the setup result
+     */
+    async setupYubikey(data: YubikeySetupInput): Promise<any> {
+        return this.post(`${this.resource}/2fa/yubikey/setup`, data);
+    }
+
+    /**
+     * Verify a YubiKey OTP
+     * @param data YubiKey verification data containing OTP
+     * @returns Promise with the verification result
+     */
+    async verifyYubikey(data: YubikeyVerifyInput): Promise<any> {
+        return this.post(`${this.resource}/2fa/yubikey/verify`, data);
+    }
+
+    /**
+     * Get all YubiKeys for the current user
+     * @returns Promise with the list of user's YubiKeys
+     */
+    async getUserYubikeys(): Promise<YubikeyListInput> {
+        return this.get(`${this.resource}/2fa/yubikey/list`);
+    }
+
+    /**
+     * Remove a YubiKey from the user's account
+     * @param data YubiKey removal data containing YubiKey ID
+     * @returns Promise with the removal result
+     */
+    async removeYubikey(data: YubikeyRemoveInput): Promise<any> {
+        return this.delete(`${this.resource}/2fa/yubikey/${data.yubikeyId}`);
+    }
+
+    /**
+     * Set the 2FA method for the user
+     * @param data Two-factor method selection data
+     * @returns Promise with the result
+     */
+    async setTwoFactorMethod(data: TwoFactorMethodSelectInput): Promise<any> {
+        return this.post(`${this.resource}/2fa/method`, data);
     }
 }
