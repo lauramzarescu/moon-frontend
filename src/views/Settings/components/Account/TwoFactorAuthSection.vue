@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, watch, type PropType } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { UserService } from '@/services/user.service.ts';
 import { useAuthStore } from '@/stores/authStore.ts';
 import TwoFactorSetupModal from './TwoFactorSetupModal.vue';
 import TwoFactorVerificationModal from '@/components/ui/two-factor-verification-modal/TwoFactorVerificationModal.vue';
 import TwoFactorMethodSelection from './TwoFactorMethodSelection.vue';
 import YubikeyManagement from './YubikeyManagement.vue';
-import { LoginType, TwoFactorMethod } from '@/enums/user/user.enum.ts';
+import { LoginType } from '@/enums/user/user.enum.ts';
 import { toast } from '@/components/ui/toast';
 import { twoFactorSetupResponseSchema } from '@/views/Settings/components/Account/schema.ts';
 
@@ -20,23 +21,44 @@ const props = defineProps({
         type: Boolean,
         required: true,
     },
-    twoFactorMethod: {
-        type: String as PropType<TwoFactorMethod | null>,
-        default: null,
-    },
-    yubikeyCount: {
-        type: Number,
-        default: 0,
-    },
 });
 
 const emit = defineEmits(['update:two-factor-enabled', 'update:two-factor-verified', 'status-updated']);
 
-// Initialize services and stores
 const userService = new UserService();
 const authStore = useAuthStore();
-
 const isSamlUser = computed(() => authStore.user?.loginType === LoginType.saml);
+
+const securityLevel = ref<'HIGH' | 'MEDIUM' | 'LOW' | null>(null);
+const enforcedMethod = ref<'HIGH_SECURITY_ONLY' | 'WEBAUTHN_ONLY' | null>(null);
+
+const securityLevelText = computed(() => {
+    switch (securityLevel.value) {
+        case 'HIGH':
+            return 'High Security';
+        case 'MEDIUM':
+            return 'Medium Security';
+        case 'LOW':
+            return 'Lower Security';
+        default:
+            return '';
+    }
+});
+
+const securityLevelColor = computed(() => {
+    switch (securityLevel.value) {
+        case 'HIGH':
+            return 'text-green-600 dark:text-green-400';
+        case 'MEDIUM':
+            return 'text-yellow-600 dark:text-yellow-400';
+        case 'LOW':
+            return 'text-orange-600 dark:text-orange-400';
+        default:
+            return '';
+    }
+});
+
+const isWebAuthnOnlyEnforced = computed(() => enforcedMethod.value === 'WEBAUTHN_ONLY');
 
 const show2FAModal = ref(false);
 const showDisable2FAModal = ref(false);
@@ -44,13 +66,35 @@ const qrCodeUrl = ref('');
 const isLoading = ref(false);
 const is2FASetupComplete = ref(false);
 const verificationModalRef = ref<InstanceType<typeof TwoFactorVerificationModal> | null>(null);
+const methodSelectionRef = ref<InstanceType<typeof TwoFactorMethodSelection> | null>(null);
 
 watch(
     () => [props.twoFactorEnabled, props.twoFactorVerified],
     ([enabled, verified]) => {
         is2FASetupComplete.value = enabled && verified;
+        if (enabled && verified) {
+            fetch2FAStatus();
+        }
     },
 );
+
+const fetch2FAStatus = async () => {
+    try {
+        const twoFactorStatus = await userService.get2FAStatus();
+        securityLevel.value = twoFactorStatus.securityLevel ?? null;
+        enforcedMethod.value = twoFactorStatus.enforcedMethod ?? null;
+    } catch (error) {
+        console.error('Failed to fetch 2FA status:', error);
+        securityLevel.value = null;
+        enforcedMethod.value = null;
+    }
+};
+
+onMounted(() => {
+    if (props.twoFactorEnabled && props.twoFactorVerified) {
+        fetch2FAStatus();
+    }
+});
 
 const generate2FAQR = async () => {
     isLoading.value = true;
@@ -119,52 +163,64 @@ const handle2FADisableCancel = () => {
     showDisable2FAModal.value = false;
 };
 
-const onMethodUpdated = (method: TwoFactorMethod) => {
+const onMethodUpdated = () => {
     emit('status-updated');
 };
 
 const onYubikeysUpdated = async (count: number) => {
     console.log('TwoFactorAuthSection: Received yubikeys-updated with count:', count);
+
+    if (methodSelectionRef.value) {
+        methodSelectionRef.value.refresh2FAStatus();
+    }
+
     console.log('TwoFactorAuthSection: Emitting status-updated');
     emit('status-updated');
 };
-
-
 </script>
 
 <template>
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <div>
-                <h4 class="text-sm font-medium">Two-Factor Authentication</h4>
+                <div class="flex items-center gap-2">
+                    <h4 class="text-sm font-medium">Two-Factor Authentication</h4>
+                    <Badge
+                        v-if="securityLevel && props.twoFactorEnabled && props.twoFactorVerified"
+                        :variant="securityLevel === 'HIGH' ? 'default' : securityLevel === 'MEDIUM' ? 'secondary' : 'outline'"
+                        :class="securityLevelColor"
+                    >
+                        {{ securityLevelText }}
+                    </Badge>
+                </div>
                 <p class="text-sm text-foreground">Add an extra layer of security to your account</p>
+                <p v-if="enforcedMethod === 'HIGH_SECURITY_ONLY'" class="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    🔒 High-security methods enforced - OTP methods disabled for enhanced security
+                </p>
+                <p v-else-if="enforcedMethod === 'WEBAUTHN_ONLY'" class="text-xs text-green-600 dark:text-green-400 mt-1">
+                    🔐 WebAuthn-only mode - Maximum security enabled
+                </p>
             </div>
             <div class="flex items-center space-x-2">
                 <Switch
-                    :checked="twoFactorEnabled && twoFactorVerified"
+                    :checked="props.twoFactorEnabled && props.twoFactorVerified"
                     @update:checked="handleToggle"
                     :disabled="isLoading || isSamlUser"
                 />
             </div>
         </div>
-        <p v-if="twoFactorEnabled && twoFactorVerified" class="text-sm text-green-600 dark:text-green-400">
+        <p v-if="props.twoFactorEnabled && props.twoFactorVerified" class="text-sm text-green-600 dark:text-green-400">
             Two-factor authentication is enabled for your account.
         </p>
     </div>
 
     <!-- 2FA Method Selection (only show when 2FA is enabled) -->
-    <div v-if="twoFactorEnabled && twoFactorVerified">
-        <TwoFactorMethodSelection
-            :key="`method-selection-${props.yubikeyCount}`"
-            :current-method="twoFactorMethod"
-            :totp-enabled="twoFactorEnabled && twoFactorVerified"
-            :yubikey-count="props.yubikeyCount"
-            @method-updated="onMethodUpdated"
-        />
+    <div v-if="props.twoFactorEnabled && props.twoFactorVerified">
+        <TwoFactorMethodSelection ref="methodSelectionRef" @method-updated="onMethodUpdated" />
     </div>
 
     <!-- YubiKey Management (only show when 2FA is enabled) -->
-    <div v-if="twoFactorEnabled && twoFactorVerified">
+    <div v-if="props.twoFactorEnabled && props.twoFactorVerified">
         <YubikeyManagement @yubikeys-updated="onYubikeysUpdated" />
     </div>
 
@@ -177,7 +233,6 @@ const onYubikeysUpdated = async (count: number) => {
         v-model:open="showDisable2FAModal"
         title="Disable Two-Factor Authentication"
         description="For security reasons, please verify your identity to disable 2FA."
-        :two-factor-method="twoFactorMethod"
         input-prefix="disable-2fa"
         @verify="handle2FADisableVerification"
         @cancel="handle2FADisableCancel"

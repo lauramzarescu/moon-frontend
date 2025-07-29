@@ -2,13 +2,39 @@
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <div>
-                <h4 class="text-sm font-medium">YubiKey Management</h4>
-                <p class="text-sm text-muted-foreground">Manage your registered YubiKeys</p>
+                <h4 class="text-sm font-medium">Security Key Management</h4>
+                <p class="text-sm text-muted-foreground">Manage your registered YubiKeys and WebAuthn security keys</p>
             </div>
-            <Button @click="showAddModal = true" size="sm" variant="outline">
-                <PlusIcon class="h-4 w-4 mr-2" />
-                Add YubiKey
-            </Button>
+            <div class="flex gap-2">
+                <Button
+                    @click="showAddModal = true"
+                    size="sm"
+                    variant="outline"
+                    :disabled="hasHighSecurityMethods"
+                    :title="hasHighSecurityMethods ? 'OTP YubiKey registration disabled when high-security methods are available' : ''"
+                >
+                    <PlusIcon class="h-4 w-4 mr-2" />
+                    Add YubiKey (OTP)
+                </Button>
+                <Button @click="showWebAuthnModal = true" size="sm" variant="outline">
+                    <PlusIcon class="h-4 w-4 mr-2" />
+                    Add WebAuthn Key
+                </Button>
+            </div>
+        </div>
+
+        <!-- Security Warning -->
+        <div v-if="hasHighSecurityMethods" class="p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950 dark:border-blue-800">
+            <div class="flex items-start gap-2">
+                <ShieldCheckIcon class="h-4 w-4 text-blue-600 mt-0.5" />
+                <div class="text-sm">
+                    <p class="font-medium text-blue-800 dark:text-blue-200 mb-1">High Security Mode Active</p>
+                    <p class="text-blue-700 dark:text-blue-300">
+                        OTP YubiKey registration is disabled because you have high-security methods (Mobile Auth or WebAuthn) configured.
+                        This prevents security downgrade attacks.
+                    </p>
+                </div>
+            </div>
         </div>
 
         <!-- YubiKeys List -->
@@ -22,7 +48,9 @@
                         <p class="text-sm font-medium">
                             {{ yubikey.nickname || `YubiKey ${yubikey.publicId.slice(-4)}` }}
                         </p>
-                        <p class="text-xs text-muted-foreground">ID: {{ yubikey.publicId }} • Added {{ formatDate(yubikey.createdAt) }}</p>
+                        <p class="text-xs text-muted-foreground">
+                            ID: {{ yubikey.publicId.slice(-12) }}... • Added {{ formatDate(yubikey.createdAt) }}
+                        </p>
                         <p v-if="yubikey.lastUsed" class="text-xs text-muted-foreground">Last used: {{ formatDate(yubikey.lastUsed) }}</p>
                     </div>
                 </div>
@@ -56,6 +84,9 @@
     <!-- Add YubiKey Modal -->
     <YubikeySetupModal v-model:open="showAddModal" @setup-complete="handleSetupComplete" />
 
+    <!-- WebAuthn Setup Modal -->
+    <WebAuthnSetupModal v-model:open="showWebAuthnModal" @setup-complete="handleSetupComplete" />
+
     <!-- Remove Confirmation Dialog -->
     <Dialog v-model:open="showRemoveDialog">
         <DialogContent class="sm:max-w-md">
@@ -68,7 +99,7 @@
                 <p class="text-sm font-medium">
                     {{ yubikeyToRemove.nickname || `YubiKey ${yubikeyToRemove.publicId.slice(-4)}` }}
                 </p>
-                <p class="text-xs text-muted-foreground">ID: {{ yubikeyToRemove.publicId }}</p>
+                <p class="text-xs text-muted-foreground">ID: {{ yubikeyToRemove.publicId.slice(-12) }}...</p>
             </div>
 
             <DialogFooter>
@@ -83,14 +114,16 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2Icon, PlusIcon, ShieldCheckIcon, ShieldOffIcon, Trash2Icon } from 'lucide-vue-next';
 import { UserService } from '@/services/user.service.ts';
 import type { YubikeyInfo } from '@/views/Settings/components/Account/schema.ts';
 import YubikeySetupModal from './YubikeySetupModal.vue';
+import WebAuthnSetupModal from './WebAuthnSetupModal.vue';
 import { toast } from '@/components/ui/toast';
+import { YubikeyAuthType } from '@/enums/user/user.enum.ts';
 
 const emit = defineEmits<{
     'yubikeys-updated': [count: number];
@@ -101,9 +134,18 @@ const userService = new UserService();
 const yubikeys = ref<YubikeyInfo[]>([]);
 const isLoading = ref(false);
 const showAddModal = ref(false);
+const showWebAuthnModal = ref(false);
 const showRemoveDialog = ref(false);
 const yubikeyToRemove = ref<YubikeyInfo | null>(null);
 const isRemoving = ref(false);
+
+// Security hierarchy - check if high-security methods exist
+const hasHighSecurityMethods = computed(() => {
+    const hasWebAuthn = yubikeys.value.some((key) => key.authType === YubikeyAuthType.WEBAUTHN || key.credentialId);
+    // Note: We would need TOTP status from parent component for complete check
+    // For now, just check WebAuthn
+    return hasWebAuthn;
+});
 
 const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();

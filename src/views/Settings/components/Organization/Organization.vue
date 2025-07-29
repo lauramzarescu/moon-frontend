@@ -65,7 +65,6 @@
         v-model:open="show2FAVerificationModal"
         title="Verify Organization Settings Change"
         description="For security reasons, please verify your identity to change MFA enforcement settings."
-        :two-factor-method="twoFactorMethod"
         input-prefix="org-settings-2fa"
         @verify="handle2FAVerification"
         @cancel="handle2FACancel"
@@ -78,12 +77,12 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-vue-next';
 import { OrganizationService } from '@/services/organization.service.ts';
-import { UserService } from '@/services/user.service.ts';
-import { TwoFactorMethod } from '@/enums/user/user.enum.ts';
+
 import TwoFactorVerificationModal from '@/components/ui/two-factor-verification-modal/TwoFactorVerificationModal.vue';
 import type { OrganizationDetailsResponse, OrganizationInput, UpdateOrganizationInput } from './schema.ts';
 import { organizationPageConfig } from './schema.ts';
 import { toast } from '@/components/ui/toast';
+import { UserService } from '@/services/user.service.ts';
 
 const organizationService = new OrganizationService();
 const userService = new UserService();
@@ -95,9 +94,6 @@ const errorMessage = ref('');
 
 // 2FA verification state
 const show2FAVerificationModal = ref(false);
-const twoFactorMethod = ref<TwoFactorMethod | null>(null);
-const twoFactorEnabled = ref(false);
-const twoFactorVerified = ref(false);
 const pendingEnforce2FAValue = ref<boolean | null>(null);
 const verificationModalRef = ref<InstanceType<typeof TwoFactorVerificationModal> | null>(null);
 
@@ -116,7 +112,9 @@ const hasChanges = computed(() => {
 });
 
 const requires2FAVerification = computed(() => {
-    return twoFactorEnabled.value && twoFactorVerified.value;
+    // Always require 2FA verification for organization settings changes
+    // The modal will handle checking if user has 2FA enabled
+    return true;
 });
 
 // Methods
@@ -125,13 +123,9 @@ const loadOrganizationData = async () => {
         isLoading.value = true;
         errorMessage.value = '';
 
-        const [orgResponse, twoFactorStatus] = await Promise.all([organizationService.getDetails(), userService.get2FAStatus()]);
+        const orgResponse = await organizationService.getDetails();
 
         organizationDetails.value = orgResponse;
-
-        twoFactorMethod.value = twoFactorStatus.method ?? null;
-        twoFactorEnabled.value = twoFactorStatus.enabled;
-        twoFactorVerified.value = twoFactorStatus.verified;
 
         formData.name = orgResponse.name;
         formData.enforce2FA = orgResponse.enforce2FA;

@@ -1,11 +1,18 @@
 import * as z from 'zod';
-import { TwoFactorMethod } from '@/enums/user/user.enum.ts';
+import { TwoFactorMethod, YubikeyAuthType } from '@/enums/user/user.enum.ts';
 
 export const twoFactorStatusSchema = z.object({
     enabled: z.boolean(),
     verified: z.boolean(),
     method: z.nativeEnum(TwoFactorMethod).optional().nullable(),
     yubikeyCount: z.number().optional().default(0),
+    hasWebAuthn: z.boolean().optional().default(false),
+    webauthnCount: z.number().optional().default(0),
+    hasTotp: z.boolean().optional().default(false),
+    hasYubikeyOTP: z.boolean().optional().default(false),
+    securityLevel: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
+    enforcedMethod: z.enum(['HIGH_SECURITY_ONLY', 'WEBAUTHN_ONLY']).optional().nullable(),
+    availableMethods: z.array(z.nativeEnum(TwoFactorMethod)).optional().default([]),
 });
 
 export const twoFactorSetupResponseSchema = z.object({
@@ -19,6 +26,14 @@ export const yubikeyInfoSchema = z.object({
     nickname: z.string().optional(),
     createdAt: z.string(),
     lastUsed: z.string().optional(),
+    credentialId: z.string().optional(),
+    credentialPublicKey: z.string().optional(),
+    counter: z.number().optional(),
+    credentialDeviceType: z.string().optional(),
+    credentialBackedUp: z.boolean().optional(),
+    transports: z.array(z.string()).optional(),
+    authType: z.nativeEnum(YubikeyAuthType).optional(),
+    isActive: z.boolean().optional().default(true),
 });
 
 export const yubikeyInfoResponseSchema = z.object({

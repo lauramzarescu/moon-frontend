@@ -14,6 +14,10 @@ import type {
     YubikeyRemoveInput,
     YubikeySetupInput,
     YubikeyVerifyInput,
+    WebAuthnRegistrationStartInput,
+    WebAuthnRegistrationCompleteInput,
+    WebAuthnAuthenticationStartInput,
+    WebAuthnAuthenticationCompleteInput,
 } from '@/views/Settings/components/Team/schema.ts';
 import type { PaginatedResult, PaginationParams } from '@/types/pagination/pagination.interface.ts';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/views/Settings/components/Account/schema.ts';
@@ -237,5 +241,77 @@ export class UserService extends ApiService {
      */
     async setTwoFactorMethod(data: TwoFactorMethodSelectInput): Promise<any> {
         return this.post(`${this.resource}/2fa/method`, data);
+    }
+
+    // WebAuthn Methods
+
+    /**
+     * Start WebAuthn registration process
+     * @param data WebAuthn registration start data
+     * @returns Promise with registration options
+     */
+    async startWebAuthnRegistration(data: WebAuthnRegistrationStartInput): Promise<any> {
+        return this.post(`${this.resource}/2fa/webauthn/registration/start`, data);
+    }
+
+    /**
+     * Complete WebAuthn registration process
+     * @param data WebAuthn registration complete data
+     * @returns Promise with registration result
+     */
+    async completeWebAuthnRegistration(data: WebAuthnRegistrationCompleteInput): Promise<any> {
+        return this.post(`${this.resource}/2fa/webauthn/registration/complete`, data);
+    }
+
+    /**
+     * Start WebAuthn authentication process
+     * @param data WebAuthn authentication start data
+     * @param sessionToken Optional session token for login flow
+     * @returns Promise with authentication options
+     */
+    async startWebAuthnAuthentication(data: WebAuthnAuthenticationStartInput, sessionToken?: string): Promise<any> {
+        const headers: Record<string, string> = {};
+
+        if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+        }
+
+        return this.post(`${this.resource}/2fa/webauthn/authentication/start`, data, { headers });
+    }
+
+    /**
+     * Complete WebAuthn authentication process
+     * @param data WebAuthn authentication complete data
+     * @param sessionToken Optional session token for login flow
+     * @returns Promise with authentication result
+     */
+    async completeWebAuthnAuthentication(data: WebAuthnAuthenticationCompleteInput, sessionToken?: string): Promise<any> {
+        const headers: Record<string, string> = {};
+
+        if (sessionToken) {
+            headers['Authorization'] = `Bearer ${sessionToken}`;
+        }
+
+        return this.post(`${this.resource}/2fa/webauthn/authentication/complete`, data, { headers });
+    }
+
+    // WebAuthn Re-authentication Methods (for authenticated users)
+
+    /**
+     * Start WebAuthn re-authentication process for authenticated users
+     * @param data WebAuthn authentication start data
+     * @returns Promise with authentication options
+     */
+    async startWebAuthnReAuthentication(data: WebAuthnAuthenticationStartInput): Promise<any> {
+        return this.post(`${this.resource}/2fa/webauthn/start`, data);
+    }
+
+    /**
+     * Complete WebAuthn re-authentication process for authenticated users
+     * @param data WebAuthn authentication complete data
+     * @returns Promise with authentication result
+     */
+    async completeWebAuthnReAuthentication(data: WebAuthnAuthenticationCompleteInput): Promise<any> {
+        return this.post(`${this.resource}/2fa/webauthn/complete`, data);
     }
 }

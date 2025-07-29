@@ -8,6 +8,7 @@
         <div class="space-y-3">
             <!-- TOTP Method -->
             <div
+                v-if="showTotpOption"
                 :class="[
                     'flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors',
                     selectedMethod === TwoFactorMethod.TOTP
@@ -21,12 +22,13 @@
                         <SmartphoneIcon class="h-4 w-4 text-green-600 dark:text-green-400" />
                     </div>
                     <div>
-                        <p class="text-sm font-medium">Authenticator App (TOTP)</p>
+                        <p class="text-sm font-medium">Mobile Auth (TOTP)</p>
                         <p class="text-xs text-muted-foreground">Use Google Authenticator, Authy, or similar apps</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Badge v-if="totpEnabled" variant="secondary" class="text-xs"> Configured</Badge>
+                    <Badge variant="outline" class="text-xs text-green-600">High Security</Badge>
+                    <Badge v-if="totpEnabled || hasTotp" variant="secondary" class="text-xs"> Configured</Badge>
                     <div
                         :class="[
                             'w-4 h-4 rounded-full border-2',
@@ -38,8 +40,9 @@
                 </div>
             </div>
 
-            <!-- YubiKey Method -->
+            <!-- YubiKey OTP Method (only shown when no webauthn methods) -->
             <div
+                v-if="showYubikeyOtpOption"
                 :class="[
                     'flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors',
                     selectedMethod === TwoFactorMethod.YUBIKEY
@@ -53,11 +56,12 @@
                         <ShieldCheckIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                        <p class="text-sm font-medium">YubiKey</p>
-                        <p class="text-xs text-muted-foreground">Use a physical YubiKey device</p>
+                        <p class="text-sm font-medium">YubiKey OTP</p>
+                        <p class="text-xs text-muted-foreground">Use YubiKey OTP (no PIN required)</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
+                    <Badge variant="outline" class="text-xs text-orange-600">Lower Security</Badge>
                     <Badge v-if="yubikeyCount > 0" variant="secondary" class="text-xs">
                         {{ yubikeyCount }} key{{ yubikeyCount !== 1 ? 's' : '' }}
                     </Badge>
@@ -72,8 +76,45 @@
                 </div>
             </div>
 
+            <!-- YubiKey WebAuthn Method (high security) -->
+            <div
+                v-if="showYubikeyWebAuthnOption"
+                :class="[
+                    'flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors',
+                    selectedMethod === TwoFactorMethod.YUBIKEY
+                        ? 'border-primary bg-primary/5'
+                        : 'border-muted hover:border-muted-foreground/20',
+                ]"
+                @click="selectMethod(TwoFactorMethod.YUBIKEY)"
+            >
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-green-100 rounded-lg dark:bg-green-900">
+                        <ShieldCheckIcon class="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium">YubiKey (WebAuthn)</p>
+                        <p class="text-xs text-muted-foreground">Use WebAuthn-compatible YubiKey with PIN protection</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <Badge variant="outline" class="text-xs text-green-600">High Security</Badge>
+                    <Badge v-if="webauthnCount > 0" variant="secondary" class="text-xs">
+                        {{ webauthnCount }} key{{ webauthnCount !== 1 ? 's' : '' }}
+                    </Badge>
+                    <div
+                        :class="[
+                            'w-4 h-4 rounded-full border-2',
+                            selectedMethod === TwoFactorMethod.YUBIKEY ? 'border-primary bg-primary' : 'border-muted-foreground',
+                        ]"
+                    >
+                        <div v-if="selectedMethod === TwoFactorMethod.YUBIKEY" class="w-2 h-2 bg-white rounded-full m-0.5" />
+                    </div>
+                </div>
+            </div>
+
             <!-- Any Method -->
             <div
+                v-if="availableMethods?.length > 1"
                 :class="[
                     'flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors',
                     selectedMethod === TwoFactorMethod.ANY
@@ -87,12 +128,13 @@
                         <ShieldIcon class="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     </div>
                     <div>
-                        <p class="text-sm font-medium">Any Method</p>
-                        <p class="text-xs text-muted-foreground">Accept either TOTP or YubiKey for authentication</p>
+                        <p class="text-sm font-medium">Any High-Security Method</p>
+                        <p class="text-xs text-muted-foreground">Accept Mobile Auth or YubiKey WebAuthn for authentication</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Badge v-if="totpEnabled && yubikeyCount > 0" variant="secondary" class="text-xs"> Available </Badge>
+                    <Badge variant="outline" class="text-xs text-green-600">High Security</Badge>
+                    <Badge variant="secondary" class="text-xs">Available</Badge>
                     <div
                         :class="[
                             'w-4 h-4 rounded-full border-2',
@@ -129,41 +171,81 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangleIcon, Loader2Icon, ShieldCheckIcon, ShieldIcon, SmartphoneIcon } from 'lucide-vue-next';
 import { TwoFactorMethod } from '@/enums/user/user.enum.ts';
 import { UserService } from '@/services/user.service.ts';
-import { toast } from '@/components/ui/toast';
+import { toast } from '@/components/ui/toast'; // No props needed - component fetches its own data
 
-const props = defineProps<{
-    currentMethod: TwoFactorMethod | null;
-    totpEnabled: boolean;
-    yubikeyCount: number;
-}>();
+// No props needed - component fetches its own data
 
 const emit = defineEmits<{
-    'method-updated': [method: TwoFactorMethod];
+    'method-updated': [];
 }>();
 
 const userService = new UserService();
 
-const selectedMethod = ref<TwoFactorMethod>(props.currentMethod || TwoFactorMethod.TOTP);
 const isLoading = ref(false);
 
+// Internal 2FA status - fetched on mount
+const currentMethod = ref<TwoFactorMethod | null>(null);
+const selectedMethod = ref<TwoFactorMethod | null>(null);
+const totpEnabled = ref(false);
+const yubikeyCount = ref(0);
+const webauthnCount = ref(0);
+const securityLevel = ref<'HIGH' | 'MEDIUM' | 'LOW' | null>(null);
+const enforcedMethod = ref<'HIGH_SECURITY_ONLY' | 'WEBAUTHN_ONLY' | null>(null);
+const availableMethods = ref<TwoFactorMethod[]>([]);
+const hasTotp = ref(false);
+const hasYubikeyOtp = ref(false);
+const is2FAStatusLoaded = ref(false);
+
+// Security hierarchy computed properties
+const hasHighSecurityMethods = computed(() => hasTotp.value || webauthnCount.value > 0);
+const isHighSecurityEnforced = computed(() => enforcedMethod.value === 'HIGH_SECURITY_ONLY');
+const isWebAuthnOnlyEnforced = computed(() => enforcedMethod.value === 'WEBAUTHN_ONLY');
+
+// Show only high-security methods when enforced
+const showTotpOption = computed(() => {
+    if (isWebAuthnOnlyEnforced.value) return false;
+    return hasTotp.value || totpEnabled.value;
+});
+
+const showYubikeyWebAuthnOption = computed(() => {
+    return webauthnCount.value > 0;
+});
+
+const showYubikeyOtpOption = computed(() => {
+    console.log('Yubikey OTP Option:', {
+        hasYubikeyOtp: hasYubikeyOtp.value,
+        showYubikeyWebAuthnOption: showYubikeyWebAuthnOption.value,
+    });
+    if (showYubikeyWebAuthnOption.value) return false; // Hide OTP when Webauthn high-security method exist
+    return hasYubikeyOtp;
+});
+
 const hasChanges = computed(() => {
-    return selectedMethod.value !== props.currentMethod;
+    return selectedMethod.value !== currentMethod.value;
 });
 
 const canSelectMethod = computed(() => {
     switch (selectedMethod.value) {
         case TwoFactorMethod.TOTP:
-            return props.totpEnabled;
+            return showTotpOption.value;
         case TwoFactorMethod.YUBIKEY:
-            return props.yubikeyCount > 0;
+            // For YUBIKEY method, check if it's WebAuthn or OTP based on context
+            if (isWebAuthnOnlyEnforced.value) {
+                return showYubikeyWebAuthnOption.value;
+            }
+            return showYubikeyWebAuthnOption.value || showYubikeyOtpOption.value;
         case TwoFactorMethod.ANY:
-            return props.totpEnabled && props.yubikeyCount > 0;
+            // ANY method requires at least one high-security method when enforced
+            if (isHighSecurityEnforced.value || isWebAuthnOnlyEnforced.value) {
+                return showTotpOption.value || showYubikeyWebAuthnOption.value;
+            }
+            return showTotpOption.value || showYubikeyWebAuthnOption.value || showYubikeyOtpOption.value;
         default:
             return false;
     }
@@ -180,9 +262,9 @@ const getRequirementMessage = () => {
         case TwoFactorMethod.YUBIKEY:
             return 'Please register at least one YubiKey first.';
         case TwoFactorMethod.ANY:
-            if (!props.totpEnabled && props.yubikeyCount === 0) {
+            if (!totpEnabled.value && yubikeyCount.value === 0) {
                 return 'Please set up both TOTP authentication and register a YubiKey.';
-            } else if (!props.totpEnabled) {
+            } else if (!totpEnabled.value) {
                 return 'Please set up TOTP authentication first.';
             } else {
                 return 'Please register at least one YubiKey first.';
@@ -201,7 +283,7 @@ const saveMethod = async () => {
             method: selectedMethod.value,
         });
 
-        emit('method-updated', selectedMethod.value);
+        emit('method-updated');
 
         toast({
             title: '2FA method updated',
@@ -220,23 +302,46 @@ const saveMethod = async () => {
     }
 };
 
-watch(
-    () => props.currentMethod,
-    (newMethod) => {
-        if (newMethod) {
-            selectedMethod.value = newMethod;
-        }
-    },
-    { immediate: true }
-);
+const fetch2FAStatus = async () => {
+    try {
+        console.log('TwoFactorMethodSelection - Fetching 2FA status...');
+        const twoFactorStatus = await userService.get2FAStatus();
 
-// Watch for changes in props that affect available methods
-watch(
-    () => [props.yubikeyCount, props.totpEnabled],
-    () => {
-        // Force reactivity update when available methods change
-        // This ensures the UI updates when YubiKeys are added/removed
-    },
-    { deep: true }
-);
+        // Get current method from status
+        currentMethod.value = twoFactorStatus.method ?? null;
+        selectedMethod.value = currentMethod.value ?? TwoFactorMethod.TOTP;
+
+        totpEnabled.value = twoFactorStatus.enabled ?? false;
+        hasTotp.value = twoFactorStatus.hasTotp ?? false;
+        hasYubikeyOtp.value = twoFactorStatus.hasYubikeyOTP ?? false;
+        securityLevel.value = twoFactorStatus.securityLevel ?? null;
+        enforcedMethod.value = twoFactorStatus.enforcedMethod ?? null;
+        availableMethods.value = twoFactorStatus.availableMethods ?? [];
+        yubikeyCount.value = twoFactorStatus.yubikeyCount ?? 0;
+        webauthnCount.value = twoFactorStatus.webauthnCount ?? 0;
+
+        is2FAStatusLoaded.value = true;
+    } catch (error) {
+        console.error('TwoFactorMethodSelection - Failed to fetch 2FA status:', error);
+        // Set safe defaults
+        totpEnabled.value = false;
+        hasTotp.value = false;
+        hasYubikeyOtp.value = false;
+        yubikeyCount.value = 0;
+        webauthnCount.value = 0;
+        is2FAStatusLoaded.value = true;
+    }
+};
+
+onMounted(() => {
+    fetch2FAStatus();
+});
+
+const refresh2FAStatus = () => {
+    fetch2FAStatus();
+};
+
+defineExpose({
+    refresh2FAStatus,
+});
 </script>

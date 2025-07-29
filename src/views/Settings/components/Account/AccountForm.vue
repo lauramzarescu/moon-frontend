@@ -13,6 +13,12 @@ const twoFactorEnabled = ref(false);
 const twoFactorVerified = ref(false);
 const twoFactorMethod = ref<TwoFactorMethod | null>(null);
 const yubikeyCount = ref(0);
+const webauthnCount = ref(0);
+const securityLevel = ref<'HIGH' | 'MEDIUM' | 'LOW' | null>(null);
+const enforcedMethod = ref<'HIGH_SECURITY_ONLY' | 'WEBAUTHN_ONLY' | null>(null);
+const availableMethods = ref<TwoFactorMethod[]>([]);
+const hasTotp = ref(false);
+const hasYubikeyOTP = ref(false);
 
 function formatDate(dateString: string) {
     return new Date(dateString).toLocaleString();
@@ -26,6 +32,12 @@ const load2FAStatus = async () => {
         twoFactorVerified.value = status.verified;
         twoFactorMethod.value = status.method ?? null;
         yubikeyCount.value = status.yubikeyCount ?? 0;
+        webauthnCount.value = status.webauthnCount ?? 0;
+        securityLevel.value = status.securityLevel ?? null;
+        enforcedMethod.value = status.enforcedMethod ?? null;
+        availableMethods.value = status.availableMethods ?? [];
+        hasTotp.value = status.hasTotp ?? false;
+        hasYubikeyOTP.value = status.hasYubikeyOTP ?? false;
     } catch (error) {
         console.error('Error checking 2FA status:', error);
     }
@@ -59,6 +71,12 @@ const handle2FAStatusUpdate = async () => {
             :two-factor-verified="twoFactorVerified"
             :two-factor-method="twoFactorMethod"
             :yubikey-count="yubikeyCount"
+            :webauthn-count="webauthnCount"
+            :security-level="securityLevel"
+            :enforced-method="enforcedMethod"
+            :available-methods="availableMethods"
+            :has-totp="hasTotp"
+            :has-yubikey-otp="hasYubikeyOTP"
             @update:two-factor-enabled="twoFactorEnabled = $event"
             @update:two-factor-verified="twoFactorVerified = $event"
             @status-updated="handle2FAStatusUpdate"

@@ -172,6 +172,24 @@ export const yubikeyRemoveSchema = z.object({
     yubikeyId: z.string().min(12).max(12),
 });
 
+// WebAuthn schemas
+export const webauthnRegistrationStartSchema = z.object({
+    nickname: z.string().optional(),
+});
+
+export const webauthnRegistrationCompleteSchema = z.object({
+    credential: z.any(), // WebAuthn credential response
+    challengeId: z.string(),
+    nickname: z.string().optional(),
+});
+
+export const webauthnAuthenticationStartSchema = z.object({});
+
+export const webauthnAuthenticationCompleteSchema = z.object({
+    credential: z.any(), // WebAuthn assertion response
+    challengeId: z.string(),
+});
+
 // Type exports
 export type UserInput = z.infer<typeof userSchema>;
 export type TwoFactorVerifyInput = z.infer<typeof twoFactorVerifySchema>;
@@ -194,6 +212,12 @@ export type YubikeySetupInput = z.infer<typeof yubikeySetupSchema>;
 export type YubikeyVerifyInput = z.infer<typeof yubikeyVerifySchema>;
 export type TwoFactorMethodSelectInput = z.infer<typeof twoFactorMethodSelectSchema>;
 export type YubikeyRemoveInput = z.infer<typeof yubikeyRemoveSchema>;
+
+// WebAuthn types
+export type WebAuthnRegistrationStartInput = z.infer<typeof webauthnRegistrationStartSchema>;
+export type WebAuthnRegistrationCompleteInput = z.infer<typeof webauthnRegistrationCompleteSchema>;
+export type WebAuthnAuthenticationStartInput = z.infer<typeof webauthnAuthenticationStartSchema>;
+export type WebAuthnAuthenticationCompleteInput = z.infer<typeof webauthnAuthenticationCompleteSchema>;
 
 /** ================================ */
 /** ===== Access control schema ==== */
