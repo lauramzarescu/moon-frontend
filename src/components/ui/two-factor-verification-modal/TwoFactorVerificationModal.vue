@@ -119,7 +119,7 @@ import { AlertTriangleIcon, Loader2Icon, ShieldCheckIcon, SmartphoneIcon } from 
 import { TwoFactorMethod, YubikeyAuthType } from '@/enums/user/user.enum.ts';
 import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
 import VerificationCodeInput from '@/components/ui/verification-code-input/VerificationCodeInput.vue';
-import { startAuthentication } from '@simplewebauthn/browser';
+import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
 import { UserService } from '@/services/user.service.ts';
 
 const props = defineProps<{
@@ -189,7 +189,6 @@ watch(isOpen, (newValue) => {
 
 const fetch2FAStatus = async () => {
     try {
-        console.log('TwoFactorVerificationModal - Fetching 2FA status...');
         const twoFactorStatus = await userService.get2FAStatus();
 
         hasTotp.value = twoFactorStatus.hasTotp ?? false;
@@ -255,12 +254,6 @@ const setInitialVerificationMethod = () => {
             useYubikey.value = false;
             useYubikeyWebAuthn.value = false;
     }
-
-    console.log('TwoFactorVerificationModal - Method set to:', {
-        useTotp: !useYubikey.value && !useYubikeyWebAuthn.value,
-        useYubikey: useYubikey.value,
-        useYubikeyWebAuthn: useYubikeyWebAuthn.value,
-    });
 };
 
 const switchToTotp = () => {
@@ -321,31 +314,90 @@ const handleWebAuthnVerify = async () => {
         isLoading.value = true;
         errorMessage.value = '';
 
-        console.log('TwoFactorVerificationModal - Starting WebAuthn authentication:', {
-            hasSessionToken: !!props.sessionToken,
-            context: props.sessionToken ? 'login' : 'authenticated',
-        });
+        if (!browserSupportsWebAuthn()) {
+            throw new Error(
+                'WebAuthn is not supported in your browser. Please use a different authentication method or update your browser.',
+            );
+        }
 
-        // Use different routes based on authentication context
         let authResponse;
         if (props.sessionToken) {
-            // Login context - use session-based authentication
-            console.log('Using login WebAuthn routes with session token');
             authResponse = await userService.startWebAuthnAuthentication({}, props.sessionToken);
         } else {
-            // Authenticated context - use re-authentication routes
-            console.log('Using re-authentication WebAuthn routes');
             authResponse = await userService.startWebAuthnReAuthentication({});
+        }
+
+        if (!authResponse.challengeId) {
+            throw new Error('Invalid authentication response: missing challengeId');
+        }
+
+        if (!authResponse.challenge) {
+            throw new Error('Invalid authentication response: missing challenge');
+        }
+
+        // Check if allowCredentials is empty (which might cause the error)
+        if (authResponse.allowCredentials && authResponse.allowCredentials.length === 0) {
+            console.warn('WebAuthn allowCredentials is empty - no registered credentials found');
+            throw new Error('No registered security keys found for this account. Please register a security key first.');
+        }
+
+        // If allowCredentials is undefined, it might be a backend issue
+        if (authResponse.allowCredentials === undefined) {
+            console.warn('WebAuthn allowCredentials is undefined - this might cause authentication issues');
+            // Don't throw an error here, let the browser handle it
         }
 
         webauthnChallengeId.value = authResponse.challengeId;
 
-        // Use SimpleWebAuthn to handle the browser WebAuthn API
-        const credential = await startAuthentication({ optionsJSON: authResponse });
+        // Prepare options for startAuthentication
+        // The SimpleWebAuthn library expects the options in a specific format
+        let authOptions = authResponse;
 
-        // Complete authentication with appropriate method
+        // If the response has a different structure, extract the options
+        if (authResponse.options) {
+            authOptions = authResponse.options;
+        }
+
+        // Ensure required fields are present
+        if (!authOptions.challenge) {
+            throw new Error('Invalid authentication options: missing challenge');
+        }
+
+        let credential;
+        try {
+            credential = await startAuthentication({
+                optionsJSON: authOptions,
+                useBrowserAutofill: false,
+            });
+        } catch (firstError: any) {
+            if (firstError.name === 'NotAllowedError' && authOptions.allowCredentials) {
+                const fallbackOptions = { ...authOptions };
+                delete fallbackOptions.allowCredentials;
+
+                try {
+                    credential = await startAuthentication({
+                        optionsJSON: fallbackOptions,
+                        useBrowserAutofill: false,
+                    });
+                } catch (secondError: any) {
+                    throw secondError;
+                }
+            } else {
+                throw firstError;
+            }
+        }
+
+        if (authResponse.allowCredentials && authResponse.allowCredentials.length > 0) {
+            const credentialMatches = authResponse.allowCredentials.some((allowedCred: any) => {
+                return allowedCred.id === credential.id;
+            });
+
+            if (!credentialMatches) {
+                console.warn('WARNING: Returned credential does not match any allowed credential!');
+            }
+        }
+
         if (props.sessionToken) {
-            // Login context
             await userService.completeWebAuthnAuthentication(
                 {
                     credential,
@@ -354,28 +406,46 @@ const handleWebAuthnVerify = async () => {
                 props.sessionToken,
             );
         } else {
-            // Authenticated context
             await userService.completeWebAuthnReAuthentication({
                 credential,
                 challengeId: webauthnChallengeId.value,
             });
         }
 
-        // Emit success - the parent component will handle the success
         emit('verify', 'webauthn-success');
     } catch (error: any) {
         console.error('WebAuthn verification error:', error);
 
         let errorMsg = 'WebAuthn authentication failed. Please try again.';
+
         if (error.name === 'NotAllowedError') {
-            errorMsg = 'Authentication was cancelled or timed out. Please try again.';
+            if (error.message && error.message.includes('not registered')) {
+                errorMsg =
+                    'This security key is not registered with your account. Please register it first or use a different authentication method.';
+            } else {
+                errorMsg = 'Authentication was cancelled, timed out, or not allowed. Please try again.';
+            }
         } else if (error.name === 'SecurityError') {
-            errorMsg = "Security error occurred. Please ensure you're using HTTPS.";
+            errorMsg = "Security error occurred. Please ensure you're using HTTPS and your security key is properly connected.";
         } else if (error.name === 'AbortError') {
             errorMsg = 'Authentication was cancelled. Please try again.';
+        } else if (error.name === 'InvalidStateError') {
+            errorMsg = 'Security key is already in use or in an invalid state. Please try again.';
+        } else if (error.name === 'NotSupportedError') {
+            errorMsg = 'WebAuthn is not supported by your browser or security key.';
+        } else if (error.name === 'UnknownError') {
+            errorMsg = 'An unknown error occurred with your security key. Please try again.';
         } else if (error.message) {
+            // Use the specific error message if available
             errorMsg = error.message;
         }
+
+        console.error('Detailed WebAuthn error:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+            cause: error.cause,
+        });
 
         errorMessage.value = errorMsg;
     } finally {

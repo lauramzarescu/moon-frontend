@@ -168,13 +168,10 @@ const onMethodUpdated = () => {
 };
 
 const onYubikeysUpdated = async (count: number) => {
-    console.log('TwoFactorAuthSection: Received yubikeys-updated with count:', count);
-
     if (methodSelectionRef.value) {
         methodSelectionRef.value.refresh2FAStatus();
     }
 
-    console.log('TwoFactorAuthSection: Emitting status-updated');
     emit('status-updated');
 };
 </script>

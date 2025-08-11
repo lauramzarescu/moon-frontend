@@ -48,9 +48,7 @@ onMounted(async () => {
 });
 
 const handle2FAStatusUpdate = async () => {
-    console.log('AccountForm: Received status-updated event, refreshing 2FA status');
     setTimeout(async () => await load2FAStatus(), 301);
-    console.log('AccountForm: 2FA status refreshed');
 };
 </script>
 

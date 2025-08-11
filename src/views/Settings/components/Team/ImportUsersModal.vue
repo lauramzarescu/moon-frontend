@@ -236,10 +236,8 @@ const handleImport = async () => {
         if (activeTab.value === 'file' && selectedFile.value) {
             fileToImport = selectedFile.value;
         } else if (activeTab.value === 'json' && jsonData.value.trim()) {
-            // Create a File object from JSON data
             const blob = new Blob([jsonData.value], { type: 'application/json' });
             fileToImport = new File([blob], 'users.json', { type: 'application/json' });
-            console.log('File created:', fileToImport);
         } else {
             return;
         }

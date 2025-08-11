@@ -55,12 +55,7 @@ async function onSubmit(event: Event) {
 
     try {
         const validatedData = loginWithEmailAndPasswordSchema.parse(formData.value);
-        const loginResponse = await authService.login(validatedData);
-        console.log('Raw login response:', loginResponse);
-
-        // Use the response directly without strict schema validation for now
-        const response = loginResponse;
-        console.log('Using response directly:', response);
+        const response = await authService.login(validatedData);
 
         if (response.requires2FAVerification) {
             const tempToken = Cookies.get('token');
@@ -68,10 +63,8 @@ async function onSubmit(event: Event) {
                 sessionToken.value = tempToken;
             }
 
-            // Set the 2FA method if provided in response (convert string to enum)
             twoFactorMethod.value = (response.twoFactorMethod as TwoFactorMethod) || null;
 
-            // Store security hierarchy information
             hasTotp.value = response.hasTotp ?? false;
             hasWebAuthn.value = response.hasWebAuthn ?? false;
             hasYubikey.value = response.hasYubikey ?? false;
@@ -79,21 +72,9 @@ async function onSubmit(event: Event) {
             enforcedMethod.value = response.enforcedMethod ?? null;
             availableMethods.value = response.availableMethods ?? [];
 
-            console.log('Login 2FA Response:', {
-                twoFactorMethod: twoFactorMethod.value,
-                hasTotp: hasTotp.value,
-                hasWebAuthn: hasWebAuthn.value,
-                hasYubikey: hasYubikey.value,
-                hasYubikeyOTP: hasYubikeyOTP.value,
-                enforcedMethod: enforcedMethod.value,
-                availableMethods: availableMethods.value,
-            });
-
-            // Determine initial verification method
             setInitialVerificationMethod();
 
             requires2FAVerification.value = true;
-            console.log('Set requires2FAVerification to true, should show 2FA UI now');
             isLoading.value = false;
         } else if (response.requires2FASetup && response.qrCodeUrl) {
             const tempToken = Cookies.get('token');
@@ -131,23 +112,10 @@ async function verifyTwoFactorCode() {
         try {
             isLoading.value = true;
 
-            console.log('Starting WebAuthn authentication for login...', {
-                hasSessionToken: !!sessionToken.value,
-                sessionToken: sessionToken.value ? 'present' : 'missing',
-            });
-
-            // Start WebAuthn authentication with session token
             const authResponse = await userService.startWebAuthnAuthentication({}, sessionToken.value);
-            console.log('WebAuthn auth start response:', authResponse);
-
-            // Store challengeId for completion
             webauthnChallengeId.value = authResponse.challengeId;
-
-            // Use SimpleWebAuthn to handle the browser WebAuthn API
             const credential = await startAuthentication({ optionsJSON: authResponse });
-            console.log('WebAuthn credential received:', credential);
 
-            // Complete authentication with challengeId and session token
             await userService.completeWebAuthnAuthentication(
                 {
                     credential,
@@ -156,7 +124,6 @@ async function verifyTwoFactorCode() {
                 sessionToken.value,
             );
 
-            console.log('WebAuthn authentication completed successfully');
             window.location.href = '/';
             return;
         } catch (error: any) {
@@ -213,18 +180,12 @@ async function verifyTwoFactorCode() {
     isLoading.value = true;
 
     try {
-        console.log('Verifying 2FA code:', {
-            method: useYubikey.value ? 'YubiKey OTP' : 'TOTP',
-            hasSessionToken: !!sessionToken.value,
-        });
-
         if (sessionToken.value) {
             await userService.verify2FASession(code, sessionToken.value);
         } else {
             await userService.verify2FASession(code);
         }
 
-        console.log('2FA verification successful');
         window.location.href = '/';
     } catch (error) {
         console.error('2FA verification error:', error);
@@ -269,14 +230,6 @@ function cancelTwoFactorVerification() {
 }
 
 function setInitialVerificationMethod() {
-    console.log('Setting initial verification method:', {
-        twoFactorMethod: twoFactorMethod.value,
-        hasTotp: hasTotp.value,
-        hasWebAuthn: hasWebAuthn.value,
-        hasYubikeyOTP: hasYubikeyOTP.value,
-        enforcedMethod: enforcedMethod.value,
-    });
-
     switch (twoFactorMethod.value) {
         case TwoFactorMethod.YUBIKEY:
             // YUBIKEY method - check if it's WebAuthn or OTP based on what's available
@@ -321,12 +274,6 @@ function setInitialVerificationMethod() {
             useYubikey.value = false;
             useWebAuthn.value = false;
     }
-
-    console.log('Initial method set:', {
-        useTotp: !useYubikey.value && !useWebAuthn.value,
-        useYubikey: useYubikey.value,
-        useWebAuthn: useWebAuthn.value,
-    });
 }
 
 function switchToTotp() {

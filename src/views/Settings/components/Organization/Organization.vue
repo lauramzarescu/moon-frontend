@@ -208,7 +208,7 @@ const handle2FAVerification = async (code: string) => {
     verificationModalRef.value.clearError();
 
     try {
-        await userService.verify2FACode(code);
+        if (code !== 'webauthn-success') await userService.verify2FACode(code);
 
         await updateEnforce2FA(pendingEnforce2FAValue.value);
 

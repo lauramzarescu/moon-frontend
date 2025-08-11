@@ -10,14 +10,14 @@ import type {
     UserDetailsResponseInput,
     UserDeviceInfo,
     UserInput,
+    WebAuthnAuthenticationCompleteInput,
+    WebAuthnAuthenticationStartInput,
+    WebAuthnRegistrationCompleteInput,
+    WebAuthnRegistrationStartInput,
     YubikeyListInput,
     YubikeyRemoveInput,
     YubikeySetupInput,
     YubikeyVerifyInput,
-    WebAuthnRegistrationStartInput,
-    WebAuthnRegistrationCompleteInput,
-    WebAuthnAuthenticationStartInput,
-    WebAuthnAuthenticationCompleteInput,
 } from '@/views/Settings/components/Team/schema.ts';
 import type { PaginatedResult, PaginationParams } from '@/types/pagination/pagination.interface.ts';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/views/Settings/components/Account/schema.ts';
@@ -276,7 +276,7 @@ export class UserService extends ApiService {
             headers['Authorization'] = `Bearer ${sessionToken}`;
         }
 
-        return this.post(`${this.resource}/2fa/webauthn/authentication/start`, data, { headers });
+        return await this.post(`${this.resource}/2fa/webauthn/authentication/start`, data, { headers });
     }
 
     /**
@@ -292,7 +292,10 @@ export class UserService extends ApiService {
             headers['Authorization'] = `Bearer ${sessionToken}`;
         }
 
-        return this.post(`${this.resource}/2fa/webauthn/authentication/complete`, data, { headers });
+        return this.post(`${this.resource}/2fa/webauthn/authentication/complete`, data, {
+            headers,
+            credentials: 'include',
+        });
     }
 
     // WebAuthn Re-authentication Methods (for authenticated users)
@@ -303,7 +306,7 @@ export class UserService extends ApiService {
      * @returns Promise with authentication options
      */
     async startWebAuthnReAuthentication(data: WebAuthnAuthenticationStartInput): Promise<any> {
-        return this.post(`${this.resource}/2fa/webauthn/start`, data);
+        return await this.post(`${this.resource}/2fa/webauthn/start`, data);
     }
 
     /**

@@ -156,8 +156,7 @@ const loadYubikeys = async () => {
         isLoading.value = true;
         const response = await userService.getUserYubikeys();
         yubikeys.value = response.data || [];
-        console.log('YubikeyManagement: Loaded YubiKeys:', yubikeys.value);
-        console.log('YubikeyManagement: Emitting yubikeys-updated with count:', yubikeys.value.length);
+
         emit('yubikeys-updated', yubikeys.value.length);
     } catch (error) {
         console.error('Error loading YubiKeys:', error);

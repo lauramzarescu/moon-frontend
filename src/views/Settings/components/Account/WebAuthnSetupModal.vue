@@ -6,9 +6,7 @@
                     <ShieldCheckIcon class="h-5 w-5 text-green-600" />
                     Set Up WebAuthn Security Key
                 </DialogTitle>
-                <DialogDescription>
-                    Add a WebAuthn-compatible security key with PIN protection for enhanced security
-                </DialogDescription>
+                <DialogDescription> Add a WebAuthn-compatible security key with PIN protection for enhanced security </DialogDescription>
             </DialogHeader>
 
             <div class="space-y-4">
@@ -49,9 +47,7 @@
                         :disabled="isLoading || !browserSupported"
                         @keydown.enter="handleSetup"
                     />
-                    <p class="text-xs text-muted-foreground">
-                        Give your security key a memorable name
-                    </p>
+                    <p class="text-xs text-muted-foreground">Give your security key a memorable name</p>
                 </div>
 
                 <!-- Error Message -->
@@ -63,7 +59,10 @@
                 </div>
 
                 <!-- Success Message -->
-                <div v-if="successMessage" class="p-3 bg-green-50 border border-green-200 rounded-md dark:bg-green-950 dark:border-green-800">
+                <div
+                    v-if="successMessage"
+                    class="p-3 bg-green-50 border border-green-200 rounded-md dark:bg-green-950 dark:border-green-800"
+                >
                     <div class="flex items-center gap-2">
                         <CheckCircleIcon class="h-4 w-4 text-green-600" />
                         <span class="text-sm text-green-700 dark:text-green-300">{{ successMessage }}</span>
@@ -72,9 +71,7 @@
             </div>
 
             <DialogFooter>
-                <Button variant="outline" @click="handleClose" :disabled="isLoading">
-                    Cancel
-                </Button>
+                <Button variant="outline" @click="handleClose" :disabled="isLoading"> Cancel </Button>
                 <Button @click="handleSetup" :disabled="isLoading || !browserSupported">
                     <Loader2Icon v-if="isLoading" class="w-4 h-4 mr-2 animate-spin" />
                     Register Security Key
@@ -85,15 +82,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShieldCheckIcon, InfoIcon, AlertTriangleIcon, CheckCircleIcon, Loader2Icon } from 'lucide-vue-next';
+import { AlertTriangleIcon, CheckCircleIcon, InfoIcon, Loader2Icon, ShieldCheckIcon } from 'lucide-vue-next';
 import { UserService } from '@/services/user.service.ts';
-import { webauthnRegistrationStartSchema, webauthnRegistrationCompleteSchema } from '@/views/Settings/components/Team/schema.ts';
-import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser';
+import { webauthnRegistrationCompleteSchema, webauthnRegistrationStartSchema } from '@/views/Settings/components/Team/schema.ts';
+import { browserSupportsWebAuthn, startRegistration } from '@simplewebauthn/browser';
 
 const props = defineProps<{
     open: boolean;
@@ -118,16 +115,19 @@ onMounted(() => {
     browserSupported.value = browserSupportsWebAuthn();
 });
 
-watch(() => props.open, (newValue) => {
-    isOpen.value = newValue;
-    if (newValue) {
-        // Reset form when opening
-        nicknameValue.value = '';
-        errorMessage.value = '';
-        successMessage.value = '';
-        challengeId.value = '';
-    }
-});
+watch(
+    () => props.open,
+    (newValue) => {
+        isOpen.value = newValue;
+        if (newValue) {
+            // Reset form when opening
+            nicknameValue.value = '';
+            errorMessage.value = '';
+            successMessage.value = '';
+            challengeId.value = '';
+        }
+    },
+);
 
 watch(isOpen, (newValue) => {
     emit('update:open', newValue);
@@ -150,31 +150,26 @@ const handleSetup = async () => {
 
         // Validate the nickname
         const startData = webauthnRegistrationStartSchema.parse({
-            nickname: nicknameValue.value.trim() || undefined
+            nickname: nicknameValue.value.trim() || undefined,
         });
 
         // Start WebAuthn registration
-        console.log('Starting WebAuthn registration with data:', startData);
         const registrationResponse = await userService.startWebAuthnRegistration(startData);
-        console.log('Received registration response:', registrationResponse);
 
         // Store the challengeId for completion
         challengeId.value = registrationResponse.challengeId;
 
         // Use SimpleWebAuthn to handle the browser WebAuthn API
         const credential = await startRegistration({ optionsJSON: registrationResponse });
-        console.log('WebAuthn credential created:', credential);
 
         // Complete registration with challengeId
         const completeData = webauthnRegistrationCompleteSchema.parse({
             credential,
             challengeId: challengeId.value,
-            nickname: nicknameValue.value.trim() || undefined
+            nickname: nicknameValue.value.trim() || undefined,
         });
-        console.log('Completing registration with data:', completeData);
 
         const result = await userService.completeWebAuthnRegistration(completeData);
-        console.log('Registration completed successfully:', result);
 
         successMessage.value = 'WebAuthn security key registered successfully!';
 
@@ -182,10 +177,9 @@ const handleSetup = async () => {
             emit('setup-complete', true);
             handleClose();
         }, 1500);
-
     } catch (error: any) {
         console.error('WebAuthn setup error:', error);
-        
+
         if (error.name === 'InvalidStateError') {
             errorMessage.value = 'This security key is already registered. Please try a different key.';
         } else if (error.name === 'NotAllowedError') {
@@ -193,7 +187,7 @@ const handleSetup = async () => {
         } else if (error.name === 'NotSupportedError') {
             errorMessage.value = 'Your security key is not supported. Please try a different key.';
         } else if (error.name === 'SecurityError') {
-            errorMessage.value = 'Security error occurred. Please ensure you\'re using HTTPS.';
+            errorMessage.value = "Security error occurred. Please ensure you're using HTTPS.";
         } else if (error.errors && error.errors.length > 0) {
             errorMessage.value = error.errors[0].message;
         } else if (error.message) {

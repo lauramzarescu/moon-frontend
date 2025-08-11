@@ -218,12 +218,8 @@ const showYubikeyWebAuthnOption = computed(() => {
 });
 
 const showYubikeyOtpOption = computed(() => {
-    console.log('Yubikey OTP Option:', {
-        hasYubikeyOtp: hasYubikeyOtp.value,
-        showYubikeyWebAuthnOption: showYubikeyWebAuthnOption.value,
-    });
     if (showYubikeyWebAuthnOption.value) return false; // Hide OTP when Webauthn high-security method exist
-    return hasYubikeyOtp;
+    return hasYubikeyOtp.value;
 });
 
 const hasChanges = computed(() => {
@@ -304,7 +300,6 @@ const saveMethod = async () => {
 
 const fetch2FAStatus = async () => {
     try {
-        console.log('TwoFactorMethodSelection - Fetching 2FA status...');
         const twoFactorStatus = await userService.get2FAStatus();
 
         // Get current method from status
