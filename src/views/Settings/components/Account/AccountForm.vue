@@ -15,7 +15,6 @@ const twoFactorMethod = ref<TwoFactorMethod | null>(null);
 const yubikeyCount = ref(0);
 const webauthnCount = ref(0);
 const securityLevel = ref<'HIGH' | 'MEDIUM' | 'LOW' | null>(null);
-const enforcedMethod = ref<'HIGH_SECURITY_ONLY' | 'WEBAUTHN_ONLY' | null>(null);
 const availableMethods = ref<TwoFactorMethod[]>([]);
 const hasTotp = ref(false);
 const hasYubikeyOTP = ref(false);
@@ -34,7 +33,6 @@ const load2FAStatus = async () => {
         yubikeyCount.value = status.yubikeyCount ?? 0;
         webauthnCount.value = status.webauthnCount ?? 0;
         securityLevel.value = status.securityLevel ?? null;
-        enforcedMethod.value = status.enforcedMethod ?? null;
         availableMethods.value = status.availableMethods ?? [];
         hasTotp.value = status.hasTotp ?? false;
         hasYubikeyOTP.value = status.hasYubikeyOTP ?? false;
@@ -71,7 +69,6 @@ const handle2FAStatusUpdate = async () => {
             :yubikey-count="yubikeyCount"
             :webauthn-count="webauthnCount"
             :security-level="securityLevel"
-            :enforced-method="enforcedMethod"
             :available-methods="availableMethods"
             :has-totp="hasTotp"
             :has-yubikey-otp="hasYubikeyOTP"

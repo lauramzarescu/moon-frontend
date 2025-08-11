@@ -2,6 +2,7 @@ import { ApiService } from '@/services/generic.service.ts';
 import type {
     ChangePasswordInput,
     ChangePasswordWith2FAInput,
+    ChangePasswordWithWebAuthnInput,
     ForgotPasswordInput,
     ResetPasswordInput,
     TwoFactorMethodSelectInput,
@@ -21,6 +22,7 @@ import type {
 } from '@/views/Settings/components/Team/schema.ts';
 import type { PaginatedResult, PaginationParams } from '@/types/pagination/pagination.interface.ts';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/views/Settings/components/Account/schema.ts';
+import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser';
 
 export class UserService extends ApiService {
     public resource = '/users';
@@ -73,6 +75,14 @@ export class UserService extends ApiService {
 
     async changePasswordWith2FA(data: ChangePasswordWith2FAInput) {
         return this.post(`${this.resource}/2fa/change-password`, data);
+    }
+
+    async startPasswordChangeWebAuthn(): Promise<{ options: PublicKeyCredentialRequestOptionsJSON; challengeId: string }> {
+        return this.post(`${this.resource}/webauthn/change-password/start`, {});
+    }
+
+    async changePasswordWithWebAuthn(data: ChangePasswordWithWebAuthnInput) {
+        return this.post(`${this.resource}/webauthn/change-password/complete`, data);
     }
 
     async triggerResetPasswordAsAdmin(userId: string) {
@@ -250,7 +260,9 @@ export class UserService extends ApiService {
      * @param data WebAuthn registration start data
      * @returns Promise with registration options
      */
-    async startWebAuthnRegistration(data: WebAuthnRegistrationStartInput): Promise<any> {
+    async startWebAuthnRegistration(
+        data: WebAuthnRegistrationStartInput,
+    ): Promise<{ options: PublicKeyCredentialRequestOptionsJSON; challengeId: string }> {
         return this.post(`${this.resource}/2fa/webauthn/registration/start`, data);
     }
 
@@ -269,7 +281,10 @@ export class UserService extends ApiService {
      * @param sessionToken Optional session token for login flow
      * @returns Promise with authentication options
      */
-    async startWebAuthnAuthentication(data: WebAuthnAuthenticationStartInput, sessionToken?: string): Promise<any> {
+    async startWebAuthnAuthentication(
+        data: WebAuthnAuthenticationStartInput,
+        sessionToken?: string,
+    ): Promise<{ options: PublicKeyCredentialRequestOptionsJSON; challengeId: string }> {
         const headers: Record<string, string> = {};
 
         if (sessionToken) {

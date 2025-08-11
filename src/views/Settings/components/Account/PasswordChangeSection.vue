@@ -9,13 +9,17 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
-import VerificationCodeInput from '@/components/ui/verification-code-input/VerificationCodeInput.vue';
 import TwoFactorVerificationModal from '@/components/ui/two-factor-verification-modal/TwoFactorVerificationModal.vue';
 import { LoginType, TwoFactorMethod } from '@/enums/user/user.enum.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-vue-next';
-import { changePasswordSchema, changePasswordWith2FASchema } from '@/views/Settings/components/Team/schema.ts';
+import {
+    changePasswordSchema,
+    changePasswordWith2FASchema,
+    changePasswordWithWebAuthnSchema,
+} from '@/views/Settings/components/Team/schema.ts';
+import type { AuthenticationResponseJSON } from '@simplewebauthn/browser';
+import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
 
 const props = defineProps<{
     twoFactorMethod?: TwoFactorMethod | null;
@@ -76,6 +80,7 @@ async function onPasswordSubmit(values: any) {
             toast({
                 title: 'Password changed successfully',
                 description: 'Your password has been updated.',
+                variant: 'success',
             });
 
             resetForm();
@@ -92,30 +97,76 @@ async function onPasswordSubmit(values: any) {
 }
 
 // Handle 2FA verification and password change
-const confirmWithTwoFactor = async (code: string) => {
+const confirmWithTwoFactor = async (verifyData: { code: string; credential?: AuthenticationResponseJSON; challengeId?: string }) => {
     if (!verificationModalRef.value) return;
 
     verificationModalRef.value.setLoading(true);
     verificationModalRef.value.clearError();
 
     try {
-        const data = changePasswordWith2FASchema.parse({
-            ...formValues.value,
-            code,
-        });
-        await userService.changePasswordWith2FA(data);
+        if (verifyData.code === 'webauthn-pending') {
+            await handleWebAuthnPasswordChange();
+        } else {
+            // Handle regular 2FA (TOTP/YubiKey OTP)
+            const data = changePasswordWith2FASchema.parse({
+                ...formValues.value,
+                code: verifyData.code,
+            });
+            await userService.changePasswordWith2FA(data);
+        }
 
         toast({
             title: 'Password changed successfully',
             description: 'Your password has been updated.',
+            variant: 'success',
         });
 
         resetForm();
         show2FAVerificationModal.value = false;
     } catch (error: any) {
-        verificationModalRef.value.setError('The verification code you entered is incorrect. Please try again.');
+        if (verifyData.code === 'webauthn-pending') {
+            verificationModalRef.value.setError('WebAuthn authentication failed. Please try again.');
+        } else {
+            verificationModalRef.value.setError('The verification code you entered is incorrect. Please try again.');
+        }
     } finally {
         verificationModalRef.value.setLoading(false);
+    }
+};
+
+const handleWebAuthnPasswordChange = async () => {
+    try {
+        if (!browserSupportsWebAuthn()) {
+            throw new Error(
+                'WebAuthn is not supported in your browser. Please use a different authentication method or update your browser.',
+            );
+        }
+
+        // Start WebAuthn password change process
+        const authResponse = await userService.startPasswordChangeWebAuthn();
+
+        if (!authResponse.challengeId) {
+            throw new Error('Invalid authentication response.');
+        }
+
+        // Get WebAuthn credential
+        const credential = await startAuthentication({
+            optionsJSON: authResponse.options,
+            useBrowserAutofill: false,
+        });
+
+        // Complete password change with WebAuthn
+        const data = changePasswordWithWebAuthnSchema.parse({
+            currentPassword: formValues.value.currentPassword,
+            newPassword: formValues.value.newPassword,
+            credential,
+            challengeId: authResponse.challengeId,
+        });
+
+        await userService.changePasswordWithWebAuthn(data);
+    } catch (error: any) {
+        console.error('WebAuthn password change error:', error);
+        throw error;
     }
 };
 
@@ -226,7 +277,6 @@ const handleDialogClose = () => {
                         </DialogFooter>
                     </Form>
                 </div>
-
             </DialogContent>
         </Dialog>
 
@@ -240,6 +290,7 @@ const handleDialogClose = () => {
             input-prefix="password-change-2fa"
             @verify="confirmWithTwoFactor"
             @cancel="handle2FACancel"
+            :is-password-change-flow="true"
         />
     </div>
 </template>

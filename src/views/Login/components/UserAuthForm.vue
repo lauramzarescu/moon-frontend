@@ -15,6 +15,7 @@ import Cookies from 'js-cookie';
 import { config } from '../../../../app.config.ts';
 import TwoFactorSetupModal from '@/views/Settings/components/Account/TwoFactorSetupModal.vue';
 import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
+import { setInitialVerificationMethod } from '@/utils/twoFactorMethodUtils.ts';
 import { TwoFactorMethod } from '@/enums/user/user.enum.ts';
 import { startAuthentication } from '@simplewebauthn/browser';
 
@@ -41,7 +42,6 @@ const hasTotp = ref(false);
 const hasWebAuthn = ref(false);
 const hasYubikey = ref(false);
 const hasYubikeyOTP = ref(false);
-const enforcedMethod = ref<'HIGH_SECURITY_ONLY' | 'WEBAUTHN_ONLY' | null>(null);
 const availableMethods = ref<TwoFactorMethod[]>([]);
 
 const formData = ref<LoginWithEmailAndPassword>({
@@ -69,10 +69,9 @@ async function onSubmit(event: Event) {
             hasWebAuthn.value = response.hasWebAuthn ?? false;
             hasYubikey.value = response.hasYubikey ?? false;
             hasYubikeyOTP.value = response.hasYubikeyOTP ?? false;
-            enforcedMethod.value = response.enforcedMethod ?? null;
             availableMethods.value = response.availableMethods ?? [];
 
-            setInitialVerificationMethod();
+            setInitialVerificationMethodLocal();
 
             requires2FAVerification.value = true;
             isLoading.value = false;
@@ -114,7 +113,7 @@ async function verifyTwoFactorCode() {
 
             const authResponse = await userService.startWebAuthnAuthentication({}, sessionToken.value);
             webauthnChallengeId.value = authResponse.challengeId;
-            const credential = await startAuthentication({ optionsJSON: authResponse });
+            const credential = await startAuthentication({ optionsJSON: { ...authResponse.options } });
 
             await userService.completeWebAuthnAuthentication(
                 {
@@ -222,68 +221,38 @@ const handle2FAModalClose = (open: boolean) => {
     }
 };
 
-function cancelTwoFactorVerification() {
+const cancelTwoFactorVerification = () => {
     requires2FAVerification.value = false;
     resetVerificationCode(verificationCode.value, 'login-2fa');
     yubikeyOtp.value = '';
     sessionToken.value = '';
-}
+};
 
-function setInitialVerificationMethod() {
-    switch (twoFactorMethod.value) {
-        case TwoFactorMethod.YUBIKEY:
-            // YUBIKEY method - check if it's WebAuthn or OTP based on what's available
-            if (hasWebAuthn.value) {
-                useWebAuthn.value = true;
-                useYubikey.value = false;
-            } else if (hasYubikeyOTP.value) {
-                useYubikey.value = true;
-                useWebAuthn.value = false;
-            } else {
-                // Fallback to OTP if nothing else is clear
-                useYubikey.value = true;
-                useWebAuthn.value = false;
-            }
-            break;
-        case TwoFactorMethod.TOTP:
-            useYubikey.value = false;
-            useWebAuthn.value = false;
-            break;
-        case TwoFactorMethod.ANY:
-            // For ANY method, prefer high-security methods
-            if (enforcedMethod.value === 'WEBAUTHN_ONLY' && hasWebAuthn.value) {
-                useWebAuthn.value = true;
-                useYubikey.value = false;
-            } else if (enforcedMethod.value === 'HIGH_SECURITY_ONLY') {
-                // Prefer WebAuthn over TOTP for high security
-                if (hasWebAuthn.value) {
-                    useWebAuthn.value = true;
-                    useYubikey.value = false;
-                } else {
-                    // Default to TOTP
-                    useYubikey.value = false;
-                    useWebAuthn.value = false;
-                }
-            } else {
-                // Default to TOTP for ANY when no enforcement
-                useYubikey.value = false;
-                useWebAuthn.value = false;
-            }
-            break;
-        default:
-            useYubikey.value = false;
-            useWebAuthn.value = false;
-    }
-}
+const setInitialVerificationMethodLocal = () => {
+    setInitialVerificationMethod(
+        twoFactorMethod,
+        {
+            hasTotp,
+            hasYubikeyOTP,
+            hasWebAuthn,
+            hasYubikey,
+        },
+        {
+            useYubikey,
+            useYubikeyWebAuthn: ref(false), // UserAuthForm doesn't use this, but utility needs it
+            useWebAuthn,
+        },
+    );
+};
 
-function switchToTotp() {
+const switchToTotp = () => {
     useYubikey.value = false;
     useWebAuthn.value = false;
     yubikeyOtp.value = '';
     resetVerificationCode(verificationCode.value, 'login-2fa');
-}
+};
 
-function switchToYubikey() {
+const switchToYubikey = () => {
     useYubikey.value = true;
     useWebAuthn.value = false;
     resetVerificationCode(verificationCode.value, 'login-2fa');
@@ -295,14 +264,14 @@ function switchToYubikey() {
             yubikeyInput.focus();
         }
     }, 100);
-}
+};
 
-function switchToWebAuthn() {
+const switchToWebAuthn = () => {
     useWebAuthn.value = true;
     useYubikey.value = false;
     yubikeyOtp.value = '';
     resetVerificationCode(verificationCode.value, 'login-2fa');
-}
+};
 
 const canSwitchMethods = computed(() => {
     // Allow switching when method is ANY and multiple methods are available
@@ -317,7 +286,7 @@ const isVerificationReady = computed(() => {
     if (useYubikey.value) {
         return yubikeyOtp.value.length >= 32;
     } else if (useWebAuthn.value) {
-        return true; // WebAuthn doesn't need pre-validation
+        return true;
     } else {
         return verificationCode.value.join('').length === 6;
     }
@@ -383,12 +352,6 @@ const goToResetPassword = () => {
                 </div>
             </div>
         </form>
-
-        <!-- Debug: Show 2FA state -->
-        <div v-if="requires2FAVerification" class="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
-            <strong>DEBUG:</strong> 2FA Required - Method: {{ twoFactorMethod }} | TOTP: {{ hasTotp }} | WebAuthn: {{ hasWebAuthn }} |
-            YubiKey: {{ hasYubikey }} | YubikeyOTP: {{ hasYubikeyOTP }}
-        </div>
 
         <!-- Step 2: 2FA Verification -->
         <div v-if="requires2FAVerification" class="flex flex-col space-y-4">

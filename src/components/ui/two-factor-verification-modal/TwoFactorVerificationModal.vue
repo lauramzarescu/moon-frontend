@@ -118,7 +118,9 @@ import { Label } from '@/components/ui/label';
 import { AlertTriangleIcon, Loader2Icon, ShieldCheckIcon, SmartphoneIcon } from 'lucide-vue-next';
 import { TwoFactorMethod, YubikeyAuthType } from '@/enums/user/user.enum.ts';
 import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
+import { setInitialVerificationMethod } from '@/utils/twoFactorMethodUtils.ts';
 import VerificationCodeInput from '@/components/ui/verification-code-input/VerificationCodeInput.vue';
+import type { AuthenticationResponseJSON } from '@simplewebauthn/browser';
 import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
 import { UserService } from '@/services/user.service.ts';
 
@@ -128,11 +130,12 @@ const props = defineProps<{
     description?: string;
     inputPrefix?: string;
     sessionToken?: string;
+    isPasswordChangeFlow?: boolean;
 }>();
 
 const emit = defineEmits<{
     'update:open': [value: boolean];
-    verify: [code: string];
+    verify: [{ code: string; credential?: AuthenticationResponseJSON; challengeId?: string }];
     cancel: [];
 }>();
 
@@ -178,7 +181,7 @@ watch(
         if (newValue) {
             resetForm();
             await fetch2FAStatus();
-            setInitialVerificationMethod();
+            setInitialVerificationMethodLocal();
         }
     },
 );
@@ -217,43 +220,20 @@ const fetch2FAStatus = async () => {
     }
 };
 
-const setInitialVerificationMethod = () => {
-    switch (twoFactorMethod.value) {
-        case TwoFactorMethod.YUBIKEY:
-            // Determine YubiKey type based on AuthType or available methods
-            if (yubikeyAuthType.value === YubikeyAuthType.WEBAUTHN || hasYubikeyWebAuthn.value) {
-                useYubikeyWebAuthn.value = true;
-                useYubikey.value = false;
-            } else {
-                useYubikey.value = true;
-                useYubikeyWebAuthn.value = false;
-            }
-            break;
-        case TwoFactorMethod.TOTP:
-            useYubikey.value = false;
-            useYubikeyWebAuthn.value = false;
-            break;
-        case TwoFactorMethod.ANY:
-            // For ANY method, prefer high-security methods
-            if (hasYubikeyWebAuthn.value) {
-                useYubikeyWebAuthn.value = true;
-                useYubikey.value = false;
-            } else if (hasTotp.value) {
-                useYubikey.value = false;
-                useYubikeyWebAuthn.value = false;
-            } else if (hasYubikeyOTP.value) {
-                useYubikey.value = true;
-                useYubikeyWebAuthn.value = false;
-            } else {
-                // Default to TOTP
-                useYubikey.value = false;
-                useYubikeyWebAuthn.value = false;
-            }
-            break;
-        default:
-            useYubikey.value = false;
-            useYubikeyWebAuthn.value = false;
-    }
+const setInitialVerificationMethodLocal = () => {
+    setInitialVerificationMethod(
+        twoFactorMethod,
+        {
+            hasTotp,
+            hasYubikeyOTP,
+            hasYubikeyWebAuthn,
+            yubikeyAuthType,
+        },
+        {
+            useYubikey,
+            useYubikeyWebAuthn,
+        }
+    );
 };
 
 const switchToTotp = () => {
@@ -273,7 +253,6 @@ const switchToYubikeyOtp = () => {
     yubikeyOtp.value = '';
     errorMessage.value = '';
 
-    // Focus on YubiKey input after switching
     setTimeout(() => {
         const yubikeyInput = document.getElementById('verification-yubikey-otp');
         if (yubikeyInput) {
@@ -305,11 +284,16 @@ const handleVerify = () => {
         handleWebAuthnVerify();
     } else {
         const code = useYubikey.value ? yubikeyOtp.value : verificationCode.value.join('');
-        emit('verify', code);
+        emit('verify', { code });
     }
 };
 
 const handleWebAuthnVerify = async () => {
+    if (props.isPasswordChangeFlow) {
+        emit('verify', { code: 'webauthn-pending' });
+        return;
+    }
+
     try {
         isLoading.value = true;
         errorMessage.value = '';
@@ -331,39 +315,19 @@ const handleWebAuthnVerify = async () => {
             throw new Error('Invalid authentication response: missing challengeId');
         }
 
-        if (!authResponse.challenge) {
-            throw new Error('Invalid authentication response: missing challenge');
-        }
-
-        // Check if allowCredentials is empty (which might cause the error)
         if (authResponse.allowCredentials && authResponse.allowCredentials.length === 0) {
             console.warn('WebAuthn allowCredentials is empty - no registered credentials found');
             throw new Error('No registered security keys found for this account. Please register a security key first.');
         }
 
-        // If allowCredentials is undefined, it might be a backend issue
         if (authResponse.allowCredentials === undefined) {
             console.warn('WebAuthn allowCredentials is undefined - this might cause authentication issues');
-            // Don't throw an error here, let the browser handle it
         }
 
         webauthnChallengeId.value = authResponse.challengeId;
-
-        // Prepare options for startAuthentication
-        // The SimpleWebAuthn library expects the options in a specific format
         let authOptions = authResponse;
-
-        // If the response has a different structure, extract the options
-        if (authResponse.options) {
-            authOptions = authResponse.options;
-        }
-
-        // Ensure required fields are present
-        if (!authOptions.challenge) {
-            throw new Error('Invalid authentication options: missing challenge');
-        }
-
         let credential;
+
         try {
             credential = await startAuthentication({
                 optionsJSON: authOptions,
@@ -412,7 +376,7 @@ const handleWebAuthnVerify = async () => {
             });
         }
 
-        emit('verify', 'webauthn-success');
+        emit('verify', { code: 'webauthn-success', credential, challengeId: webauthnChallengeId.value });
     } catch (error: any) {
         console.error('WebAuthn verification error:', error);
 
@@ -436,7 +400,6 @@ const handleWebAuthnVerify = async () => {
         } else if (error.name === 'UnknownError') {
             errorMsg = 'An unknown error occurred with your security key. Please try again.';
         } else if (error.message) {
-            // Use the specific error message if available
             errorMsg = error.message;
         }
 
@@ -475,7 +438,6 @@ const clearError = () => {
     errorMessage.value = '';
 };
 
-// Expose methods for parent components
 defineExpose({
     setLoading,
     setError,

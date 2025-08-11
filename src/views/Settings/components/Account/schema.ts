@@ -11,7 +11,6 @@ export const twoFactorStatusSchema = z.object({
     hasTotp: z.boolean().optional().default(false),
     hasYubikeyOTP: z.boolean().optional().default(false),
     securityLevel: z.enum(['HIGH', 'MEDIUM', 'LOW']).optional(),
-    enforcedMethod: z.enum(['HIGH_SECURITY_ONLY', 'WEBAUTHN_ONLY']).optional().nullable(),
     availableMethods: z.array(z.nativeEnum(TwoFactorMethod)).optional().default([]),
 });
 

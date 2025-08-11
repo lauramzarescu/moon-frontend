@@ -251,6 +251,7 @@ const handleImport = async () => {
         toast({
             title: 'Users imported successfully',
             description: 'The users have been imported into the system.',
+            variant: 'success',
         });
     } catch (error) {
         toast({

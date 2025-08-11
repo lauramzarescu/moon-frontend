@@ -196,7 +196,6 @@ const totpEnabled = ref(false);
 const yubikeyCount = ref(0);
 const webauthnCount = ref(0);
 const securityLevel = ref<'HIGH' | 'MEDIUM' | 'LOW' | null>(null);
-const enforcedMethod = ref<'HIGH_SECURITY_ONLY' | 'WEBAUTHN_ONLY' | null>(null);
 const availableMethods = ref<TwoFactorMethod[]>([]);
 const hasTotp = ref(false);
 const hasYubikeyOtp = ref(false);
@@ -204,12 +203,8 @@ const is2FAStatusLoaded = ref(false);
 
 // Security hierarchy computed properties
 const hasHighSecurityMethods = computed(() => hasTotp.value || webauthnCount.value > 0);
-const isHighSecurityEnforced = computed(() => enforcedMethod.value === 'HIGH_SECURITY_ONLY');
-const isWebAuthnOnlyEnforced = computed(() => enforcedMethod.value === 'WEBAUTHN_ONLY');
 
-// Show only high-security methods when enforced
 const showTotpOption = computed(() => {
-    if (isWebAuthnOnlyEnforced.value) return false;
     return hasTotp.value || totpEnabled.value;
 });
 
@@ -231,16 +226,8 @@ const canSelectMethod = computed(() => {
         case TwoFactorMethod.TOTP:
             return showTotpOption.value;
         case TwoFactorMethod.YUBIKEY:
-            // For YUBIKEY method, check if it's WebAuthn or OTP based on context
-            if (isWebAuthnOnlyEnforced.value) {
-                return showYubikeyWebAuthnOption.value;
-            }
             return showYubikeyWebAuthnOption.value || showYubikeyOtpOption.value;
         case TwoFactorMethod.ANY:
-            // ANY method requires at least one high-security method when enforced
-            if (isHighSecurityEnforced.value || isWebAuthnOnlyEnforced.value) {
-                return showTotpOption.value || showYubikeyWebAuthnOption.value;
-            }
             return showTotpOption.value || showYubikeyWebAuthnOption.value || showYubikeyOtpOption.value;
         default:
             return false;
@@ -310,7 +297,6 @@ const fetch2FAStatus = async () => {
         hasTotp.value = twoFactorStatus.hasTotp ?? false;
         hasYubikeyOtp.value = twoFactorStatus.hasYubikeyOTP ?? false;
         securityLevel.value = twoFactorStatus.securityLevel ?? null;
-        enforcedMethod.value = twoFactorStatus.enforcedMethod ?? null;
         availableMethods.value = twoFactorStatus.availableMethods ?? [];
         yubikeyCount.value = twoFactorStatus.yubikeyCount ?? 0;
         webauthnCount.value = twoFactorStatus.webauthnCount ?? 0;

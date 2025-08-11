@@ -201,14 +201,14 @@ const updateEnforce2FA = async (value: boolean) => {
     }
 };
 
-const handle2FAVerification = async (code: string) => {
+const handle2FAVerification = async (verifyData: { code: string; credential?: any; challengeId?: string }) => {
     if (!verificationModalRef.value || pendingEnforce2FAValue.value === null) return;
 
     verificationModalRef.value.setLoading(true);
     verificationModalRef.value.clearError();
 
     try {
-        if (code !== 'webauthn-success') await userService.verify2FACode(code);
+        if (verifyData.code !== 'webauthn-success') await userService.verify2FACode(verifyData.code);
 
         await updateEnforce2FA(pendingEnforce2FAValue.value);
 

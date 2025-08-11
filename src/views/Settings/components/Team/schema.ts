@@ -213,11 +213,31 @@ export type YubikeyVerifyInput = z.infer<typeof yubikeyVerifySchema>;
 export type TwoFactorMethodSelectInput = z.infer<typeof twoFactorMethodSelectSchema>;
 export type YubikeyRemoveInput = z.infer<typeof yubikeyRemoveSchema>;
 
+// WebAuthn password change schema
+export const changePasswordWithWebAuthnSchema = z.object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+    credential: z.object({
+        id: z.string(),
+        rawId: z.string(),
+        response: z.object({
+            authenticatorData: z.string(),
+            clientDataJSON: z.string(),
+            signature: z.string(),
+            userHandle: z.string().optional(),
+        }),
+        type: z.literal('public-key'),
+        clientExtensionResults: z.record(z.any()).default({}),
+    }),
+    challengeId: z.string(),
+});
+
 // WebAuthn types
 export type WebAuthnRegistrationStartInput = z.infer<typeof webauthnRegistrationStartSchema>;
 export type WebAuthnRegistrationCompleteInput = z.infer<typeof webauthnRegistrationCompleteSchema>;
 export type WebAuthnAuthenticationStartInput = z.infer<typeof webauthnAuthenticationStartSchema>;
 export type WebAuthnAuthenticationCompleteInput = z.infer<typeof webauthnAuthenticationCompleteSchema>;
+export type ChangePasswordWithWebAuthnInput = z.infer<typeof changePasswordWithWebAuthnSchema>;
 
 /** ================================ */
 /** ===== Access control schema ==== */

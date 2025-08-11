@@ -17,7 +17,6 @@ export const loginWithEmailAndPasswordResponseSchema = z.object({
     hasWebAuthn: z.boolean().optional().default(false),
     hasYubikey: z.boolean().optional().default(false),
     hasYubikeyOTP: z.boolean().optional().default(false),
-    enforcedMethod: z.enum(['HIGH_SECURITY_ONLY', 'WEBAUTHN_ONLY']).optional().nullable(),
     availableMethods: z.array(z.string()).optional().default([]), // More flexible - accept any strings
 }).passthrough(); // Allow additional fields that we don't know about
 

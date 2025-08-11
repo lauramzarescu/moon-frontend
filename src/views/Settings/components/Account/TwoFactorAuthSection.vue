@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { UserService } from '@/services/user.service.ts';
 import { useAuthStore } from '@/stores/authStore.ts';
 import TwoFactorSetupModal from './TwoFactorSetupModal.vue';
@@ -30,7 +29,6 @@ const authStore = useAuthStore();
 const isSamlUser = computed(() => authStore.user?.loginType === LoginType.saml);
 
 const securityLevel = ref<'HIGH' | 'MEDIUM' | 'LOW' | null>(null);
-const enforcedMethod = ref<'HIGH_SECURITY_ONLY' | 'WEBAUTHN_ONLY' | null>(null);
 
 const securityLevelText = computed(() => {
     switch (securityLevel.value) {
@@ -58,7 +56,6 @@ const securityLevelColor = computed(() => {
     }
 });
 
-const isWebAuthnOnlyEnforced = computed(() => enforcedMethod.value === 'WEBAUTHN_ONLY');
 
 const show2FAModal = ref(false);
 const showDisable2FAModal = ref(false);
@@ -82,11 +79,9 @@ const fetch2FAStatus = async () => {
     try {
         const twoFactorStatus = await userService.get2FAStatus();
         securityLevel.value = twoFactorStatus.securityLevel ?? null;
-        enforcedMethod.value = twoFactorStatus.enforcedMethod ?? null;
     } catch (error) {
         console.error('Failed to fetch 2FA status:', error);
         securityLevel.value = null;
-        enforcedMethod.value = null;
     }
 };
 
@@ -132,14 +127,14 @@ const onSetupComplete = async (enabled: boolean, verified: boolean) => {
     emit('status-updated');
 };
 
-const handle2FADisableVerification = async (code: string) => {
+const handle2FADisableVerification = async (verifyData: { code: string; credential?: any; challengeId?: string }) => {
     if (!verificationModalRef.value) return;
 
     verificationModalRef.value.setLoading(true);
     verificationModalRef.value.clearError();
 
     try {
-        await userService.disable2FA(code);
+        await userService.disable2FA(verifyData.code);
 
         toast({
             title: 'Two-factor authentication disabled',
@@ -182,21 +177,8 @@ const onYubikeysUpdated = async (count: number) => {
             <div>
                 <div class="flex items-center gap-2">
                     <h4 class="text-sm font-medium">Two-Factor Authentication</h4>
-                    <Badge
-                        v-if="securityLevel && props.twoFactorEnabled && props.twoFactorVerified"
-                        :variant="securityLevel === 'HIGH' ? 'default' : securityLevel === 'MEDIUM' ? 'secondary' : 'outline'"
-                        :class="securityLevelColor"
-                    >
-                        {{ securityLevelText }}
-                    </Badge>
                 </div>
                 <p class="text-sm text-foreground">Add an extra layer of security to your account</p>
-                <p v-if="enforcedMethod === 'HIGH_SECURITY_ONLY'" class="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                    🔒 High-security methods enforced - OTP methods disabled for enhanced security
-                </p>
-                <p v-else-if="enforcedMethod === 'WEBAUTHN_ONLY'" class="text-xs text-green-600 dark:text-green-400 mt-1">
-                    🔐 WebAuthn-only mode - Maximum security enabled
-                </p>
             </div>
             <div class="flex items-center space-x-2">
                 <Switch
