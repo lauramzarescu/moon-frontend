@@ -173,6 +173,7 @@ watch(newImageUri, (value) => {
             serviceName: props.serviceName,
             containerName: props.containerName,
             newImageUri: value,
+            oldImageUri: props.currentImage,
         });
         validationError.value = '';
     } catch (error: any) {
@@ -237,6 +238,7 @@ const handleSubmit = async () => {
             serviceName: props.serviceName,
             containerName: props.containerName,
             newImageUri: newImageUri.value,
+            oldImageUri: props.currentImage,
         });
 
         emit('image-updated');

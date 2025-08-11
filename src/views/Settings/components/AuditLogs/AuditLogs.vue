@@ -48,7 +48,7 @@
             </div>
 
             <div class="flex items-center space-x-2">
-                <!-- Sort Controls - Enhanced -->
+                <!-- Sort Controls -->
                 <div class="flex items-center space-x-1">
                     <!-- Sort Field Selector -->
                     <div class="relative">
@@ -181,6 +181,26 @@
 
                         <!-- Actions -->
                         <div class="flex items-center space-x-2">
+                            <!-- Cluster Info -->
+                            <div
+                                v-if="log.details.info?.cluster"
+                                class="flex items-center gap-1.5 text-sm text-foreground/70 bg-muted/30 rounded-md px-2 py-1"
+                            >
+                                <template v-if="log.action === AuditLogEnum.AWS_SERVICE_UPDATED">
+                                    <svg class="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    <span class="font-medium">{{ log.details.info.cluster }}</span>
+                                    <span class="text-xs text-muted-foreground">updated</span>
+                                </template>
+                                <template v-else>
+                                    <svg class="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                    </svg>
+                                    <span class="font-medium">{{ log.details.info.cluster }}</span>
+                                </template>
+                            </div>
+
                             <Button
                                 v-if="log.details?.info && Object.keys(log.details.info).length > 0"
                                 variant="ghost"
@@ -347,6 +367,7 @@ import { DotsHorizontalIcon } from '@radix-icons/vue';
 import { useAuditLogs } from './composables/useAuditLogs.ts';
 import { formatActionName, formatDate, getActionBadgeClass } from './utils/auditLogHelpers.ts';
 import AuditLogDetails from './components/AuditLogDetails.vue';
+import { AuditLogEnum } from '@/views/Settings/components/AuditLogs/schema.ts';
 
 const {
     // State

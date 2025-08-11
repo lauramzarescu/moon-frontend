@@ -122,6 +122,7 @@ export function useDeploymentLogic(initialServices: TransformedService[], maxSer
                         serviceName: service.serviceName,
                         containerName: service.containerName,
                         newImageUri: data.newImageUri,
+                        oldImageUri: service.image,
                     };
 
                     console.log(`Deploying ${service.serviceName} with payload:`, deploymentPayload);
