@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useAuditLogs } from '@/views/Settings/components/AuditLogs/composables/useAuditLogs';
 import type { AuditLog } from '@/views/Settings/components/AuditLogs/schema';
 import { Activity, TrendingUp, BarChart3 } from 'lucide-vue-next';
@@ -199,7 +199,23 @@ const loadMoreData = async () => {
     }
 };
 
-// Handle scroll events for infinite loading
+// Stacked day headers on scroll
+const stackedLabels = ref<string[]>([]);
+const updateStackedLabels = () => {
+    const headings = Array.from(document.querySelectorAll('[data-timeline-day]')) as HTMLElement[];
+    const labels: string[] = [];
+    for (const h of headings) {
+        const rect = h.getBoundingClientRect();
+        if (rect.top <= 0) {
+            const lbl = h.dataset.dayLabel || h.textContent?.trim() || '';
+            if (lbl) labels.push(lbl);
+        }
+    }
+    // keep the most recent few
+    stackedLabels.value = labels.slice(-3);
+};
+
+// Handle scroll events for infinite loading and stacked labels
 const handleScroll = () => {
     const scrollTop = window.scrollY;
     const scrollHeight = document.documentElement.scrollHeight;
@@ -207,15 +223,25 @@ const handleScroll = () => {
     if (scrollHeight - scrollTop - clientHeight < 200 && hasMoreData.value && !isLoadingMore.value) {
         loadMoreData();
     }
+    updateStackedLabels();
 };
 
 onMounted(() => {
     fetchAuditLogs(1);
     window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', updateStackedLabels);
+    // initial compute after first paint
+    requestAnimationFrame(() => updateStackedLabels());
 });
 
 onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
+    window.removeEventListener('resize', updateStackedLabels);
+});
+
+watch(auditLogs, () => {
+    // Recompute when data changes
+    requestAnimationFrame(() => updateStackedLabels());
 });
 </script>
 
@@ -322,9 +348,26 @@ onUnmounted(() => {
         </div>
 
         <!-- Activity by day (left-aligned) -->
-        <div v-else class="max-w-5xl">
+        <div v-else class="max-w-5xl relative">
+            <!-- Stacked sticky labels (animated) -->
+            <div class="pointer-events-none sticky top-[56px] z-20 flex flex-col gap-1">
+                <transition-group name="stack-fade" tag="div">
+                    <div
+                        v-for="(lbl, idx) in stackedLabels"
+                        :key="lbl + idx"
+                        class="text-[11px] font-medium text-muted-foreground/80 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-2 py-0.5 rounded border w-fit shadow-sm"
+                        :style="{ transform: `translateY(${idx * -2}px)` }"
+                    >
+                        {{ lbl }}
+                    </div>
+                </transition-group>
+            </div>
             <div v-for="[dayKey, items] in groupedByDay" :key="dayKey" class="mb-8">
-                <div class="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 mb-3">
+                <div
+                    class="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 mb-3"
+                    :data-timeline-day="dayKey"
+                    :data-day-label="labelForDay(dayKey)"
+                >
                     <h3 class="text-sm font-semibold text-muted-foreground">{{ labelForDay(dayKey) }}</h3>
                 </div>
 
@@ -334,8 +377,6 @@ onUnmounted(() => {
                         :key="deployment.id"
                         :deployment="deployment"
                         @rollback="() => {}"
-                        @logs="() => {}"
-                        @details="() => {}"
                         @redeploy="() => {}"
                     />
                 </div>
@@ -363,3 +404,15 @@ onUnmounted(() => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.stack-fade-enter-active,
+.stack-fade-leave-active {
+    transition: all 200ms ease;
+}
+.stack-fade-enter-from,
+.stack-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+</style>
