@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import Chart from 'primevue/chart';
 import Calendar from '@/components/ui/calendar/Calendar.vue';
 import DeploymentCard from '@/components/ui/deployments/DeploymentCard.vue';
+import { AwsService } from '@/services/aws.service.ts';
 
 const { auditLogs, loading, error, filters, paginationMeta, fetchAuditLogs } = useAuditLogs();
 
@@ -174,6 +175,55 @@ const labelForDay = (key: string) => {
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     return formatDate(target);
+};
+
+// AWS service wiring for redeploy/rollback
+const awsService = new AwsService();
+
+const getDeploymentUpdatePayload = (deployment: AuditLog) => {
+    const info = (deployment.details?.info as Record<string, unknown>) || {};
+    const clusterName = (info.cluster as string) || (info.clusterName as string) || '';
+    const serviceName = (info.service as string) || (info.serviceName as string) || '';
+    const containerName = (info.containerName as string) || (info.container as string) || serviceName;
+    const oldImageUri = (info.oldServiceImage as string) || (info.oldImage as string) || (info.oldImageUri as string) || '';
+    const newImageUri = (info.newServiceImage as string) || (info.newImage as string) || (info.newImageUri as string) || '';
+
+    return { clusterName, serviceName, containerName, oldImageUri, newImageUri };
+};
+
+const handleRedeploy = async (deployment: AuditLog) => {
+    const { clusterName, serviceName, containerName, oldImageUri, newImageUri } = getDeploymentUpdatePayload(deployment);
+    if (!clusterName || !serviceName || !containerName || !newImageUri || !oldImageUri) {
+        console.error('Invalid deployment payload', deployment);
+        return;
+    }
+
+    try {
+        await awsService.updateServiceImage({ clusterName, serviceName, containerName, newImageUri, oldImageUri });
+    } catch (e) {
+        console.error('Redeploy failed', e);
+    }
+};
+
+const handleRollback = async (deployment: AuditLog) => {
+    const { clusterName, serviceName, containerName, oldImageUri, newImageUri } = getDeploymentUpdatePayload(deployment);
+
+    if (!clusterName || !serviceName || !containerName || !newImageUri || !oldImageUri) {
+        console.error('Invalid deployment payload', deployment);
+        return;
+    }
+
+    try {
+        await awsService.updateServiceImage({
+            clusterName,
+            serviceName,
+            containerName,
+            newImageUri: oldImageUri,
+            oldImageUri: newImageUri,
+        });
+    } catch (e) {
+        console.error('Rollback failed', e);
+    }
 };
 
 // Load more data for infinite scroll
@@ -376,8 +426,8 @@ watch(auditLogs, () => {
                         v-for="deployment in items"
                         :key="deployment.id"
                         :deployment="deployment"
-                        @rollback="() => {}"
-                        @redeploy="() => {}"
+                        @rollback="() => handleRollback(deployment)"
+                        @redeploy="() => handleRedeploy(deployment)"
                     />
                 </div>
             </div>

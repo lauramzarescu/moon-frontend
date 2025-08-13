@@ -102,7 +102,8 @@ const onRedeploy = () => emits('redeploy', { id: props.deployment.id });
                 <span class="font-mono break-all">{{ newImage || 'N/A' }}</span>
             </div>
             <div class="mt-1 text-xs text-muted-foreground">
-                <Clock class="inline h-3 w-3" :title="createdAt.toLocaleString()" aria-label="Exact date" />
+                <Clock class="inline h-3 w-3" :title="createdAt" aria-label="Exact date" />
+                {{ createdAt.toLocaleString() }}
             </div>
         </div>
 
