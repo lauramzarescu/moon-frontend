@@ -182,11 +182,11 @@ const awsService = new AwsService();
 
 const getDeploymentUpdatePayload = (deployment: AuditLog) => {
     const info = (deployment.details?.info as Record<string, unknown>) || {};
-    const clusterName = (info.cluster as string) || (info.clusterName as string) || '';
-    const serviceName = (info.service as string) || (info.serviceName as string) || '';
-    const containerName = (info.containerName as string) || (info.container as string) || serviceName;
-    const oldImageUri = (info.oldServiceImage as string) || (info.oldImage as string) || (info.oldImageUri as string) || '';
-    const newImageUri = (info.newServiceImage as string) || (info.newImage as string) || (info.newImageUri as string) || '';
+    const clusterName = (info.cluster as string) || 'N/A';
+    const serviceName = (info.service as string) || 'N/A';
+    const containerName = (info.container as string) || serviceName;
+    const oldImageUri = (info.oldServiceImage as string) || (info.oldImage as string) || (info.oldImageUri as string) || 'N/A';
+    const newImageUri = (info.newServiceImage as string) || (info.newImage as string) || (info.newImageUri as string) || 'N/A';
 
     return { clusterName, serviceName, containerName, oldImageUri, newImageUri };
 };
