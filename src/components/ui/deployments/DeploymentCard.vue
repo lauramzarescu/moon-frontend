@@ -3,11 +3,12 @@ import { computed, ref } from 'vue';
 import type { AuditLog } from '@/views/Settings/components/AuditLogs/schema';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
+import UpdateServiceImageDialog from '@/views/AWS/Services/components/UpdateServiceImageDialog.vue';
 import Progress from '@/components/ui/progress/Progress.vue';
 import { Server, Clock, RotateCcw, Play, ChevronDown } from 'lucide-vue-next';
 
 const props = defineProps<{ deployment: AuditLog }>();
-const emits = defineEmits<{
+const emit = defineEmits<{
     (e: 'rollback', payload: { id: string; oldImage?: string; newImage?: string }): void;
     (e: 'logs', payload: { id: string }): void;
     (e: 'details', payload: { id: string }): void;
@@ -16,11 +17,11 @@ const emits = defineEmits<{
 
 const info = computed(() => (props.deployment.details?.info as Record<string, unknown>) || {});
 const email = computed(() => (info.value.email as string) || 'System');
-const service = computed(() => (info.value.service as string) || undefined);
-const cluster = computed(() => (info.value.cluster as string) || undefined);
-const ip = computed(() => (props.deployment.details?.ip as string) || (info.value.ip as string) || undefined);
-const oldImage = computed(() => (info.value.oldServiceImage as string) || undefined);
-const newImage = computed(() => (info.value.newServiceImage as string) || undefined);
+const service = computed(() => (info.value.service as string) || 'N/A');
+const container = computed(() => (info.value.container as string) || 'N/A');
+const cluster = computed(() => (info.value.cluster as string) || 'N/A');
+const oldImage = computed(() => (info.value.oldServiceImage as string) || 'N/A');
+const newImage = computed(() => (info.value.newServiceImage as string) || 'N/A');
 
 // Status and progress (best-effort from info)
 const rawStatus = computed(() => ((info.value.status as string) || '').toLowerCase());
@@ -60,9 +61,9 @@ const createdAt = computed(() => new Date(props.deployment.createdAt));
 // Expand controls
 const openDetails = ref(false);
 
-// Actions
-const onRollback = () => emits('rollback', { id: props.deployment.id, oldImage: oldImage.value, newImage: newImage.value });
-const onRedeploy = () => emits('redeploy', { id: props.deployment.id });
+// Confirm dialogs
+const rollbackOpen = ref(false);
+const redeployOpen = ref(false);
 </script>
 
 <template>
@@ -86,10 +87,24 @@ const onRedeploy = () => emits('redeploy', { id: props.deployment.id });
             </div>
             <div class="flex items-center gap-2">
                 <!-- Quick actions -->
-                <Button size="sm" variant="outline" class="h-7 px-2" :disabled="!oldImage || oldImage === newImage" @click="onRollback"
-                    ><RotateCcw class="h-3 w-3 mr-1" /> Rollback</Button
+                <Button
+                    size="sm"
+                    variant="outline"
+                    class="h-7 px-2 border-red-500/40 text-red-300 hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    :disabled="!oldImage || oldImage === newImage"
+                    @click="rollbackOpen = true"
                 >
-                <Button size="sm" variant="outline" class="h-7 px-2" @click="onRedeploy"><Play class="h-3 w-3 mr-1" /> Redeploy</Button>
+                    <RotateCcw class="h-3 w-3 mr-1" /> Rollback</Button
+                >
+
+                <Button
+                    size="sm"
+                    variant="outline"
+                    class="h-7 px-2 border-blue-500/40 text-blue-300 hover:bg-blue-500/10"
+                    @click="redeployOpen = true"
+                >
+                    <Play class="h-3 w-3 mr-1" /> Redeploy</Button
+                >
             </div>
         </div>
 
@@ -116,13 +131,6 @@ const onRedeploy = () => emits('redeploy', { id: props.deployment.id });
         <div class="mt-3 flex flex-wrap gap-2">
             <span v-if="cluster" class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-muted border">
                 <Server class="h-3 w-3 text-muted-foreground" /> {{ cluster }}
-            </span>
-
-            <span v-if="ip" class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-muted border">
-                <span class="inline-block w-2 h-2 rounded-full bg-blue-500"></span> {{ ip }}
-            </span>
-            <span class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-muted border">
-                {{ props.deployment.action }}
             </span>
         </div>
 
@@ -154,5 +162,36 @@ const onRedeploy = () => emits('redeploy', { id: props.deployment.id });
                 </Collapsible>
             </div>
         </div>
+        <!-- Confirm Rollback Dialog (reuse UpdateServiceImageDialog confirm view) -->
+        <UpdateServiceImageDialog
+            v-if="service && cluster && oldImage && newImage"
+            :open="rollbackOpen"
+            :hide-trigger="true"
+            :confirm-only="true"
+            :current-image="newImage"
+            :default-new-image-uri="oldImage"
+            :container-name="container"
+            :cluster-name="cluster"
+            :service-name="service"
+            :is-cluster-production="String(cluster).toLowerCase().includes('prod')"
+            @update:open="(v) => (rollbackOpen = v)"
+            @image-updated="emit('rollback', { id: props.deployment.id, oldImage: oldImage, newImage: newImage })"
+        />
+
+        <!-- Confirm Redeploy Dialog (reuse UpdateServiceImageDialog confirm view) -->
+        <UpdateServiceImageDialog
+            v-if="service && cluster && newImage"
+            :open="redeployOpen"
+            :hide-trigger="true"
+            :confirm-only="true"
+            :current-image="newImage"
+            :default-new-image-uri="newImage"
+            :container-name="container"
+            :cluster-name="cluster"
+            :service-name="service"
+            :is-cluster-production="String(cluster).toLowerCase().includes('prod')"
+            @update:open="(v) => (redeployOpen = v)"
+            @image-updated="emit('redeploy', { id: props.deployment.id })"
+        />
     </div>
 </template>

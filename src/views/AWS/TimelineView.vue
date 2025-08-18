@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import type { DateValue } from '@internationalized/date';
+import { parseDate } from '@internationalized/date';
 import { useAuditLogs } from '@/views/Settings/components/AuditLogs/composables/useAuditLogs';
 import type { AuditLog } from '@/views/Settings/components/AuditLogs/schema';
 import { Activity, TrendingUp, BarChart3 } from 'lucide-vue-next';
@@ -9,11 +11,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import Chart from 'primevue/chart';
 import Calendar from '@/components/ui/calendar/Calendar.vue';
 import DeploymentCard from '@/components/ui/deployments/DeploymentCard.vue';
-import { AwsService } from '@/services/aws.service.ts';
 
-const { auditLogs, loading, error, filters, paginationMeta, fetchAuditLogs } = useAuditLogs();
+const { auditLogs, loading, error, filters, paginationMeta, pagination, fetchAuditLogs } = useAuditLogs();
 
 filters.action = 'aws:service:updated';
+pagination.limit = 1000;
 
 // Infinite scroll state
 const isLoadingMore = ref(false);
@@ -58,6 +60,7 @@ const nDayDeltaPctTile = computed(() => {
 // Trend sparkline (last N days)
 const trendDays = ref<number>(14);
 const trendOptions = [
+    { value: 1, label: 'Last day' },
     { value: 7, label: 'Last 7 days' },
     { value: 14, label: 'Last 14 days' },
     { value: 30, label: 'Last 30 days' },
@@ -107,6 +110,11 @@ const trendStartStr = ref<string>('');
 const trendEndStr = ref<string>('');
 const trendStartDate = computed<Date | undefined>(() => (trendStartStr.value ? new Date(trendStartStr.value) : undefined));
 const trendEndDate = computed<Date | undefined>(() => (trendEndStr.value ? new Date(trendEndStr.value) : undefined));
+// Calendar DateValue bindings for highlighting selected dates
+const trendStartValue = computed<DateValue | undefined>(() => (trendStartStr.value ? parseDate(trendStartStr.value) : undefined));
+const trendEndValue = computed<DateValue | undefined>(() => (trendEndStr.value ? parseDate(trendEndStr.value) : undefined));
+const isCustomRangeActive = computed<boolean>(() => Boolean(trendStartDate.value && trendEndDate.value));
+const isPresetActive = (value: number) => !isCustomRangeActive.value && trendDays.value === value;
 const onCalendarStartChange = (val: unknown | undefined) => {
     if (val && typeof val === 'object' && 'toString' in val) {
         const d = new Date(String(val));
@@ -175,55 +183,6 @@ const labelForDay = (key: string) => {
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     return formatDate(target);
-};
-
-// AWS service wiring for redeploy/rollback
-const awsService = new AwsService();
-
-const getDeploymentUpdatePayload = (deployment: AuditLog) => {
-    const info = (deployment.details?.info as Record<string, unknown>) || {};
-    const clusterName = (info.cluster as string) || 'N/A';
-    const serviceName = (info.service as string) || 'N/A';
-    const containerName = (info.container as string) || serviceName;
-    const oldImageUri = (info.oldServiceImage as string) || (info.oldImage as string) || (info.oldImageUri as string) || 'N/A';
-    const newImageUri = (info.newServiceImage as string) || (info.newImage as string) || (info.newImageUri as string) || 'N/A';
-
-    return { clusterName, serviceName, containerName, oldImageUri, newImageUri };
-};
-
-const handleRedeploy = async (deployment: AuditLog) => {
-    const { clusterName, serviceName, containerName, oldImageUri, newImageUri } = getDeploymentUpdatePayload(deployment);
-    if (!clusterName || !serviceName || !containerName || !newImageUri || !oldImageUri) {
-        console.error('Invalid deployment payload', deployment);
-        return;
-    }
-
-    try {
-        await awsService.updateServiceImage({ clusterName, serviceName, containerName, newImageUri, oldImageUri });
-    } catch (e) {
-        console.error('Redeploy failed', e);
-    }
-};
-
-const handleRollback = async (deployment: AuditLog) => {
-    const { clusterName, serviceName, containerName, oldImageUri, newImageUri } = getDeploymentUpdatePayload(deployment);
-
-    if (!clusterName || !serviceName || !containerName || !newImageUri || !oldImageUri) {
-        console.error('Invalid deployment payload', deployment);
-        return;
-    }
-
-    try {
-        await awsService.updateServiceImage({
-            clusterName,
-            serviceName,
-            containerName,
-            newImageUri: oldImageUri,
-            oldImageUri: newImageUri,
-        });
-    } catch (e) {
-        console.error('Rollback failed', e);
-    }
 };
 
 // Load more data for infinite scroll
@@ -306,7 +265,13 @@ watch(auditLogs, () => {
             <div class="shrink-0">
                 <Popover v-model:open="trendPopoverOpen">
                     <PopoverTrigger as-child>
-                        <Button variant="outline" class="h-9 px-3 text-xs whitespace-nowrap">{{ timeSelectorLabel }}</Button>
+                        <Button
+                            variant="outline"
+                            class="h-9 px-3 text-xs whitespace-nowrap border-blue-500/40 hover:bg-blue-500/10 text-foreground"
+                            :class="trendPopoverOpen ? 'bg-blue-500/10' : ''"
+                        >
+                            {{ timeSelectorLabel }}
+                        </Button>
                     </PopoverTrigger>
                     <PopoverContent class="p-3 w-[620px]" align="end" side="bottom">
                         <!-- quick presets -->
@@ -314,8 +279,18 @@ watch(auditLogs, () => {
                             <button
                                 v-for="opt in trendOptions"
                                 :key="opt.value"
-                                class="px-2 py-1 text-xs rounded border hover:bg-accent"
-                                @click="trendDays = opt.value"
+                                :aria-pressed="isPresetActive(opt.value) ? 'true' : 'false'"
+                                :class="[
+                                    'px-2 py-1 text-xs rounded border transition-colors',
+                                    isPresetActive(opt.value)
+                                        ? 'bg-blue-500/15 border-blue-500/40 text-foreground ring-1 ring-blue-500/20 shadow-sm'
+                                        : 'hover:bg-accent/40',
+                                ]"
+                                @click="
+                                    trendDays = opt.value;
+                                    trendStartStr = '';
+                                    trendEndStr = '';
+                                "
                             >
                                 {{ opt.label }}
                             </button>
@@ -324,11 +299,19 @@ watch(auditLogs, () => {
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <div class="text-xs text-muted-foreground mb-1">Start</div>
-                                <Calendar @update:model-value="onCalendarStartChange" class="rounded-md border" />
+                                <Calendar
+                                    :model-value="trendStartValue"
+                                    @update:model-value="onCalendarStartChange"
+                                    class="rounded-md border"
+                                />
                             </div>
                             <div>
                                 <div class="text-xs text-muted-foreground mb-1">End</div>
-                                <Calendar @update:model-value="onCalendarEndChange" class="rounded-md border" />
+                                <Calendar
+                                    :model-value="trendEndValue"
+                                    @update:model-value="onCalendarEndChange"
+                                    class="rounded-md border"
+                                />
                             </div>
                         </div>
                         <div class="flex justify-between items-center mt-3 text-xs text-muted-foreground">
@@ -336,7 +319,24 @@ watch(auditLogs, () => {
                                 {{ trendStartDate ? formatDateLong(trendStartDate) : 'Start' }} →
                                 {{ trendEndDate ? formatDateLong(trendEndDate) : 'End' }}
                             </span>
-                            <Button size="sm" @click="applyTrendRange">Apply</Button>
+                            <div class="flex items-center gap-2">
+                                <button
+                                    class="px-2 py-1 rounded border text-xs"
+                                    :class="isCustomRangeActive ? 'bg-accent/50 border-accent text-foreground' : 'hover:bg-accent'"
+                                    @click="applyTrendRange"
+                                >
+                                    Apply Range
+                                </button>
+                                <button
+                                    class="px-2 py-1 rounded border text-xs hover:bg-accent"
+                                    @click="
+                                        trendStartStr = '';
+                                        trendEndStr = '';
+                                    "
+                                >
+                                    Clear
+                                </button>
+                            </div>
                         </div>
                     </PopoverContent>
                 </Popover>
@@ -422,13 +422,7 @@ watch(auditLogs, () => {
                 </div>
 
                 <div class="space-y-4">
-                    <DeploymentCard
-                        v-for="deployment in items"
-                        :key="deployment.id"
-                        :deployment="deployment"
-                        @rollback="() => handleRollback(deployment)"
-                        @redeploy="() => handleRedeploy(deployment)"
-                    />
+                    <DeploymentCard v-for="deployment in items" :key="deployment.id" :deployment="deployment" />
                 </div>
             </div>
 
