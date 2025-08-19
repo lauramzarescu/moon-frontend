@@ -366,6 +366,7 @@
 
         <!-- Audit Log Details Sheet -->
         <AuditLogDetails
+            class="bg-background"
             :is-open="isSheetOpen"
             :active-section="activeSection"
             :log="selectedLog"

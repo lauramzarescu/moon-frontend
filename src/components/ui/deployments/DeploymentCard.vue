@@ -5,7 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/ui/button';
 import UpdateServiceImageDialog from '@/views/AWS/Services/components/UpdateServiceImageDialog.vue';
 import Progress from '@/components/ui/progress/Progress.vue';
-import { Server, Clock, RotateCcw, Play, ChevronDown } from 'lucide-vue-next';
+import { ChevronDown, Clock, Play, RotateCcw, Server } from 'lucide-vue-next';
 
 const props = defineProps<{ deployment: AuditLog }>();
 const emit = defineEmits<{
@@ -89,20 +89,15 @@ const redeployOpen = ref(false);
                 <!-- Quick actions -->
                 <Button
                     size="sm"
-                    variant="outline"
-                    class="h-7 px-2 border-red-500/40 text-red-300 hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    variant="outline-default"
+                    class="h-7 px-2 disabled:cursor-not-allowed border-blue-500/40 dark:text-blue-300 text-blue-600 hover:bg-blue-500/10"
                     :disabled="!oldImage || oldImage === newImage"
                     @click="rollbackOpen = true"
                 >
                     <RotateCcw class="h-3 w-3 mr-1" /> Rollback</Button
                 >
 
-                <Button
-                    size="sm"
-                    variant="outline"
-                    class="h-7 px-2 border-blue-500/40 text-blue-300 hover:bg-blue-500/10"
-                    @click="redeployOpen = true"
-                >
+                <Button size="sm" variant="outline-error" class="h-7 px-2 border-red-500/40 dark:text-red-300 text-red-600 hover:bg-red-500/10" @click="redeployOpen = true">
                     <Play class="h-3 w-3 mr-1" /> Redeploy</Button
                 >
             </div>

@@ -10,6 +10,7 @@ export const userDeviceInfoSchema = z.object({
 });
 
 export const userSchema = z.object({
+    id: z.string().uuid(),
     name: z.string().optional().nullable(),
     email: z.string().email(),
     organizationId: z.string(),

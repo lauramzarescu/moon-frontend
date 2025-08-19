@@ -161,7 +161,7 @@ onBeforeRouteLeave(() => {
                             v-for="row in table.getRowModel().rows"
                             :key="row.id"
                             :data-state="row.getIsSelected() && 'selected'"
-                            class="cursor-pointer hover:bg-muted/50"
+                            class="cursor-pointer"
                         >
                             <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" @click="handleRowClick(row.original)">
                                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />

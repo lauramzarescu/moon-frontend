@@ -3,7 +3,6 @@ import { useDataStore } from '@/stores/dataStore.ts';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ChevronDownIcon } from '@radix-icons/vue';
 import { useSocket } from '@/composables/useSocket.ts';
 import StuckDeploymentBanner from '@/components/ui/stuck-deployment/StuckDeploymentBanner.vue';
@@ -124,7 +123,7 @@ onUnmounted(() => {
 
         <Popover v-model:open="isPopoverOpen">
             <PopoverTrigger as-child>
-                <Button variant="outline" class="ml-auto">
+                <Button variant="outline-default" class="ml-auto">
                     {{
                         store.refreshIsDynamic
                             ? `Dynamic refresh (${store.refreshInterval}s)`
@@ -133,34 +132,26 @@ onUnmounted(() => {
                     <ChevronDownIcon class="ml-2 h-4 w-4 text-foreground" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent class="p-0" align="end" side="bottom">
-                <Command>
-                    <CommandInput placeholder="Select refresh interval..." />
-                    <CommandList>
-                        <CommandEmpty>No options found.</CommandEmpty>
-                        <CommandGroup>
-                            <CommandItem
-                                v-for="option in refreshOptions"
-                                :key="option.value"
-                                :value="option.value"
-                                @select="handleRefreshIntervalChange(option.value)"
-                                :class="[
-                                    'space-y-1 flex flex-col items-start px-4 py-2',
-                                    {
-                                        'bg-accent text-accent-foreground': store.refreshInterval === option.value,
-                                        'font-medium': store.refreshInterval === option.value,
-                                    },
-                                ]"
-                                :aria-selected="store.refreshInterval === option.value"
-                            >
-                                <p>{{ option.label }}</p>
-                                <p class="text-sm text-foreground">
-                                    {{ option.description }}
-                                </p>
-                            </CommandItem>
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
+            <PopoverContent class="p-0" align="end">
+                <div class="overflow-auto">
+                    <div
+                        v-for="option in refreshOptions"
+                        :key="option.value"
+                        :class="{
+                            'bg-accent rounded-lg text-foreground font-medium': store.refreshInterval === option.value,
+                        }"
+                        class="space-y-1 flex flex-col items-start px-4 py-2 cursor-pointer transition-colors hover:bg-muted/40 w-full"
+                        @click="handleRefreshIntervalChange(option.value)"
+                    >
+                        <div class="flex items-center justify-between w-full">
+                            <p>{{ option.label }}</p>
+                            <span v-if="store.refreshInterval === option.value" class="ml-2 text-xs">✓</span>
+                        </div>
+                        <p class="text-sm text-muted-foreground">
+                            {{ option.description }}
+                        </p>
+                    </div>
+                </div>
             </PopoverContent>
         </Popover>
 

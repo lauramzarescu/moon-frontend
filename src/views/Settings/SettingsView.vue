@@ -2,13 +2,13 @@
     <section class="p-4 w-full mx-auto">
         <h1 class="text-2xl font-bold mb-4">Settings</h1>
         <Tabs v-model="selectedTab" class="w-full">
-            <TabsList class="bg-white dark:bg-background min-h-9 p-0 w-full justify-start overflow-hidden rounded-none">
+            <TabsList class="min-h-9 p-0 bg-background w-full justify-start overflow-hidden rounded-none">
                 <template v-for="tab in tabs" :key="tab.value">
-                    <TabsTrigger class="pb-3 data-[state=active]:shadow-none data-[state=active]:text-blue-500 relative" :value="tab.value">
+                    <TabsTrigger class="pb-3 data-[state=active]:shadow-none relative" :value="tab.value">
                         {{ tab.label }}
                         <div
                             v-if="selectedTab === tab.value"
-                            class="w-[calc(100%-24px)] h-0.5 bg-blue-500 absolute bottom-0 rounded-t-full"
+                            class="w-[calc(100%-24px)] h-0.5 bg-primary absolute bottom-0 rounded-t-full"
                         />
                     </TabsTrigger>
                 </template>

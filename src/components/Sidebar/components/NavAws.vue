@@ -40,11 +40,11 @@ watch(
 <template>
     <SidebarMenu>
         <SidebarMenuItem v-for="item in items" :key="item.title">
-            <SidebarMenuButton as-child :is-active="item.isActive">
+            <SidebarMenuButton as-child :is-active="activeButton === item.url">
                 <Button
                     :key="item.title"
-                    :variant="activeButton === item.url ? 'secondary' : 'ghost'"
-                    class="w-full justify-start"
+                    :variant="activeButton === item.url ? 'default' : 'ghost'"
+                    class="w-full justify-start data-[active=true]:!bg-primary data-[active=true]:!text-primary-foreground font-medium"
                     @click="navigate(item.url)"
                 >
                     <component :is="item.icon" />

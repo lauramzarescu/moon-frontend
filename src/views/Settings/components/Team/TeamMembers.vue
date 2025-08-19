@@ -252,16 +252,15 @@ watch(
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent class="p-0" align="end">
-                            <div class="max-h-60 overflow-auto">
+                            <div class="overflow-auto">
                                 <div
                                     v-for="role in Object.values(UserRole)"
                                     :key="role"
                                     :class="{
-                                        'bg-accent text-accent-foreground': userRoles[user.id] === role,
-                                        'font-medium': userRoles[user.id] === role,
+                                        'bg-accent rounded-lg text-foreground font-medium': userRoles[user.id] === role,
                                         'opacity-50 cursor-not-allowed': !hasPermission(PermissionEnum.USER_WRITE),
                                     }"
-                                    class="space-y-1 flex flex-col items-start px-4 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+                                    class="space-y-1 flex flex-col items-start px-4 py-2 cursor-pointer transition-colors hover:bg-muted/40 w-full"
                                     @click="hasPermission(PermissionEnum.USER_WRITE) && handleRoleChange(user, role)"
                                 >
                                     <div class="flex items-center justify-between w-full">

@@ -29,7 +29,7 @@ const selectedValues = computed(() => new Set(props.column?.getFilterValue() as 
 <template>
     <Popover>
         <PopoverTrigger as-child>
-            <Button variant="outline" size="sm" class="h-8 border-dashed">
+            <Button variant="outline" size="sm" class="h-8 border-dashed border-2 border-accent">
                 <PlusCircledIcon class="mr-2 h-4 w-4" />
                 {{ title }}
                 <template v-if="selectedValues.size > 0">

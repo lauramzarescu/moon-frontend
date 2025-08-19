@@ -4,8 +4,7 @@ import type { DateValue } from '@internationalized/date';
 import { parseDate } from '@internationalized/date';
 import { useAuditLogs } from '@/views/Settings/components/AuditLogs/composables/useAuditLogs';
 import type { AuditLog } from '@/views/Settings/components/AuditLogs/schema';
-import { Activity, TrendingUp, BarChart3 } from 'lucide-vue-next';
-import { SlidersHorizontal } from 'lucide-vue-next';
+import { Activity, SlidersHorizontal, TrendingUp } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Chart from 'primevue/chart';
@@ -266,15 +265,14 @@ watch(auditLogs, () => {
                 <Popover v-model:open="trendPopoverOpen">
                     <PopoverTrigger as-child>
                         <Button
-                            variant="outline"
-                            class="h-9 px-3 text-xs whitespace-nowrap border-blue-500/40 hover:bg-blue-500/10 text-foreground"
-                            :class="trendPopoverOpen ? 'bg-blue-500/10' : ''"
+                            variant="outline-default"
+                            class="h-9 px-3 text-xs whitespace-nowrap"
+                            :class="trendPopoverOpen ? 'bg-accent/40' : ''"
                         >
                             {{ timeSelectorLabel }}
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent class="p-3 w-[620px]" align="end" side="bottom">
-                        <!-- quick presets -->
                         <div class="flex flex-wrap gap-2 mb-3">
                             <button
                                 v-for="opt in trendOptions"
@@ -283,7 +281,7 @@ watch(auditLogs, () => {
                                 :class="[
                                     'px-2 py-1 text-xs rounded border transition-colors',
                                     isPresetActive(opt.value)
-                                        ? 'bg-blue-500/15 border-blue-500/40 text-foreground ring-1 ring-blue-500/20 shadow-sm'
+                                        ? 'bg-accent/50 border-accent text-foreground ring-1 ring-ring/10 shadow-sm'
                                         : 'hover:bg-accent/40',
                                 ]"
                                 @click="
@@ -344,27 +342,14 @@ watch(auditLogs, () => {
         </header>
 
         <!-- Top widgets -->
-        <div class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch max-w-5xl">
-            <!-- Last 24 hours -->
-            <div class="rounded-lg border bg-card p-4">
-                <div class="flex items-center gap-2">
-                    <div class="p-2 rounded-md bg-sky-500/10 border border-sky-500/20">
-                        <BarChart3 class="h-4 w-4 text-sky-400" />
-                    </div>
-                    <span class="text-xs text-muted-foreground">Deployments (24h)</span>
-                </div>
-                <div class="text-3xl font-semibold mt-2 text-foreground">{{ last24hCount }}</div>
-            </div>
-
+        <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch max-w-5xl">
             <!-- Current window with delta -->
             <div class="rounded-lg border bg-card p-4">
                 <div class="flex items-center gap-2">
                     <div class="p-2 rounded-md bg-teal-500/10 border border-teal-500/20">
                         <TrendingUp class="h-4 w-4 text-teal-400" />
                     </div>
-                    <span class="text-xs text-muted-foreground"
-                        >Deployments ({{ trendStartDate && trendEndDate ? 'custom' : trendDays + 'd' }})</span
-                    >
+                    <span class="text-xs text-muted-foreground">Deployments</span>
                 </div>
                 <div class="flex items-baseline gap-2 mt-2">
                     <div class="text-3xl font-semibold text-foreground">{{ lastNDaysCount }}</div>
