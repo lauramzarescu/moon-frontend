@@ -232,7 +232,7 @@ const setInitialVerificationMethodLocal = () => {
         {
             useYubikey,
             useYubikeyWebAuthn,
-        }
+        },
     );
 };
 
@@ -315,32 +315,30 @@ const handleWebAuthnVerify = async () => {
             throw new Error('Invalid authentication response: missing challengeId');
         }
 
-        if (authResponse.allowCredentials && authResponse.allowCredentials.length === 0) {
-            console.warn('WebAuthn allowCredentials is empty - no registered credentials found');
+        if (
+            (authResponse.options.allowCredentials && authResponse.options.allowCredentials.length === 0) ||
+            authResponse.options.allowCredentials === undefined
+        ) {
+            console.warn('WebAuthn allowCredentials is not valid - no registered credentials found');
             throw new Error('No registered security keys found for this account. Please register a security key first.');
         }
 
-        if (authResponse.allowCredentials === undefined) {
-            console.warn('WebAuthn allowCredentials is undefined - this might cause authentication issues');
-        }
-
         webauthnChallengeId.value = authResponse.challengeId;
-        let authOptions = authResponse;
         let credential;
 
         try {
             credential = await startAuthentication({
-                optionsJSON: authOptions,
+                optionsJSON: authResponse.options,
                 useBrowserAutofill: false,
             });
         } catch (firstError: any) {
-            if (firstError.name === 'NotAllowedError' && authOptions.allowCredentials) {
-                const fallbackOptions = { ...authOptions };
-                delete fallbackOptions.allowCredentials;
+            if (firstError.name === 'NotAllowedError' && authResponse.options.allowCredentials) {
+                const fallbackOptions = { ...authResponse };
+                delete fallbackOptions.options.allowCredentials;
 
                 try {
                     credential = await startAuthentication({
-                        optionsJSON: fallbackOptions,
+                        optionsJSON: fallbackOptions.options,
                         useBrowserAutofill: false,
                     });
                 } catch (secondError: any) {
@@ -351,8 +349,8 @@ const handleWebAuthnVerify = async () => {
             }
         }
 
-        if (authResponse.allowCredentials && authResponse.allowCredentials.length > 0) {
-            const credentialMatches = authResponse.allowCredentials.some((allowedCred: any) => {
+        if (authResponse.options.allowCredentials && authResponse.options.allowCredentials.length > 0) {
+            const credentialMatches = authResponse.options.allowCredentials.some((allowedCred: any) => {
                 return allowedCred.id === credential.id;
             });
 

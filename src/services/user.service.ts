@@ -320,7 +320,9 @@ export class UserService extends ApiService {
      * @param data WebAuthn authentication start data
      * @returns Promise with authentication options
      */
-    async startWebAuthnReAuthentication(data: WebAuthnAuthenticationStartInput): Promise<any> {
+    async startWebAuthnReAuthentication(
+        data: WebAuthnAuthenticationStartInput,
+    ): Promise<{ options: PublicKeyCredentialRequestOptionsJSON; challengeId: string }> {
         return await this.post(`${this.resource}/2fa/webauthn/start`, data);
     }
 
