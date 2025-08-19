@@ -28,6 +28,8 @@ export function useAuditLogs() {
         userId: '',
         userEmail: '',
         action: '',
+        startDate: '',
+        endDate: '',
     });
 
     // Sorting

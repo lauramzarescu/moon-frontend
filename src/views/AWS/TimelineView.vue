@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import type { DateValue } from '@internationalized/date';
 import { parseDate } from '@internationalized/date';
 import { useAuditLogs } from '@/views/Settings/components/AuditLogs/composables/useAuditLogs';
+import { useDeploymentWidgets } from '@/views/AWS/composables/useDeploymentWidgets';
 import type { AuditLog } from '@/views/Settings/components/AuditLogs/schema';
 import { Activity, SlidersHorizontal, TrendingUp } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,18 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import Chart from 'primevue/chart';
 import Calendar from '@/components/ui/calendar/Calendar.vue';
 import DeploymentCard from '@/components/ui/deployments/DeploymentCard.vue';
+import moment from 'moment';
 
 const { auditLogs, loading, error, filters, paginationMeta, pagination, fetchAuditLogs } = useAuditLogs();
+const {
+    deploymentsCount,
+    deploymentsCountLoading,
+    deploymentsDelta,
+    deploymentsTimelineLoading,
+    chartData,
+    chartOptions,
+    fetchAllWidgetData,
+} = useDeploymentWidgets();
 
 filters.action = 'aws:service:updated';
 pagination.limit = 1000;
@@ -20,44 +30,31 @@ pagination.limit = 1000;
 const isLoadingMore = ref(false);
 const hasMoreData = ref(true);
 
-const formatDate = (dateInput: Date | string) => {
-    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return date.toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
+// Date formatting utilities using Moment.js
+const formatDate = (dateInput: Date | string | moment.Moment) => {
+    const date = moment(dateInput);
+    if (!date.isValid()) return 'Invalid Date';
+    return date.format('ddd, MMM D, YYYY');
 };
 
-const formatDateLong = (date: Date) => date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const formatDateLong = (dateInput: Date | string | moment.Moment) => {
+    const date = moment(dateInput);
+    if (!date.isValid()) return 'Invalid Date';
+    return date.format('MMM D, YYYY');
+};
 
-// Widgets: volume & trends
-const last24hCount = computed(() => {
-    const since = Date.now() - 24 * 60 * 60 * 1000;
-    return auditLogs.value.filter((d) => new Date(d.createdAt).getTime() >= since).length;
-});
-const lastNDaysCount = computed(() => {
-    const since = Date.now() - trendDays.value * 24 * 60 * 60 * 1000;
-    return auditLogs.value.filter((d) => new Date(d.createdAt).getTime() >= since).length;
-});
-const prevNDaysCountForTile = computed(() => {
-    const startPrev = Date.now() - 2 * trendDays.value * 24 * 60 * 60 * 1000;
-    const endPrev = Date.now() - trendDays.value * 24 * 60 * 60 * 1000;
-    return auditLogs.value.filter((d) => {
-        const ts = new Date(d.createdAt).getTime();
-        return ts >= startPrev && ts < endPrev;
-    }).length;
-});
-const nDayDeltaPctTile = computed(() => {
-    const prev = prevNDaysCountForTile.value;
-    if (prev === 0) return 100;
-    return Math.round(((lastNDaysCount.value - prev) / prev) * 100);
-});
+const toYMD = (dateInput: Date | string | moment.Moment): string => {
+    const date = moment(dateInput);
+    if (!date.isValid()) return '';
+    return date.format('YYYY-MM-DD');
+};
 
-// Trend sparkline (last N days)
+// Date range state and management
 const trendDays = ref<number>(14);
+const trendStartStr = ref<string>('');
+const trendEndStr = ref<string>('');
+const trendPopoverOpen = ref(false);
+
 const trendOptions = [
     { value: 1, label: 'Last day' },
     { value: 7, label: 'Last 7 days' },
@@ -65,86 +62,78 @@ const trendOptions = [
     { value: 30, label: 'Last 30 days' },
     { value: 60, label: 'Last 60 days' },
 ];
-const trendPopoverOpen = ref(false);
-const dailyCounts = computed(() => {
-    const days = trendDays.value;
-    const arr: number[] = [];
-    const end = trendEndDate.value ?? new Date();
-    for (let i = days - 1; i >= 0; i--) {
-        const dayStart = new Date(end.getFullYear(), end.getMonth(), end.getDate() - i).getTime();
-        const dayEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate() - i + 1).getTime();
-        const count = auditLogs.value.filter((d) => {
-            const ts = new Date(d.createdAt).getTime();
-            return ts >= dayStart && ts < dayEnd;
-        }).length;
-        arr.push(count);
-    }
-    return arr;
-});
-const trendLabels = computed(() => Array.from({ length: dailyCounts.value.length }, (_, i) => i + 1));
-const chartData = computed(() => ({
-    labels: trendLabels.value,
-    datasets: [
-        {
-            data: dailyCounts.value,
-            borderColor: 'hsl(221.2 83.2% 53.3%)',
-            backgroundColor: 'hsl(221.2 83.2% 53.3% / 0.15)',
-            fill: true,
-            tension: 0.35,
-            borderWidth: 2,
-            pointRadius: 0,
-        },
-    ],
-}));
-const chartOptions = computed(() => ({
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false }, tooltip: { enabled: true } },
-    scales: { x: { display: false }, y: { display: false } },
-    elements: { line: { borderJoinStyle: 'round', capBezierPoints: true }, point: { radius: 0 } },
-}));
 
-// Calendar-backed trend range
-const trendStartStr = ref<string>('');
-const trendEndStr = ref<string>('');
-const trendStartDate = computed<Date | undefined>(() => (trendStartStr.value ? new Date(trendStartStr.value) : undefined));
-const trendEndDate = computed<Date | undefined>(() => (trendEndStr.value ? new Date(trendEndStr.value) : undefined));
-// Calendar DateValue bindings for highlighting selected dates
-const trendStartValue = computed<DateValue | undefined>(() => (trendStartStr.value ? parseDate(trendStartStr.value) : undefined));
-const trendEndValue = computed<DateValue | undefined>(() => (trendEndStr.value ? parseDate(trendEndStr.value) : undefined));
-const isCustomRangeActive = computed<boolean>(() => Boolean(trendStartDate.value && trendEndDate.value));
+// Computed properties for date handling using Moment.js
+const trendStartDate = computed(() => (trendStartStr.value ? moment(trendStartStr.value) : undefined));
+const trendEndDate = computed(() => (trendEndStr.value ? moment(trendEndStr.value) : undefined));
+const trendStartValue = computed(() => (trendStartStr.value ? parseDate(trendStartStr.value) : undefined));
+const trendEndValue = computed(() => (trendEndStr.value ? parseDate(trendEndStr.value) : undefined));
+const isCustomRangeActive = computed(() => Boolean(trendStartDate.value && trendEndDate.value));
 const isPresetActive = (value: number) => !isCustomRangeActive.value && trendDays.value === value;
-const onCalendarStartChange = (val: unknown | undefined) => {
+
+// Filter management and API calls
+const updateFilters = (startISO: string, endISO: string) => {
+    filters.startDate = startISO;
+    filters.endDate = endISO;
+    hasMoreData.value = true;
+    isLoadingMore.value = false;
+    fetchAuditLogs(1);
+    // Fetch widget data with new date range
+    fetchAllWidgetData(startISO, endISO);
+};
+
+const clearFilters = () => {
+    trendStartStr.value = '';
+    trendEndStr.value = '';
+    updateFilters('', '');
+    // Fetch widget data without date filters
+    fetchAllWidgetData();
+};
+
+// Calendar event handlers
+const onCalendarChange = (val: unknown | undefined, isStart: boolean) => {
     if (val && typeof val === 'object' && 'toString' in val) {
-        const d = new Date(String(val));
-        if (!isNaN(d.getTime())) trendStartStr.value = d.toISOString().slice(0, 10);
-        // Keep end >= start
-        if (trendEndDate.value && d.getTime() > trendEndDate.value.getTime()) {
-            trendEndStr.value = trendStartStr.value;
+        const d = moment(String(val));
+        if (d.isValid()) {
+            const dateStr = toYMD(d);
+            if (isStart) {
+                trendStartStr.value = dateStr;
+                // Keep end >= start
+                if (trendEndDate.value && d.isAfter(trendEndDate.value)) {
+                    trendEndStr.value = dateStr;
+                }
+            } else {
+                trendEndStr.value = dateStr;
+                // Keep end >= start
+                if (trendStartDate.value && d.isBefore(trendStartDate.value)) {
+                    trendStartStr.value = dateStr;
+                }
+            }
         }
     }
 };
-const onCalendarEndChange = (val: unknown | undefined) => {
-    if (val && typeof val === 'object' && 'toString' in val) {
-        const d = new Date(String(val));
-        if (!isNaN(d.getTime())) trendEndStr.value = d.toISOString().slice(0, 10);
-        // Keep end >= start
-        if (trendStartDate.value && d.getTime() < trendStartDate.value.getTime()) {
-            trendStartStr.value = trendEndStr.value;
-            // trigger start calendar to reflect new start
-            onCalendarStartChange(val);
-        }
-    }
+
+// Preset and range application
+const applyPreset = (days: number) => {
+    trendDays.value = days;
+    const end = moment();
+    const start = moment().subtract(days - 1, 'days');
+    trendStartStr.value = '';
+    trendEndStr.value = '';
+    updateFilters(toYMD(start), toYMD(end));
 };
-const applyTrendRange = () => {
+
+const applyCustomRange = () => {
     if (!trendStartDate.value || !trendEndDate.value) return;
-    const start = trendStartDate.value <= trendEndDate.value ? trendStartDate.value : trendEndDate.value;
-    const end = trendEndDate.value >= trendStartDate.value ? trendEndDate.value : trendStartDate.value;
-    const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (24 * 3600000)) + 1);
+    const start = trendStartDate.value.isSameOrBefore(trendEndDate.value) ? trendStartDate.value : trendEndDate.value;
+    const end = trendEndDate.value.isSameOrAfter(trendStartDate.value) ? trendEndDate.value : trendStartDate.value;
+    const days = Math.max(1, end.diff(start, 'days') + 1);
     trendDays.value = Math.min(60, Math.max(1, days));
+    updateFilters(toYMD(start), toYMD(end));
     trendPopoverOpen.value = false;
 };
 
+// UI labels and display
 const timeSelectorLabel = computed(() => {
     if (trendStartDate.value && trendEndDate.value) {
         return `Custom: ${formatDateLong(trendStartDate.value)} – ${formatDateLong(trendEndDate.value)}`;
@@ -152,33 +141,46 @@ const timeSelectorLabel = computed(() => {
     return trendOptions.find((o) => o.value === trendDays.value)?.label ?? 'Select range';
 });
 
-// Group by local day (YYYY-MM-DD)
-const groupedByDay = computed(() => {
-    const toKey = (d: Date) => {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-    };
+// Initialize with 14-day default range on component mount
+onMounted(() => {
+    // Set default 14-day range
+    trendDays.value = 14;
+    const end = moment();
+    const start = moment().subtract(13, 'days'); // 13 days ago + today = 14 days total
 
+    // Set the date strings for UI display
+    trendStartStr.value = '';
+    trendEndStr.value = '';
+
+    // Apply the 14-day filter and fetch data
+    const startISO = toYMD(start);
+    const endISO = toYMD(end);
+    updateFilters(startISO, endISO);
+});
+
+const groupedByDay = computed(() => {
     const groups = new Map<string, AuditLog[]>();
+
     for (const item of auditLogs.value) {
-        const d = new Date(item.createdAt);
-        const key = toKey(d);
+        const d = moment(item.createdAt);
+        const key = toYMD(d);
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key)!.push(item);
     }
+
+    // Sort items within each day by newest first
     for (const [, list] of groups) {
-        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        list.sort((a, b) => moment(b.createdAt).valueOf() - moment(a.createdAt).valueOf());
     }
+
+    // Sort days by newest first
     return Array.from(groups.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
 });
 
 const labelForDay = (key: string) => {
-    const today = new Date();
-    const target = new Date(key + 'T00:00:00');
-    const msPerDay = 24 * 60 * 60 * 1000;
-    const diffDays = Math.floor((new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() - target.getTime()) / msPerDay);
+    const today = moment().startOf('day');
+    const target = moment(key);
+    const diffDays = today.diff(target, 'days');
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     return formatDate(target);
@@ -248,7 +250,6 @@ onUnmounted(() => {
 });
 
 watch(auditLogs, () => {
-    // Recompute when data changes
     requestAnimationFrame(() => updateStackedLabels());
 });
 </script>
@@ -284,11 +285,7 @@ watch(auditLogs, () => {
                                         ? 'bg-accent/50 border-accent text-foreground ring-1 ring-ring/10 shadow-sm'
                                         : 'hover:bg-accent/40',
                                 ]"
-                                @click="
-                                    trendDays = opt.value;
-                                    trendStartStr = '';
-                                    trendEndStr = '';
-                                "
+                                @click="applyPreset(opt.value)"
                             >
                                 {{ opt.label }}
                             </button>
@@ -299,7 +296,9 @@ watch(auditLogs, () => {
                                 <div class="text-xs text-muted-foreground mb-1">Start</div>
                                 <Calendar
                                     :model-value="trendStartValue"
-                                    @update:model-value="onCalendarStartChange"
+                                    :range-start="trendStartStr || undefined"
+                                    :range-end="trendEndStr || undefined"
+                                    @update:model-value="(val) => onCalendarChange(val, true)"
                                     class="rounded-md border"
                                 />
                             </div>
@@ -307,7 +306,9 @@ watch(auditLogs, () => {
                                 <div class="text-xs text-muted-foreground mb-1">End</div>
                                 <Calendar
                                     :model-value="trendEndValue"
-                                    @update:model-value="onCalendarEndChange"
+                                    :range-start="trendStartStr || undefined"
+                                    :range-end="trendEndStr || undefined"
+                                    @update:model-value="(val) => onCalendarChange(val, false)"
                                     class="rounded-md border"
                                 />
                             </div>
@@ -321,19 +322,11 @@ watch(auditLogs, () => {
                                 <button
                                     class="px-2 py-1 rounded border text-xs"
                                     :class="isCustomRangeActive ? 'bg-accent/50 border-accent text-foreground' : 'hover:bg-accent'"
-                                    @click="applyTrendRange"
+                                    @click="applyCustomRange"
                                 >
                                     Apply Range
                                 </button>
-                                <button
-                                    class="px-2 py-1 rounded border text-xs hover:bg-accent"
-                                    @click="
-                                        trendStartStr = '';
-                                        trendEndStr = '';
-                                    "
-                                >
-                                    Clear
-                                </button>
+                                <button class="px-2 py-1 rounded border text-xs hover:bg-accent" @click="clearFilters">Clear</button>
                             </div>
                         </div>
                     </PopoverContent>
@@ -351,10 +344,13 @@ watch(auditLogs, () => {
                     </div>
                     <span class="text-xs text-muted-foreground">Deployments</span>
                 </div>
-                <div class="flex items-baseline gap-2 mt-2">
-                    <div class="text-3xl font-semibold text-foreground">{{ lastNDaysCount }}</div>
-                    <div :class="['text-xs font-medium', nDayDeltaPctTile >= 0 ? 'text-emerald-500' : 'text-red-500']">
-                        {{ nDayDeltaPctTile >= 0 ? '+' : '' }}{{ nDayDeltaPctTile }}%
+                <div v-if="deploymentsCountLoading" class="flex items-center justify-center mt-2 h-12">
+                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                </div>
+                <div v-else class="flex items-baseline gap-2 mt-2">
+                    <div class="text-3xl font-semibold text-foreground">{{ deploymentsCount }}</div>
+                    <div :class="['text-xs font-medium', deploymentsDelta >= 0 ? 'text-emerald-500' : 'text-red-500']">
+                        {{ deploymentsDelta >= 0 ? '+' : '' }}{{ deploymentsDelta }}%
                     </div>
                 </div>
             </div>
@@ -367,7 +363,10 @@ watch(auditLogs, () => {
                     </div>
                     <span class="text-xs text-muted-foreground">Trend</span>
                 </div>
-                <div class="mt-3 h-24">
+                <div v-if="deploymentsTimelineLoading" class="flex items-center justify-center mt-3 h-24">
+                    <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                </div>
+                <div v-else class="mt-3 h-24">
                     <Chart type="line" :data="chartData" :options="chartOptions" style="width: 100%; height: 100%" />
                 </div>
             </div>
@@ -403,7 +402,9 @@ watch(auditLogs, () => {
                     :data-timeline-day="dayKey"
                     :data-day-label="labelForDay(dayKey)"
                 >
-                    <h3 class="text-base font-semibold text-muted-foreground bg-accent/40 inline-block px-2 py-0.5 rounded">{{ labelForDay(dayKey) }}</h3>
+                    <h3 class="text-base font-semibold text-muted-foreground bg-accent/40 inline-block px-2 py-0.5 rounded">
+                        {{ labelForDay(dayKey) }}
+                    </h3>
                 </div>
 
                 <div class="space-y-4">
