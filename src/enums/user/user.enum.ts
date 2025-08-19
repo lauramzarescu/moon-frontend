@@ -9,6 +9,17 @@ export enum UserRole {
     user = 'user',
 }
 
+export enum TwoFactorMethod {
+    TOTP = 'TOTP',
+    YUBIKEY = 'YUBIKEY',
+    ANY = 'ANY',
+}
+
+export enum YubikeyAuthType {
+    OTP = 'OTP',
+    WEBAUTHN = 'WEBAUTHN',
+}
+
 export enum PermissionEnum {
     USER_CREATE = 'user:create',
     USER_READ = 'user:read',

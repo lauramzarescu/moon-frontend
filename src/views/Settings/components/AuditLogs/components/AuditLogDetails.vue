@@ -48,7 +48,7 @@
                                         getActionBadgeClass(log.action),
                                     ]"
                                 >
-                                    {{ formatActionName(log.action) }}
+                                    {{ formatActionName(log.action).toLowerCase() }}
                                 </div>
                             </div>
                         </div>

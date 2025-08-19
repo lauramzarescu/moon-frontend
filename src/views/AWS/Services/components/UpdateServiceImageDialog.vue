@@ -1,5 +1,6 @@
 <template>
     <Button
+        v-if="!hideTrigger"
         :variant="isClusterProduction ? 'destructive' : 'secondary'"
         size="sm"
         :class="[
@@ -150,12 +151,17 @@ const props = defineProps<{
     clusterName: string;
     serviceName: string;
     isClusterProduction: boolean;
+    hideTrigger?: boolean;
+    open?: boolean;
+    confirmOnly?: boolean;
+    defaultNewImageUri?: string;
 }>();
 
 const emit = defineEmits<{
     (e: 'image-updated'): void;
     (e: 'dialog-close'): void;
     (e: 'dialog-open'): void;
+    (e: 'update:open', value: boolean): void;
 }>();
 
 const isDialogOpen = ref(false);
@@ -165,19 +171,34 @@ const isLoading = ref(false);
 const validationError = ref('');
 const awsService = new AwsService();
 
+// External open control
+watch(
+    () => props.open,
+    (val) => {
+        if (typeof val === 'boolean') {
+            isDialogOpen.value = val;
+        }
+    },
+    { immediate: true },
+);
+
+watch(isDialogOpen, (val) => emit('update:open', val));
+
 // Validate input when newImageUri changes
 watch(newImageUri, (value) => {
     try {
-        const result = serviceUpdateImageSchema.parse({
+        serviceUpdateImageSchema.parse({
             clusterName: props.clusterName,
             serviceName: props.serviceName,
             containerName: props.containerName,
             newImageUri: value,
+            oldImageUri: props.currentImage,
         });
         validationError.value = '';
-    } catch (error: any) {
-        if (error.errors && error.errors.length > 0) {
-            validationError.value = error.errors[0].message;
+    } catch (error: unknown) {
+        const err = error as { errors?: Array<{ message: string }> };
+        if (err?.errors && err.errors.length > 0) {
+            validationError.value = err.errors[0].message;
         } else {
             validationError.value = 'Invalid input';
         }
@@ -237,6 +258,7 @@ const handleSubmit = async () => {
             serviceName: props.serviceName,
             containerName: props.containerName,
             newImageUri: newImageUri.value,
+            oldImageUri: props.currentImage,
         });
 
         emit('image-updated');
@@ -251,6 +273,12 @@ const handleSubmit = async () => {
 };
 
 onMounted(() => {
-    newImageUri.value = props.currentImage;
+    newImageUri.value = props.defaultNewImageUri ?? props.currentImage;
+});
+
+watch(isDialogOpen, (open) => {
+    if (open && props.confirmOnly) {
+        isConfirming.value = true;
+    }
 });
 </script>

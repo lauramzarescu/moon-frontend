@@ -57,8 +57,6 @@ const accountFormSchema = toTypedSchema(
     }),
 );
 
-// https://github.com/logaretm/vee-validate/issues/3521
-// https://github.com/logaretm/vee-validate/discussions/3571
 async function onSubmit(values: any) {
     toast({
         title: 'You submitted the following values:',
@@ -67,6 +65,7 @@ async function onSubmit(values: any) {
             { class: 'mt-2 w-[340px] rounded-md bg-slate-950 p-4' },
             h('code', { class: 'text-white' }, JSON.stringify(values, null, 2)),
         ),
+        variant: 'success',
     });
 }
 </script>

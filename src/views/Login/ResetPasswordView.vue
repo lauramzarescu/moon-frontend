@@ -81,12 +81,10 @@ const isFormValid = computed(() => {
     return newPassword.value && confirmPassword.value;
 });
 
-// Check if we have a reset token in the URL on mount
 onMounted(() => {
     const token = route.query.token as string;
-    console.log('Reset token from URL:', token);
+
     if (!token) {
-        // No token in URL, show error toast and redirect to login
         toast({
             title: 'Invalid Reset Link',
             description: 'No reset token found. Please request a new password reset link.',
@@ -97,23 +95,19 @@ onMounted(() => {
     }
 
     resetToken.value = token;
-    console.log('Reset token loaded from URL:', token);
 });
 
 const handleSubmit = async () => {
-    // Clear previous errors and messages
     errors.value = {};
     errorMessage.value = '';
     successMessage.value = '';
 
-    // Client-side validation for password confirmation
     if (newPassword.value !== confirmPassword.value) {
         errors.value.confirmPassword = 'Passwords do not match';
         return;
     }
 
     try {
-        // Validate input
         const validatedData = resetPasswordSchema.parse({
             token: resetToken.value,
             newPassword: newPassword.value,
@@ -131,18 +125,15 @@ const handleSubmit = async () => {
             variant: 'success',
         });
 
-        // Redirect to login after a delay
         setTimeout(() => {
             router.push('/login');
         }, 500);
     } catch (error: any) {
         if (error.errors) {
-            // Zod validation errors
             error.errors.forEach((err: any) => {
                 errors.value[err.path[0]] = err.message;
             });
         } else {
-            // API errors
             errorMessage.value = error.message || 'Failed to reset password. Please try again.';
         }
 

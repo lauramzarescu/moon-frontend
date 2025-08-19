@@ -2,16 +2,12 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { cn } from '@/utils.ts';
-import { BriefcaseIcon, Loader2 } from 'lucide-vue-next';
+import { BriefcaseIcon, Loader2, ShieldCheckIcon, SmartphoneIcon } from 'lucide-vue-next';
 import { AuthService } from '@/services/auth.service.ts';
 import { UserService } from '@/services/user.service.ts';
-import {
-    type LoginWithEmailAndPassword,
-    loginWithEmailAndPasswordResponseSchema,
-    loginWithEmailAndPasswordSchema,
-} from '@/views/Login/components/schema.ts';
+import { type LoginWithEmailAndPassword, loginWithEmailAndPasswordSchema } from '@/views/Login/components/schema.ts';
 import { toast } from '@/components/ui/toast';
 import { useRouter } from 'vue-router';
 import VerificationCodeInput from '@/components/ui/verification-code-input/VerificationCodeInput.vue';
@@ -19,6 +15,9 @@ import Cookies from 'js-cookie';
 import { config } from '../../../../app.config.ts';
 import TwoFactorSetupModal from '@/views/Settings/components/Account/TwoFactorSetupModal.vue';
 import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
+import { setInitialVerificationMethod } from '@/utils/twoFactorMethodUtils.ts';
+import { TwoFactorMethod } from '@/enums/user/user.enum.ts';
+import { startAuthentication } from '@simplewebauthn/browser';
 
 const authService = new AuthService();
 const userService = new UserService();
@@ -29,9 +28,21 @@ const requires2FAVerification = ref(false);
 const requires2FASetup = ref(false);
 const verificationCode = ref(['', '', '', '', '', '']);
 const sessionToken = ref(''); // Store the temporary session token
+const twoFactorMethod = ref<TwoFactorMethod | null>(null);
+const yubikeyOtp = ref('');
+const useYubikey = ref(false);
+const useWebAuthn = ref(false);
+const webauthnChallengeId = ref('');
 
 const show2FAModal = ref(false);
 const qrCodeUrl = ref('');
+
+// Security hierarchy information from login response
+const hasTotp = ref(false);
+const hasWebAuthn = ref(false);
+const hasYubikey = ref(false);
+const hasYubikeyOTP = ref(false);
+const availableMethods = ref<TwoFactorMethod[]>([]);
 
 const formData = ref<LoginWithEmailAndPassword>({
     email: '',
@@ -44,13 +55,23 @@ async function onSubmit(event: Event) {
 
     try {
         const validatedData = loginWithEmailAndPasswordSchema.parse(formData.value);
-        const response = loginWithEmailAndPasswordResponseSchema.parse(await authService.login(validatedData));
+        const response = await authService.login(validatedData);
 
         if (response.requires2FAVerification) {
             const tempToken = Cookies.get('token');
             if (tempToken) {
                 sessionToken.value = tempToken;
             }
+
+            twoFactorMethod.value = (response.twoFactorMethod as TwoFactorMethod) || null;
+
+            hasTotp.value = response.hasTotp ?? false;
+            hasWebAuthn.value = response.hasWebAuthn ?? false;
+            hasYubikey.value = response.hasYubikey ?? false;
+            hasYubikeyOTP.value = response.hasYubikeyOTP ?? false;
+            availableMethods.value = response.availableMethods ?? [];
+
+            setInitialVerificationMethodLocal();
 
             requires2FAVerification.value = true;
             isLoading.value = false;
@@ -85,20 +106,79 @@ async function onSubmit(event: Event) {
 }
 
 async function verifyTwoFactorCode() {
-    if (verificationCode.value.join('').length !== 6) {
-        toast({
-            title: 'Verification Error',
-            description: 'Please enter a valid 6-digit verification code',
-            variant: 'destructive',
-        });
-        return;
+    if (useWebAuthn.value) {
+        // WebAuthn authentication
+        try {
+            isLoading.value = true;
+
+            const authResponse = await userService.startWebAuthnAuthentication({}, sessionToken.value);
+            webauthnChallengeId.value = authResponse.challengeId;
+            const credential = await startAuthentication({ optionsJSON: { ...authResponse.options } });
+
+            await userService.completeWebAuthnAuthentication(
+                {
+                    credential,
+                    challengeId: webauthnChallengeId.value,
+                },
+                sessionToken.value,
+            );
+
+            window.location.href = '/';
+            return;
+        } catch (error: any) {
+            console.error('WebAuthn authentication error:', error);
+
+            let errorMessage = 'WebAuthn authentication failed. Please try again.';
+            if (error.name === 'NotAllowedError') {
+                errorMessage = 'Authentication was cancelled or timed out. Please try again.';
+            } else if (error.name === 'SecurityError') {
+                errorMessage = "Security error occurred. Please ensure you're using HTTPS.";
+            } else if (error.name === 'AbortError') {
+                errorMessage = 'Authentication was cancelled. Please try again.';
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            toast({
+                title: 'WebAuthn Authentication Failed',
+                description: errorMessage,
+                variant: 'destructive',
+            });
+            isLoading.value = false;
+            return;
+        }
+    }
+
+    // Handle TOTP and YubiKey OTP
+    let code = '';
+
+    if (useYubikey.value) {
+        // YubiKey OTP validation
+        if (!yubikeyOtp.value || yubikeyOtp.value.length < 32) {
+            toast({
+                title: 'Verification Error',
+                description: 'Please provide a valid YubiKey OTP',
+                variant: 'destructive',
+            });
+            return;
+        }
+        code = yubikeyOtp.value;
+    } else {
+        // TOTP validation
+        if (verificationCode.value.join('').length !== 6) {
+            toast({
+                title: 'Verification Error',
+                description: 'Please enter a valid 6-digit verification code',
+                variant: 'destructive',
+            });
+            return;
+        }
+        code = verificationCode.value.join('');
     }
 
     isLoading.value = true;
 
     try {
-        const code = verificationCode.value.join('');
-
         if (sessionToken.value) {
             await userService.verify2FASession(code, sessionToken.value);
         } else {
@@ -107,7 +187,13 @@ async function verifyTwoFactorCode() {
 
         window.location.href = '/';
     } catch (error) {
-        resetVerificationCode(verificationCode.value, 'login-2fa');
+        console.error('2FA verification error:', error);
+
+        if (useYubikey.value) {
+            yubikeyOtp.value = '';
+        } else if (!useWebAuthn.value) {
+            resetVerificationCode(verificationCode.value, 'login-2fa');
+        }
 
         toast({
             title: 'Verification Failed',
@@ -135,11 +221,76 @@ const handle2FAModalClose = (open: boolean) => {
     }
 };
 
-function cancelTwoFactorVerification() {
+const cancelTwoFactorVerification = () => {
     requires2FAVerification.value = false;
     resetVerificationCode(verificationCode.value, 'login-2fa');
-    sessionToken.value = ''; // Clear the session token
-}
+    yubikeyOtp.value = '';
+    sessionToken.value = '';
+};
+
+const setInitialVerificationMethodLocal = () => {
+    setInitialVerificationMethod(
+        twoFactorMethod,
+        {
+            hasTotp,
+            hasYubikeyOTP,
+            hasWebAuthn,
+            hasYubikey,
+        },
+        {
+            useYubikey,
+            useYubikeyWebAuthn: ref(false), // UserAuthForm doesn't use this, but utility needs it
+            useWebAuthn,
+        },
+    );
+};
+
+const switchToTotp = () => {
+    useYubikey.value = false;
+    useWebAuthn.value = false;
+    yubikeyOtp.value = '';
+    resetVerificationCode(verificationCode.value, 'login-2fa');
+};
+
+const switchToYubikey = () => {
+    useYubikey.value = true;
+    useWebAuthn.value = false;
+    resetVerificationCode(verificationCode.value, 'login-2fa');
+    yubikeyOtp.value = '';
+    // Focus on YubiKey input after switching
+    setTimeout(() => {
+        const yubikeyInput = document.getElementById('yubikey-otp');
+        if (yubikeyInput) {
+            yubikeyInput.focus();
+        }
+    }, 100);
+};
+
+const switchToWebAuthn = () => {
+    useWebAuthn.value = true;
+    useYubikey.value = false;
+    yubikeyOtp.value = '';
+    resetVerificationCode(verificationCode.value, 'login-2fa');
+};
+
+const canSwitchMethods = computed(() => {
+    // Allow switching when method is ANY and multiple methods are available
+    if (twoFactorMethod.value === TwoFactorMethod.ANY) {
+        const availableCount = [hasTotp.value, hasWebAuthn.value, hasYubikeyOTP.value].filter(Boolean).length;
+        return availableCount > 1;
+    }
+    return false;
+});
+
+const isVerificationReady = computed(() => {
+    if (useYubikey.value) {
+        return yubikeyOtp.value.length >= 32;
+    } else if (useWebAuthn.value) {
+        return true;
+    } else {
+        return verificationCode.value.join('').length === 6;
+    }
+});
 
 const handleSAMLLogin = async () => {
     window.location.href = `${config.BACKEND_URL}/auth/saml/login`;
@@ -204,19 +355,104 @@ const goToResetPassword = () => {
 
         <!-- Step 2: 2FA Verification -->
         <div v-if="requires2FAVerification" class="flex flex-col space-y-4">
-            <div class="text-sm text-center mb-2">
-                <p class="font-medium mb-2">Two-Factor Authentication Required</p>
-                <p class="text-foreground">Please enter the 6-digit verification code from your authenticator app to complete login.</p>
+            <div class="text-center">
+                <h3 class="text-lg font-semibold flex items-center justify-center gap-2 mb-2">
+                    <ShieldCheckIcon v-if="useYubikey || useWebAuthn" class="h-5 w-5 text-blue-600" />
+                    <SmartphoneIcon v-else class="h-5 w-5 text-green-600" />
+                    Two-Factor Authentication
+                </h3>
+                <p class="text-sm text-muted-foreground">
+                    {{
+                        useWebAuthn
+                            ? "Click the button below and follow your browser's prompts to authenticate with your security key"
+                            : useYubikey
+                              ? 'Insert your YubiKey and touch the gold contact'
+                              : 'Enter the 6-digit code from your authenticator app'
+                    }}
+                </p>
             </div>
 
-            <VerificationCodeInput v-model:code="verificationCode" prefix="login-2fa" :disabled="isLoading" @submit="verifyTwoFactorCode" />
+            <!-- Method Switching (only show if multiple methods are available) -->
+            <div v-if="canSwitchMethods" class="flex justify-center">
+                <div class="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                    <Button
+                        v-if="hasTotp"
+                        :variant="!useYubikey && !useWebAuthn ? 'default' : 'ghost'"
+                        size="sm"
+                        @click="switchToTotp"
+                        class="h-8 px-2 text-xs"
+                    >
+                        <SmartphoneIcon class="h-3 w-3 mr-1" />
+                        TOTP
+                    </Button>
+                    <Button
+                        v-if="hasYubikeyOTP"
+                        :variant="useYubikey ? 'default' : 'ghost'"
+                        size="sm"
+                        @click="switchToYubikey"
+                        class="h-8 px-2 text-xs"
+                    >
+                        <ShieldCheckIcon class="h-3 w-3 mr-1" />
+                        YubiKey OTP
+                    </Button>
+                    <Button
+                        v-if="hasWebAuthn"
+                        :variant="useWebAuthn ? 'default' : 'ghost'"
+                        size="sm"
+                        @click="switchToWebAuthn"
+                        class="h-8 px-2 text-xs"
+                    >
+                        <ShieldCheckIcon class="h-3 w-3 mr-1" />
+                        YubiKey WebAuthn
+                    </Button>
+                </div>
+            </div>
 
-            <div class="flex space-x-2 mt-4">
+            <!-- WebAuthn Authentication -->
+            <div v-if="useWebAuthn" class="space-y-4">
+                <div class="text-center">
+                    <Button @click="verifyTwoFactorCode" :disabled="isLoading" class="w-full">
+                        <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
+                        <ShieldCheckIcon v-else class="mr-2 h-4 w-4" />
+                        Authenticate with Security Key
+                    </Button>
+                    <p class="text-xs text-muted-foreground mt-2">Click the button above and follow your browser's prompts</p>
+                </div>
+            </div>
+
+            <!-- YubiKey Input -->
+            <div v-else-if="useYubikey" class="space-y-2">
+                <Label for="yubikey-otp" class="sr-only">YubiKey OTP</Label>
+                <Input
+                    id="yubikey-otp"
+                    v-model="yubikeyOtp"
+                    placeholder="Touch your YubiKey to generate OTP..."
+                    :disabled="isLoading"
+                    class="font-mono text-center"
+                    @keydown.enter="verifyTwoFactorCode"
+                />
+                <p class="text-xs text-muted-foreground text-center">The OTP will be automatically entered when you touch your YubiKey</p>
+            </div>
+
+            <!-- TOTP Input -->
+            <div v-else>
+                <VerificationCodeInput
+                    v-model:code="verificationCode"
+                    prefix="login-2fa"
+                    :disabled="isLoading"
+                    @submit="verifyTwoFactorCode"
+                />
+            </div>
+
+            <div v-if="!useWebAuthn" class="flex space-x-2 mt-4">
                 <Button variant="outline" class="flex-1" @click="cancelTwoFactorVerification" :disabled="isLoading"> Back </Button>
-                <Button class="flex-1" @click="verifyTwoFactorCode" :disabled="isLoading || verificationCode.join('').length !== 6">
+                <Button class="flex-1" @click="verifyTwoFactorCode" :disabled="isLoading || !isVerificationReady">
                     <Loader2 v-if="isLoading" class="mr-2 h-4 w-4 animate-spin" />
                     <span v-else>Verify</span>
                 </Button>
+            </div>
+            <div v-else class="flex justify-center mt-4">
+                <Button variant="outline" @click="cancelTwoFactorVerification" :disabled="isLoading"> Back</Button>
             </div>
         </div>
 

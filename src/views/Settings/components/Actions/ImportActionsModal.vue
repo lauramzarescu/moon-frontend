@@ -299,7 +299,6 @@ const validateData = (data: any) => {
             errors.push(`Action ${index + 1}: ${result.error.errors.map((e) => e.message).join(', ')}`);
         }
     });
-    console.log('validActions', validActions);
     if (errors.length > 0) {
         validationErrors.value = errors;
     } else {

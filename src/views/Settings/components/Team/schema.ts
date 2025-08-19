@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { LoginType, UserRole } from '@/enums/user/user.enum.ts';
+import { LoginType, TwoFactorMethod, UserRole } from '@/enums/user/user.enum.ts';
+import { yubikeyInfoResponseSchema } from '@/views/Settings/components/Account/schema.ts';
 
 export const userDeviceInfoSchema = z.object({
     id: z.string(),
@@ -9,7 +10,6 @@ export const userDeviceInfoSchema = z.object({
 });
 
 export const userSchema = z.object({
-    id: z.string(),
     name: z.string().optional().nullable(),
     email: z.string().email(),
     organizationId: z.string(),
@@ -22,6 +22,8 @@ export const userSchema = z.object({
     sessionIndex: z.string().optional().nullable(),
     twoFactorSecret: z.string().optional().nullable(),
     twoFactorVerified: z.boolean().default(false),
+    twoFactorMethod: z.nativeEnum(TwoFactorMethod).optional().nullable(),
+    yubikeyIds: z.array(z.string()).optional(),
     verifiedDevices: z.array(userDeviceInfoSchema).optional(),
     resetToken: z.string().optional().nullable(),
     resetTokenExpiry: z.date().optional().nullable(),
@@ -44,7 +46,6 @@ export const userDetailsResponseSchema = userSchema.omit({
 
 export const userCreateSchema = userSchema
     .omit({
-        id: true,
         loginType: true,
         nameID: true,
         nameIDFormat: true,
@@ -96,7 +97,22 @@ export const changePasswordSchema = z.object({
 export const changePasswordWith2FASchema = z.object({
     currentPassword: z.string().min(1, 'Current password is required'),
     newPassword: z.string().min(8, 'New password must be at least 8 characters'),
-    code: z.string().length(6, '2FA code must be 6 digits'),
+    code: z
+        .string()
+        .min(6, 'Code must be at least 6 characters')
+        .max(48, 'Code must be at most 48 characters')
+        .refine(
+            (code) => {
+                // TOTP codes are exactly 6 digits
+                const isTOTP = /^\d{6}$/.test(code);
+                // YubiKey OTPs are 32-48 characters, alphanumeric (modhex format)
+                const isYubikey = /^[cbdefghijklnrtuv]{32,48}$/.test(code);
+                return isTOTP || isYubikey;
+            },
+            {
+                message: 'Code must be either a 6-digit TOTP code or a valid YubiKey OTP',
+            },
+        ),
 });
 
 export const forgotPasswordSchema = z.object({
@@ -114,7 +130,22 @@ export const adminResetPasswordSchema = z.object({
 
 // 2FA schemas
 export const twoFactorVerifySchema = z.object({
-    code: z.string().min(6).max(6),
+    code: z
+        .string()
+        .min(6, 'Code must be at least 6 characters')
+        .max(48, 'Code must be at most 48 characters')
+        .refine(
+            (code) => {
+                // TOTP codes are exactly 6 digits
+                const isTOTP = /^\d{6}$/.test(code);
+                // YubiKey OTPs are 32-48 characters, alphanumeric (modhex format)
+                const isYubikey = /^[cbdefghijklnrtuv]{32,48}$/.test(code);
+                return isTOTP || isYubikey;
+            },
+            {
+                message: 'Code must be either a 6-digit TOTP code or a valid YubiKey OTP',
+            },
+        ),
 });
 
 export const twoFactorDisableSchema = twoFactorVerifySchema;
@@ -123,6 +154,43 @@ export const reset2FASchema = z.object({
     email: z.string().email('Valid email is required'),
 });
 
+// YubiKey schemas
+export const yubikeySetupSchema = z.object({
+    otp: z.string().min(32).max(48),
+    nickname: z.string().optional(),
+});
+
+export const yubikeyVerifySchema = z.object({
+    otp: z.string().min(32).max(48),
+});
+
+export const twoFactorMethodSelectSchema = z.object({
+    method: z.nativeEnum(TwoFactorMethod),
+});
+
+export const yubikeyRemoveSchema = z.object({
+    yubikeyId: z.string().min(12).max(12),
+});
+
+// WebAuthn schemas
+export const webauthnRegistrationStartSchema = z.object({
+    nickname: z.string().optional(),
+});
+
+export const webauthnRegistrationCompleteSchema = z.object({
+    credential: z.any(), // WebAuthn credential response
+    challengeId: z.string(),
+    nickname: z.string().optional(),
+});
+
+export const webauthnAuthenticationStartSchema = z.object({});
+
+export const webauthnAuthenticationCompleteSchema = z.object({
+    credential: z.any(), // WebAuthn assertion response
+    challengeId: z.string(),
+});
+
+// Type exports
 export type UserInput = z.infer<typeof userSchema>;
 export type TwoFactorVerifyInput = z.infer<typeof twoFactorVerifySchema>;
 export type TwoFactorDisableInput = z.infer<typeof twoFactorDisableSchema>;
@@ -139,6 +207,37 @@ export type UserDetailsResponseInput = z.infer<typeof userDetailsResponseSchema>
 export type UserImportInput = z.infer<typeof userImportSchema>;
 export type UserExportInput = z.infer<typeof userExportSchema>;
 export type UsersImportRequestInput = z.infer<typeof usersImportRequestSchema>;
+export type YubikeyListInput = z.infer<typeof yubikeyInfoResponseSchema>;
+export type YubikeySetupInput = z.infer<typeof yubikeySetupSchema>;
+export type YubikeyVerifyInput = z.infer<typeof yubikeyVerifySchema>;
+export type TwoFactorMethodSelectInput = z.infer<typeof twoFactorMethodSelectSchema>;
+export type YubikeyRemoveInput = z.infer<typeof yubikeyRemoveSchema>;
+
+// WebAuthn password change schema
+export const changePasswordWithWebAuthnSchema = z.object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(8, 'New password must be at least 8 characters'),
+    credential: z.object({
+        id: z.string(),
+        rawId: z.string(),
+        response: z.object({
+            authenticatorData: z.string(),
+            clientDataJSON: z.string(),
+            signature: z.string(),
+            userHandle: z.string().optional(),
+        }),
+        type: z.literal('public-key'),
+        clientExtensionResults: z.record(z.any()).default({}),
+    }),
+    challengeId: z.string(),
+});
+
+// WebAuthn types
+export type WebAuthnRegistrationStartInput = z.infer<typeof webauthnRegistrationStartSchema>;
+export type WebAuthnRegistrationCompleteInput = z.infer<typeof webauthnRegistrationCompleteSchema>;
+export type WebAuthnAuthenticationStartInput = z.infer<typeof webauthnAuthenticationStartSchema>;
+export type WebAuthnAuthenticationCompleteInput = z.infer<typeof webauthnAuthenticationCompleteSchema>;
+export type ChangePasswordWithWebAuthnInput = z.infer<typeof changePasswordWithWebAuthnSchema>;
 
 /** ================================ */
 /** ===== Access control schema ==== */

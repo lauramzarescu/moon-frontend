@@ -35,12 +35,10 @@ const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 
-// Check if we have a reset token in the URL on mount
 onMounted(() => {
     const token = route.query.token as string;
-    console.log('2FA Reset token from URL:', token);
+
     if (!token) {
-        // No token in URL, show error toast and redirect to login
         toast({
             title: 'Invalid Reset Link',
             description: 'No reset token found. Please request a new 2FA reset link.',
@@ -51,11 +49,9 @@ onMounted(() => {
     }
 
     resetToken.value = token;
-    console.log('2FA Reset token loaded from URL:', token);
 });
 
 const handleSubmit = async () => {
-    // Clear previous messages
     errorMessage.value = '';
     successMessage.value = '';
 

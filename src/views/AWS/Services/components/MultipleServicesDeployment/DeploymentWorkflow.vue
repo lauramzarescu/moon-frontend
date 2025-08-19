@@ -175,13 +175,9 @@ watch(
         }
 
         if (hasSignificantChange(newServices, oldServices)) {
-            console.log('Significant service changes detected, resetting workflow');
             resetState();
             currentStep.value = 1;
         } else {
-            // For minor updates (like status changes), just cleanup invalid services
-            // but preserve the current step and selections
-            console.log('Minor service updates detected, cleaning up invalid services');
             cleanupInvalidServices(transformServices(newServices));
         }
     },

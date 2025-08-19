@@ -9,17 +9,28 @@ import { toTypedSchema } from '@vee-validate/zod';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
-import VerificationCodeInput from '@/components/ui/verification-code-input/VerificationCodeInput.vue';
-import { LoginType } from '@/enums/user/user.enum.ts';
+import TwoFactorVerificationModal from '@/components/ui/two-factor-verification-modal/TwoFactorVerificationModal.vue';
+import { LoginType, TwoFactorMethod } from '@/enums/user/user.enum.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-vue-next';
-import { changePasswordSchema, changePasswordWith2FASchema } from '@/views/Settings/components/Team/schema.ts';
+import {
+    changePasswordSchema,
+    changePasswordWith2FASchema,
+    changePasswordWithWebAuthnSchema,
+} from '@/views/Settings/components/Team/schema.ts';
+import type { AuthenticationResponseJSON } from '@simplewebauthn/browser';
+import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
+
+const props = defineProps<{
+    twoFactorMethod?: TwoFactorMethod | null;
+}>();
 
 const showPasswordModal = ref(false);
+const show2FAVerificationModal = ref(false);
 const step = ref(1); // 1: Password form, 2: 2FA verification (if enabled)
 const isLoading = ref(false);
 const verificationCode = ref(['', '', '', '', '', '']);
+const verificationModalRef = ref<InstanceType<typeof TwoFactorVerificationModal> | null>(null);
 
 // Store form values between steps
 const formValues = ref({
@@ -60,7 +71,8 @@ async function onPasswordSubmit(values: any) {
 
     try {
         if (is2FAEnabled.value) {
-            step.value = 2;
+            showPasswordModal.value = false;
+            show2FAVerificationModal.value = true;
         } else {
             const data = changePasswordSchema.parse(values);
             await userService.changePassword(data);
@@ -68,6 +80,7 @@ async function onPasswordSubmit(values: any) {
             toast({
                 title: 'Password changed successfully',
                 description: 'Your password has been updated.',
+                variant: 'success',
             });
 
             resetForm();
@@ -84,40 +97,87 @@ async function onPasswordSubmit(values: any) {
 }
 
 // Handle 2FA verification and password change
-const confirmWithTwoFactor = async () => {
-    if (verificationCode.value.join('').length !== 6) return;
+const confirmWithTwoFactor = async (verifyData: { code: string; credential?: AuthenticationResponseJSON; challengeId?: string }) => {
+    if (!verificationModalRef.value) return;
 
-    isLoading.value = true;
+    verificationModalRef.value.setLoading(true);
+    verificationModalRef.value.clearError();
 
     try {
-        const code = verificationCode.value.join('');
-        const data = changePasswordWith2FASchema.parse({
-            ...formValues.value,
-            code,
-        });
-        await userService.changePasswordWith2FA(data);
+        if (verifyData.code === 'webauthn-pending') {
+            await handleWebAuthnPasswordChange();
+        } else {
+            // Handle regular 2FA (TOTP/YubiKey OTP)
+            const data = changePasswordWith2FASchema.parse({
+                ...formValues.value,
+                code: verifyData.code,
+            });
+            await userService.changePasswordWith2FA(data);
+        }
 
         toast({
             title: 'Password changed successfully',
             description: 'Your password has been updated.',
+            variant: 'success',
         });
 
         resetForm();
+        show2FAVerificationModal.value = false;
     } catch (error: any) {
-        resetVerificationCode(verificationCode.value, 'change-password-2fa');
-
-        toast({
-            title: 'Verification failed',
-            description: 'The verification code you entered is incorrect. Please try again.',
-            variant: 'destructive',
-        });
+        if (verifyData.code === 'webauthn-pending') {
+            verificationModalRef.value.setError('WebAuthn authentication failed. Please try again.');
+        } else {
+            verificationModalRef.value.setError('The verification code you entered is incorrect. Please try again.');
+        }
     } finally {
-        isLoading.value = false;
+        verificationModalRef.value.setLoading(false);
     }
+};
+
+const handleWebAuthnPasswordChange = async () => {
+    try {
+        if (!browserSupportsWebAuthn()) {
+            throw new Error(
+                'WebAuthn is not supported in your browser. Please use a different authentication method or update your browser.',
+            );
+        }
+
+        // Start WebAuthn password change process
+        const authResponse = await userService.startPasswordChangeWebAuthn();
+
+        if (!authResponse.challengeId) {
+            throw new Error('Invalid authentication response.');
+        }
+
+        // Get WebAuthn credential
+        const credential = await startAuthentication({
+            optionsJSON: authResponse.options,
+            useBrowserAutofill: false,
+        });
+
+        // Complete password change with WebAuthn
+        const data = changePasswordWithWebAuthnSchema.parse({
+            currentPassword: formValues.value.currentPassword,
+            newPassword: formValues.value.newPassword,
+            credential,
+            challengeId: authResponse.challengeId,
+        });
+
+        await userService.changePasswordWithWebAuthn(data);
+    } catch (error: any) {
+        console.error('WebAuthn password change error:', error);
+        throw error;
+    }
+};
+
+const handle2FACancel = () => {
+    show2FAVerificationModal.value = false;
+    showPasswordModal.value = true;
 };
 
 const resetForm = () => {
     showPasswordModal.value = false;
+    show2FAVerificationModal.value = false;
     step.value = 1;
     verificationCode.value = ['', '', '', '', '', ''];
     formValues.value = { currentPassword: '', newPassword: '', confirmPassword: '' };
@@ -217,32 +277,20 @@ const handleDialogClose = () => {
                         </DialogFooter>
                     </Form>
                 </div>
-
-                <!-- 2FA Verification (Step 2) -->
-                <div v-if="step === 2" class="space-y-6">
-                    <div class="text-sm text-center">
-                        <p class="font-medium mb-2">Two-Factor Authentication Required</p>
-                        <p class="text-foreground">
-                            For security reasons, please enter the current 6-digit code from your authenticator app to change your password.
-                        </p>
-                    </div>
-
-                    <VerificationCodeInput v-model:code="verificationCode" prefix="change-password-2fa" :disabled="isLoading" />
-
-                    <DialogFooter>
-                        <Button variant="outline" @click="step = 1" @keydown.esc="step = 1" :disabled="isLoading"> Back </Button>
-
-                        <Button
-                            @click="confirmWithTwoFactor"
-                            @keydown.enter="confirmWithTwoFactor"
-                            :disabled="isLoading || verificationCode.join('').length !== 6"
-                        >
-                            <span v-if="isLoading">Verifying...</span>
-                            <span v-else>Change Password</span>
-                        </Button>
-                    </DialogFooter>
-                </div>
             </DialogContent>
         </Dialog>
+
+        <!-- 2FA Verification Modal -->
+        <TwoFactorVerificationModal
+            ref="verificationModalRef"
+            v-model:open="show2FAVerificationModal"
+            title="Verify Password Change"
+            description="For security reasons, please verify your identity to change your password."
+            :two-factor-method="twoFactorMethod"
+            input-prefix="password-change-2fa"
+            @verify="confirmWithTwoFactor"
+            @cancel="handle2FACancel"
+            :is-password-change-flow="true"
+        />
     </div>
 </template>
