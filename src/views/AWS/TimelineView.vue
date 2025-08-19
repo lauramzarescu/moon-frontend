@@ -390,7 +390,7 @@ watch(auditLogs, () => {
                     <div
                         v-for="(lbl, idx) in stackedLabels"
                         :key="lbl + idx"
-                        class="text-[11px] font-medium text-muted-foreground/80 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-2 py-0.5 rounded border w-fit shadow-sm"
+                        class="text-[12px] font-semibold text-foreground bg-accent/50 backdrop-blur supports-[backdrop-filter]:bg-accent/40 px-2 py-0.5 rounded border border-accent w-fit shadow-sm"
                         :style="{ transform: `translateY(${idx * -2}px)` }"
                     >
                         {{ lbl }}
@@ -403,7 +403,7 @@ watch(auditLogs, () => {
                     :data-timeline-day="dayKey"
                     :data-day-label="labelForDay(dayKey)"
                 >
-                    <h3 class="text-sm font-semibold text-muted-foreground">{{ labelForDay(dayKey) }}</h3>
+                    <h3 class="text-base font-semibold text-muted-foreground bg-accent/40 inline-block px-2 py-0.5 rounded">{{ labelForDay(dayKey) }}</h3>
                 </div>
 
                 <div class="space-y-4">
