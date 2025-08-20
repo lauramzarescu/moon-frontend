@@ -29,17 +29,11 @@ export class AuditLogService extends ApiService {
         return this.get(`${this.resource}/${id}`);
     }
 
-    async getDeploymentsCount(params?: {
-        filter_startDate?: string;
-        filter_endDate?: string;
-    }) {
+    async getDeploymentsCount(params?: { filter_startDate?: string; filter_endDate?: string; tz?: string }) {
         return this.get<DeploymentsCountResponse>(`${this.resource}/widgets/deployments-count`, params);
     }
 
-    async getDeploymentsTimeline(params?: {
-        filter_startDate?: string;
-        filter_endDate?: string;
-    }) {
+    async getDeploymentsTimeline(params?: { filter_startDate?: string; filter_endDate?: string; tz?: string }) {
         return this.get<DeploymentsTimelineResponse>(`${this.resource}/widgets/deployments-timeline`, params);
     }
 }

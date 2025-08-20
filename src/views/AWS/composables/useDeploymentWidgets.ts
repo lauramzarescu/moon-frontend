@@ -73,9 +73,12 @@ export function useDeploymentWidgets() {
         deploymentsCountError.value = null;
 
         try {
-            const params: { filter_startDate?: string; filter_endDate?: string } = {};
+            const params: { filter_startDate?: string; filter_endDate?: string; tz?: string } = {};
             if (startDate) params.filter_startDate = startDate;
             if (endDate) params.filter_endDate = endDate;
+
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if (tz) params.tz = tz;
 
             const response = await auditLogService.getDeploymentsCount(params);
             deploymentsCount.value = response.count;
@@ -87,6 +90,7 @@ export function useDeploymentWidgets() {
                     const prevResponse = await auditLogService.getDeploymentsCount({
                         filter_startDate: prevStart,
                         filter_endDate: prevEnd,
+                        tz,
                     });
                     previousPeriodCount.value = prevResponse.count;
                 } catch (prevError) {
@@ -110,9 +114,10 @@ export function useDeploymentWidgets() {
         deploymentsTimelineError.value = null;
 
         try {
-            const params: { filter_startDate?: string; filter_endDate?: string } = {};
+            const params: { filter_startDate?: string; filter_endDate?: string; tz?: string } = {};
             if (startDate) params.filter_startDate = startDate;
             if (endDate) params.filter_endDate = endDate;
+            params.tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
             deploymentsTimeline.value = await auditLogService.getDeploymentsTimeline(params);
         } catch (error) {

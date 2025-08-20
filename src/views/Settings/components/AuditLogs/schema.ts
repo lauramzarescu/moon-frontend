@@ -121,6 +121,7 @@ export const paginationParamsSchema = z.object({
     filters: z.record(z.string(), z.string()).optional(),
     orderBy: z.string().optional(),
     order: z.enum(['asc', 'desc']).optional(),
+    tz: z.string().optional(),
 });
 
 export const paginationMetaSchema = z.object({
