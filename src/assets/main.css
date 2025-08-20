@@ -320,7 +320,7 @@
 :root {
     --background: rgb(253, 253, 253);
     --foreground: rgb(0, 0, 0);
-    --card: rgb(253, 253, 253);
+    --card: rgb(242, 242, 243);
     --card-foreground: rgb(0, 0, 0);
     --popover: rgb(252, 252, 252);
     --popover-foreground: rgb(0, 0, 0);

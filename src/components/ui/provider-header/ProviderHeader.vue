@@ -2,8 +2,10 @@
 import { useDataStore } from '@/stores/dataStore.ts';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronDownIcon } from '@radix-icons/vue';
+import { Clock, Cloud, RefreshCw } from 'lucide-vue-next';
 import { useSocket } from '@/composables/useSocket.ts';
 import StuckDeploymentBanner from '@/components/ui/stuck-deployment/StuckDeploymentBanner.vue';
 import InProgressDeploymentBanner from '@/components/ui/in-progress-deployment/InProgressDeploymentBanner.vue';
@@ -40,10 +42,6 @@ const handleManualRefresh = () => {
     store.manualRefresh();
 };
 
-const handleProgressiveLoadingChange = (checked: boolean) => {
-    store.toggleProgressiveLoading(checked);
-};
-
 onMounted(() => {
     setInterval(() => {
         currentDate.value = new Date();
@@ -58,117 +56,101 @@ onUnmounted(() => {
 });
 </script>
 <template>
-    <div class="flex gap-4 text-sm text-foreground">
-        <div class="flex items-center gap-2">
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-cloud"
-            >
-                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
-            </svg>
-            <span>Provider: AWS</span>
-        </div>
-        <div class="flex items-center gap-2">
-            <button
-                @click="handleManualRefresh"
-                class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-9 w-9"
-            >
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="lucide lucide-refresh-cw"
-                >
-                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                    <path d="M21 3v5h-5" />
-                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                    <path d="M3 21v-5h5" />
-                </svg>
-            </button>
-            <span>Last updated: {{ lastUpdated }}</span>
-        </div>
-
-        <div class="flex items-center gap-2">
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-clock"
-            >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span>{{ currentDate.toLocaleDateString() }} {{ currentDate.toLocaleTimeString() }}</span>
-        </div>
-
-        <Popover v-model:open="isPopoverOpen">
-            <PopoverTrigger as-child>
-                <Button variant="outline-default" class="ml-auto">
-                    {{
-                        store.refreshIsDynamic
-                            ? `Dynamic refresh (${store.refreshInterval}s)`
-                            : refreshOptions.find((option) => option.value === store.refreshInterval)?.label
-                    }}
-                    <ChevronDownIcon class="ml-2 h-4 w-4 text-foreground" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent class="p-0" align="end">
-                <div class="overflow-auto">
+    <div class="space-y-4">
+        <!-- Main Provider Header Card -->
+        <Card class="p-5 transition-all duration-300 hover:shadow-md">
+            <div class="flex items-center justify-between gap-6">
+                <!-- Left Section: Provider Info -->
+                <div class="flex items-center gap-4 flex-shrink-0">
                     <div
-                        v-for="option in refreshOptions"
-                        :key="option.value"
-                        :class="{
-                            'bg-accent rounded-lg text-foreground font-medium': store.refreshInterval === option.value,
-                        }"
-                        class="space-y-1 flex flex-col items-start px-4 py-2 cursor-pointer transition-colors hover:bg-muted/40 w-full"
-                        @click="handleRefreshIntervalChange(option.value)"
+                        class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-all duration-200 hover:bg-primary/15"
                     >
-                        <div class="flex items-center justify-between w-full">
-                            <p>{{ option.label }}</p>
-                            <span v-if="store.refreshInterval === option.value" class="ml-2 text-xs">✓</span>
-                        </div>
-                        <p class="text-sm text-muted-foreground">
-                            {{ option.description }}
-                        </p>
+                        <Cloud class="h-5 w-5" />
+                    </div>
+                    <div class="min-w-0">
+                        <h2 class="text-lg font-semibold text-foreground leading-tight">AWS Provider</h2>
+                        <p class="text-sm text-muted-foreground hidden sm:block">Cloud infrastructure management</p>
                     </div>
                 </div>
-            </PopoverContent>
-        </Popover>
 
-        <!--        <div class="flex items-center gap-2">-->
-        <!--            <label class="inline-flex items-center space-x-2">-->
-        <!--                <Switch v-model:checked="store.useProgressiveLoading" @update:checked="handleProgressiveLoadingChange" />-->
-        <!--                <span>Progressive Loading</span>-->
-        <!--            </label>-->
-        <!--        </div>-->
-    </div>
+                <!-- Center Section: Status and Time Info -->
+                <div class="flex items-center justify-center gap-8 text-sm text-muted-foreground flex-1 min-w-0">
+                    <!-- Last Updated -->
+                    <div class="flex items-center gap-3 min-w-0">
+                        <Button
+                            @click="handleManualRefresh"
+                            variant="outline-default"
+                            size="sm"
+                            class="h-7 w-7 p-0 transition-all duration-200 hover:scale-105 hover:shadow-sm group ml-1"
+                            title="Refresh data manually"
+                        >
+                            <RefreshCw class="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180" />
+                        </Button>
+                        <div class="flex items-center gap-2">
+                            <span class="hidden md:inline font-medium">Last updated:</span>
+                        </div>
+                        <span class="truncate text-foreground">{{ lastUpdated }}</span>
+                    </div>
 
-    <!-- Banners Row -->
-    <div class="flex gap-4 w-full">
-        <div class="flex-1">
+                    <!-- Current Time -->
+                    <div class="flex items-center gap-2 min-w-0 hidden lg:flex">
+                        <Clock class="h-4 w-4 flex-shrink-0" />
+                        <span class="truncate text-foreground font-medium">
+                            {{ currentDate.toLocaleDateString() }} {{ currentDate.toLocaleTimeString() }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Right Section: Refresh Settings -->
+                <div class="flex-shrink-0">
+                    <Popover v-model:open="isPopoverOpen">
+                        <PopoverTrigger as-child>
+                            <Button variant="outline-default" size="sm" class="transition-all duration-200 hover:shadow-sm">
+                                <span class="hidden lg:inline">
+                                    {{
+                                        store.refreshIsDynamic
+                                            ? `Dynamic refresh (${store.refreshInterval}s)`
+                                            : refreshOptions.find((option) => option.value === store.refreshInterval)?.label
+                                    }}
+                                </span>
+                                <span class="lg:hidden">
+                                    {{ store.refreshIsDynamic ? 'Dynamic' : `${store.refreshInterval}s` }}
+                                </span>
+                                <ChevronDownIcon
+                                    class="ml-2 h-4 w-4 transition-transform duration-200"
+                                    :class="{ 'rotate-180': isPopoverOpen }"
+                                />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="p-0" align="end">
+                            <div class="overflow-auto">
+                                <div
+                                    v-for="option in refreshOptions"
+                                    :key="option.value"
+                                    :class="{
+                                        'bg-accent rounded-lg text-foreground font-medium': store.refreshInterval === option.value,
+                                    }"
+                                    class="space-y-1 flex flex-col items-start px-4 py-2 cursor-pointer transition-colors hover:bg-muted/40 w-full"
+                                    @click="handleRefreshIntervalChange(option.value)"
+                                >
+                                    <div class="flex items-center justify-between w-full">
+                                        <p>{{ option.label }}</p>
+                                        <span v-if="store.refreshInterval === option.value" class="ml-2 text-xs">✓</span>
+                                    </div>
+                                    <p class="text-sm text-muted-foreground">
+                                        {{ option.description }}
+                                    </p>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+            </div>
+        </Card>
+
+        <!-- Deployment Banners -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <InProgressDeploymentBanner />
-        </div>
-        <div class="flex-1">
             <StuckDeploymentBanner />
         </div>
     </div>
