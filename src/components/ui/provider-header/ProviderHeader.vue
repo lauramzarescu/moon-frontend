@@ -3,6 +3,7 @@ import { useDataStore } from '@/stores/dataStore.ts';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ChevronDownIcon } from '@radix-icons/vue';
 import { Clock, Cloud, RefreshCw } from 'lucide-vue-next';
@@ -58,46 +59,57 @@ onUnmounted(() => {
 <template>
     <div class="space-y-4">
         <!-- Main Provider Header Card -->
-        <Card class="p-5 transition-all duration-300 hover:shadow-md">
-            <div class="flex items-center justify-between gap-6">
+        <Card class="p-3 md:p-3">
+            <div class="flex items-center justify-between gap-4">
                 <!-- Left Section: Provider Info -->
-                <div class="flex items-center gap-4 flex-shrink-0">
-                    <div
-                        class="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-all duration-200 hover:bg-primary/15"
-                    >
-                        <Cloud class="h-5 w-5" />
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <div class="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                        <Cloud class="h-4 w-4" />
                     </div>
                     <div class="min-w-0">
-                        <h2 class="text-lg font-semibold text-foreground leading-tight">AWS Provider</h2>
-                        <p class="text-sm text-muted-foreground hidden sm:block">Cloud infrastructure management</p>
+                        <h2 class="text-base font-semibold text-foreground leading-tight">AWS Provider</h2>
                     </div>
                 </div>
 
                 <!-- Center Section: Status and Time Info -->
-                <div class="flex items-center justify-center gap-8 text-sm text-muted-foreground flex-1 min-w-0">
-                    <!-- Last Updated -->
-                    <div class="flex items-center gap-3 min-w-0">
-                        <Button
-                            @click="handleManualRefresh"
-                            variant="outline-default"
-                            size="sm"
-                            class="h-7 w-7 p-0 transition-all duration-200 hover:scale-105 hover:shadow-sm group ml-1"
-                            title="Refresh data manually"
-                        >
-                            <RefreshCw class="h-3.5 w-3.5 transition-transform duration-200 group-hover:rotate-180" />
-                        </Button>
-                        <div class="flex items-center gap-2">
-                            <span class="hidden md:inline font-medium">Last updated:</span>
-                        </div>
-                        <span class="truncate text-foreground">{{ lastUpdated }}</span>
+                <div class="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
+                    <!-- Manual Refresh Button -->
+                    <Button
+                        @click="handleManualRefresh"
+                        variant="outline-default"
+                        size="sm"
+                        class="h-8 w-8 p-0 hover:shadow-sm group"
+                        aria-label="Refresh"
+                        title="Refresh data manually"
+                    >
+                        <RefreshCw class="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
+                    </Button>
+
+                    <!-- Refresh Mode Badge -->
+                    <Badge class="h-6 px-2 hidden sm:inline-flex items-center">
+                        {{
+                            store.refreshIsDynamic
+                                ? `Dynamic (${store.refreshInterval}s)`
+                                : store.refreshInterval > 0
+                                  ? `Auto: ${store.refreshInterval}s`
+                                  : 'Manual'
+                        }}
+                    </Badge>
+
+                    <!-- Last Updated Chip -->
+                    <div class="inline-flex items-center gap-1.5 text-sm rounded-md border bg-background border-input px-4 py-1 min-w-0">
+                        <Clock class="h-3.5 w-3.5 text-muted-foreground" />
+                        <span class="hidden md:inline text-muted-foreground">Last updated</span>
+                        <span class="text-foreground">{{ lastUpdated }}</span>
                     </div>
 
-                    <!-- Current Time -->
-                    <div class="flex items-center gap-2 min-w-0 hidden lg:flex">
-                        <Clock class="h-4 w-4 flex-shrink-0" />
-                        <span class="truncate text-foreground font-medium">
-                            {{ currentDate.toLocaleDateString() }} {{ currentDate.toLocaleTimeString() }}
-                        </span>
+                    <!-- Current Time Chip -->
+                    <div
+                        class="hidden md:inline-flex items-center text-sm gap-1.5 rounded-md border bg-background border-input px-4 py-1 min-w-0"
+                    >
+                        <Clock class="h-3.5 w-3.5 text-muted-foreground" />
+                        <span class="hidden md:inline text-muted-foreground">Current time</span>
+                        <span class="text-foreground"> {{ currentDate.toLocaleDateString() }} {{ currentDate.toLocaleTimeString() }} </span>
                     </div>
                 </div>
 
@@ -105,7 +117,7 @@ onUnmounted(() => {
                 <div class="flex-shrink-0">
                     <Popover v-model:open="isPopoverOpen">
                         <PopoverTrigger as-child>
-                            <Button variant="outline-default" size="sm" class="transition-all duration-200 hover:shadow-sm">
+                            <Button variant="outline-default" size="sm" class="hover:shadow-sm">
                                 <span class="hidden lg:inline">
                                     {{
                                         store.refreshIsDynamic
