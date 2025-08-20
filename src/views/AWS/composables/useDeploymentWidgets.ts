@@ -27,27 +27,88 @@ export function useDeploymentWidgets() {
         return Math.round(((current - previous) / previous) * 100);
     });
 
-    const chartData = computed(() => ({
-        labels: deploymentsTimeline.value.labels || Array.from({ length: deploymentsTimeline.value.data.length }, (_, i) => i + 1),
-        datasets: [
-            {
-                data: deploymentsTimeline.value.data,
-                borderColor: 'hsl(221.2 83.2% 53.3%)',
-                backgroundColor: 'hsl(221.2 83.2% 53.3% / 0.15)',
-                fill: true,
-                tension: 0.35,
-                borderWidth: 2,
-                pointRadius: 0,
-            },
-        ],
-    }));
+    // Computed property to check if chart has data
+    const hasChartData = computed(() => {
+        return deploymentsTimeline.value.data && deploymentsTimeline.value.data.length > 0;
+    });
+
+    // Computed property to check if chart has single data point
+    const hasSingleDataPoint = computed(() => {
+        return deploymentsTimeline.value.data && deploymentsTimeline.value.data.length === 1;
+    });
+
+    const chartData = computed(() => {
+        const data = deploymentsTimeline.value.data || [];
+        const labels = deploymentsTimeline.value.labels || Array.from({ length: data.length }, (_, i) => i + 1);
+
+        return {
+            labels,
+            datasets: [
+                {
+                    data,
+                    borderColor: 'hsl(221.2 83.2% 53.3%)',
+                    backgroundColor: 'hsl(221.2 83.2% 53.3% / 0.15)',
+                    fill: true,
+                    tension: hasSingleDataPoint.value ? 0 : 0.35,
+                    borderWidth: 2,
+                    pointRadius: hasSingleDataPoint.value ? 4 : 0,
+                    pointHoverRadius: hasSingleDataPoint.value ? 6 : 4,
+                    pointBackgroundColor: 'hsl(221.2 83.2% 53.3%)',
+                    pointBorderColor: 'hsl(221.2 83.2% 53.3%)',
+                    pointBorderWidth: 2,
+                },
+            ],
+        };
+    });
 
     const chartOptions = computed(() => ({
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { enabled: true } },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                enabled: true,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: 'white',
+                bodyColor: 'white',
+                borderColor: 'hsl(221.2 83.2% 53.3%)',
+                borderWidth: 1,
+                cornerRadius: 6,
+                displayColors: false,
+                callbacks: {
+                    title: function(context: any) {
+                        const dataIndex = context[0]?.dataIndex;
+                        const labels = deploymentsTimeline.value.labels;
+
+                        if (labels && labels[dataIndex]) {
+                            // If we have proper date labels, format them nicely
+                            const date = moment(labels[dataIndex]);
+                            if (date.isValid()) {
+                                return date.format('MMM D, YYYY');
+                            }
+                            return labels[dataIndex];
+                        }
+
+                        // Fallback to generic label
+                        return `Data Point ${dataIndex + 1}`;
+                    },
+                    label: function(context: any) {
+                        const value = context.parsed.y;
+                        const deploymentText = value === 1 ? 'deployment' : 'deployments';
+                        return `${value} ${deploymentText}`;
+                    }
+                }
+            }
+        },
         scales: { x: { display: false }, y: { display: false } },
-        elements: { line: { borderJoinStyle: 'round', capBezierPoints: true }, point: { radius: 0 } },
+        elements: {
+            line: { borderJoinStyle: 'round', capBezierPoints: true },
+            point: { radius: hasSingleDataPoint.value ? 4 : 0 }
+        },
+        interaction: {
+            intersect: false,
+            mode: 'index'
+        }
     }));
 
     // Helper function to calculate previous period dates using Moment.js
@@ -147,6 +208,8 @@ export function useDeploymentWidgets() {
         deploymentsDelta,
         chartData,
         chartOptions,
+        hasChartData,
+        hasSingleDataPoint,
 
         // Methods
         fetchDeploymentsCount,

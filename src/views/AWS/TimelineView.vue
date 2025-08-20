@@ -20,6 +20,8 @@ const {
     deploymentsTimelineLoading,
     chartData,
     chartOptions,
+    hasChartData,
+    hasSingleDataPoint,
     fetchAllWidgetData,
 } = useDeploymentWidgets();
 
@@ -365,6 +367,12 @@ watch(auditLogs, () => {
                 </div>
                 <div v-if="deploymentsTimelineLoading" class="flex items-center justify-center mt-3 h-24">
                     <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                </div>
+                <div v-else-if="!hasChartData" class="flex items-center justify-center mt-3 h-24">
+                    <div class="text-center text-muted-foreground">
+                        <div class="text-sm">No deployment data available</div>
+                        <div class="text-xs mt-1">Try adjusting your date range</div>
+                    </div>
                 </div>
                 <div v-else class="mt-3 h-24">
                     <Chart type="line" :data="chartData" :options="chartOptions" style="width: 100%; height: 100%" />
