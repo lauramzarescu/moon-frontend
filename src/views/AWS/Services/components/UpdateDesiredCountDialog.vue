@@ -4,12 +4,12 @@
             <Button
                 :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
                 @click="emit('dialog-open')"
-                variant="secondary"
-                size="sm"
-                class="h-7 px-2 gap-1"
+                variant="outline"
+                size="default"
+                class="px-4 py-2 gap-2 transition-all duration-200 hover:shadow-sm group"
             >
-                <Edit2Icon class="h-3.5 w-3.5" />
-                <span class="text-xs">Update count</span>
+                <Edit2Icon class="h-4 w-4 transition-transform duration-200 group-hover:rotate-12" />
+                <span class="text-sm">Update Count</span>
             </Button>
         </DialogTrigger>
         <DialogContent class="sm:max-w-[425px]">
@@ -30,20 +30,25 @@
                         <Button
                             variant="outline"
                             size="icon"
-                            class="h-8 w-8 shrink-0 rounded-full"
+                            class="h-8 w-8 shrink-0 rounded-full transition-all duration-200 hover:shadow-md"
                             @click="decrementCount"
                             :disabled="desiredCount <= 0"
                         >
-                            <MinusIcon class="h-4 w-4" />
+                            <MinusIcon class="h-4 w-4 transition-transform duration-200" />
                             <span class="sr-only">Decrease</span>
                         </Button>
                         <div class="flex-1 text-center">
-                            <div class="text-5xl font-bold tracking-tighter">
+                            <div class="text-5xl font-bold tracking-tighter transition-all duration-300">
                                 {{ desiredCount }}
                             </div>
                         </div>
-                        <Button variant="outline" size="icon" class="h-8 w-8 shrink-0 rounded-full" @click="incrementCount">
-                            <PlusIcon class="h-4 w-4" />
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            class="h-8 w-8 shrink-0 rounded-full transition-all duration-200 hover:shadow-md"
+                            @click="incrementCount"
+                        >
+                            <PlusIcon class="h-4 w-4 transition-transform duration-200" />
                             <span class="sr-only">Increase</span>
                         </Button>
                     </div>

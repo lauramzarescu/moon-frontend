@@ -105,20 +105,20 @@ const redeployOpen = ref(false);
                 <Button
                     size="sm"
                     variant="outline"
-                    class="h-7 px-2 disabled:cursor-not-allowed border-blue-500/40 dark:text-blue-300 text-blue-600 hover:bg-blue-500/10"
+                    class="h-7 px-3 disabled:cursor-not-allowed border-blue-500/40 dark:text-blue-300 text-blue-600 hover:bg-blue-500/10"
                     :disabled="!oldImage || oldImage === newImage"
                     @click="rollbackOpen = true"
                 >
-                    <RotateCcw class="h-3 w-3 mr-1" /> Rollback</Button
+                    <RotateCcw class="h-3 w-3" /> Rollback</Button
                 >
 
                 <Button
                     size="sm"
                     variant="outline"
-                    class="h-7 px-2 border-red-500/40 dark:text-red-300 text-red-600 hover:bg-red-500/10"
+                    class="h-7 px-3 border-red-500/40 dark:text-red-300 text-red-600 hover:bg-red-500/10"
                     @click="redeployOpen = true"
                 >
-                    <Play class="h-3 w-3 mr-1" /> Redeploy</Button
+                    <Play class="h-3 w-3" /> Redeploy</Button
                 >
                 <span v-if="cluster" class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-muted border">
                     <Server class="h-3 w-3 text-muted-foreground" /> {{ cluster }}
