@@ -85,6 +85,10 @@ onUnmounted(() => {
                         <RefreshCw class="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
                     </Button>
 
+                    <!-- Deployment Status Badges -->
+                    <InProgressDeploymentBanner />
+                    <StuckDeploymentBanner />
+
                     <!-- Refresh Mode Badge -->
                     <Badge class="h-6 px-2 hidden sm:inline-flex items-center">
                         {{
@@ -160,10 +164,6 @@ onUnmounted(() => {
             </div>
         </Card>
 
-        <!-- Deployment Banners -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <InProgressDeploymentBanner />
-            <StuckDeploymentBanner />
-        </div>
+
     </div>
 </template>
