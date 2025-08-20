@@ -92,11 +92,6 @@
         :initial-section="'overview'"
         @update:isOpen="isServiceDrawerOpen = $event"
     />
-
-    <DialogFooter class="flex-shrink-0">
-        <Button variant="outline" @click="$emit('update:isOpen', false)">Close</Button>
-        <Button @click="dataStore.manualRefresh">Refresh Data</Button>
-    </DialogFooter>
 </template>
 
 <script setup lang="ts">

@@ -60,6 +60,11 @@
                     </div>
                 </Card>
             </div>
+
+            <DialogFooter>
+                <Button variant="outline" @click="$emit('update:isOpen', false)">Close</Button>
+                <Button @click="dataStore.manualRefresh">Refresh Data</Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
 
@@ -78,7 +83,7 @@
 import { ref } from 'vue';
 import { useDataStore } from '@/stores/dataStore';
 import moment from 'moment';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
