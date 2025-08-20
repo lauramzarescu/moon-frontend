@@ -6,7 +6,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Button } from '@/components/ui/button';
 import UpdateServiceImageDialog from '@/views/AWS/Services/components/UpdateServiceImageDialog.vue';
 import Progress from '@/components/ui/progress/Progress.vue';
-import { Clock, Info, Play, Rocket, RotateCcw, Server } from 'lucide-vue-next';
+import { Check, Clock, Copy, Info, Play, Rocket, RotateCcw, Server } from 'lucide-vue-next';
+import { copyToClipboard as copyToClipboardHelper } from '@/composables/useClipboard';
 
 const props = defineProps<{ deployment: AuditLog }>();
 const emit = defineEmits<{
@@ -60,6 +61,12 @@ const createdAt = computed(() => new Date(props.deployment.createdAt));
 
 const rollbackOpen = ref(false);
 const redeployOpen = ref(false);
+
+const copiedDesc = ref(false);
+const onCopyDescription = async (text: string) => {
+    copiedDesc.value = await copyToClipboardHelper(text);
+    setTimeout(() => (copiedDesc.value = false), 2000);
+};
 </script>
 
 <template>
@@ -155,9 +162,19 @@ const redeployOpen = ref(false);
         <!-- Context badges moved near actions -->
 
         <!-- Description -->
-        <div v-if="props.deployment.details?.info && (info.description as string | undefined)" class="mt-3 text-sm">
+        <div v-if="props.deployment.details?.info && (info.description as string | undefined)" class="mt-3 text-sm group">
             <span class="text-muted-foreground">Description:</span>
-            <span class="text-foreground font-medium ml-2">{{ info.description as string }}</span>
+            <span class="text-foreground font-medium ml-2 break-all">{{ info.description as string }}</span>
+            <button
+                v-if="info.description"
+                class="inline-flex items-center gap-1 text-xs ml-4 text-muted-foreground hover:text-foreground transition-all duration-200 opacity-0 group-hover:opacity-100"
+                :aria-label="copiedDesc ? 'Copied' : 'Copy description'"
+                :title="copiedDesc ? 'Copied' : 'Copy description'"
+                @click="onCopyDescription(String(info.description))"
+            >
+                <component :is="copiedDesc ? Check : Copy" class="h-3.5 w-3.5" />
+                <span>{{ copiedDesc ? 'Copied' : '' }}</span>
+            </button>
         </div>
 
         <!-- Confirm Rollback Dialog (reuse UpdateServiceImageDialog confirm view) -->
