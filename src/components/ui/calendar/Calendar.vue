@@ -18,17 +18,32 @@ import {
     CalendarPrevButton,
 } from '.';
 
-const props = defineProps<CalendarRootProps & { class?: HTMLAttributes['class'] }>();
+const props = defineProps<
+    CalendarRootProps & {
+        class?: HTMLAttributes['class'];
+        // ISO date strings YYYY-MM-DD to visually highlight a range
+        rangeStart?: string;
+        rangeEnd?: string;
+    }
+>();
 
 const emits = defineEmits<CalendarRootEmits>();
 
 const delegatedProps = computed(() => {
-    const { class: _, ...delegated } = props;
-
+    const { class: _c, rangeStart: _rs, rangeEnd: _re, ...delegated } = props as any;
     return delegated;
 });
 
 const forwarded = useForwardPropsEmits(delegatedProps, emits);
+
+const startIso = computed(() => props.rangeStart || '');
+const endIso = computed(() => props.rangeEnd || '');
+
+const inRangeClass = (iso: string) => {
+    if (!startIso.value || !endIso.value) return '';
+    if (iso >= startIso.value && iso <= endIso.value) return 'bg-accent/40 text-foreground';
+    return '';
+};
 </script>
 
 <template>
@@ -51,7 +66,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
                 <CalendarGridBody>
                     <CalendarGridRow v-for="(weekDates, index) in month.rows" :key="`weekDate-${index}`" class="mt-2 w-full">
                         <CalendarCell v-for="weekDate in weekDates" :key="weekDate.toString()" :date="weekDate">
-                            <CalendarCellTrigger :day="weekDate" :month="month.value" />
+                            <CalendarCellTrigger :day="weekDate" :month="month.value" :class="inRangeClass(weekDate.toString())" />
                         </CalendarCell>
                     </CalendarGridRow>
                 </CalendarGridBody>

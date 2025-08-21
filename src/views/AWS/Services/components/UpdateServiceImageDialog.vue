@@ -1,10 +1,10 @@
 <template>
     <Button
         v-if="!hideTrigger"
-        :variant="isClusterProduction ? 'destructive' : 'secondary'"
-        size="sm"
+        :variant="isClusterProduction ? 'destructive' : 'outline'"
+        size="default"
         :class="[
-            'h-7 px-2 gap-1',
+            'px-4 py-2 gap-2 transition-all duration-200 hover:shadow-sm group',
             isClusterProduction &&
                 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900',
         ]"
@@ -14,9 +14,9 @@
         "
         :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
     >
-        <ShieldAlertIcon v-if="isClusterProduction" class="h-3.5 w-3.5" />
-        <Edit2Icon v-else class="h-3.5 w-3.5" />
-        <span class="text-xs">{{ isClusterProduction ? 'Update Production' : 'Update Image' }}</span>
+        <ShieldAlertIcon v-if="isClusterProduction" class="h-4 w-4 transition-transform duration-200" />
+        <Edit2Icon v-else class="h-4 w-4 transition-transform duration-200 group-hover:rotate-12" />
+        <span class="text-sm">{{ isClusterProduction ? 'Update Production' : 'Update Image' }}</span>
     </Button>
 
     <Dialog v-model:open="isDialogOpen">

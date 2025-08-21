@@ -28,6 +28,8 @@ export function useAuditLogs() {
         userId: '',
         userEmail: '',
         action: '',
+        startDate: '',
+        endDate: '',
     });
 
     // Sorting
@@ -88,12 +90,14 @@ export function useAuditLogs() {
                 }
             });
 
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
             const params: PaginationParams & { filters?: Record<string, any> } = {
                 page,
                 limit: pagination.limit,
                 orderBy: sorting.orderBy,
                 order: sorting.order,
                 filters: activeFilters,
+                tz,
             };
 
             const response = await auditLogService.getAll(params);

@@ -49,18 +49,7 @@
                             <!-- Resource Widgets -->
                             <div class="grid grid-cols-12 gap-4">
                                 <CustomWidget class="col-span-6" title="Image" :value="container.image ?? 'N/A'" :icon="ImageIcon">
-                                    <template #icon>
-                                        <UpdateServiceImageDialog
-                                            :current-image="container.image"
-                                            :container-name="container.name"
-                                            :cluster-name="props.row.clusterName"
-                                            :service-name="props.row.name"
-                                            :is-cluster-production="props.row.isClusterProduction"
-                                            @image-updated="$emit('refresh')"
-                                            @dialog-open="handleDialogToggle(true)"
-                                            @dialog-close="handleDialogToggle(false)"
-                                        />
-                                    </template>
+                                    <template #icon> </template>
                                 </CustomWidget>
 
                                 <CustomWidget class="col-span-3" title="Memory" :value="container.memory ?? 'N/A'" :icon="MemoryStickIcon">
@@ -91,7 +80,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContainerIcon, CpuIcon, ImageIcon, MemoryStickIcon } from 'lucide-vue-next';
 import CustomWidget from '@/components/ui/custom-widget/CustomWidget.vue';
-import UpdateServiceImageDialog from './UpdateServiceImageDialog.vue';
 import SecretsTable from './SecretsTable.vue';
 import { ref } from 'vue';
 import { useDataStore } from '@/stores/dataStore.ts';

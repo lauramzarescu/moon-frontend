@@ -1,6 +1,6 @@
 <template>
     <Sheet :open="isOpen" @update:open="$emit('update:isOpen', $event)">
-        <SheetContent side="right" class="min-w-[40%] max-w-[90vw]">
+        <SheetContent side="right" class="min-w-[40%] max-w-[90vw] bg-background">
             <SheetHeader class="border-b pb-4">
                 <SheetTitle class="flex items-center gap-3">
                     <span class="font-bold text-xl">Audit Log Details</span>
@@ -8,16 +8,16 @@
                 <SheetDescription>Detailed information for audit log entry</SheetDescription>
             </SheetHeader>
 
-            <div class="mt-6 overflow-auto h-[calc(100vh-120px)] px-2 pb-5">
+            <div class="mt-6 overflow-auto h-[calc(100vh-120px)] px-2 pb-5 bg-background">
                 <div v-if="log" class="space-y-6">
                     <!-- Navigation Tabs -->
-                    <div v-if="hasDiffData" class="flex space-x-1 bg-muted p-1 rounded-lg">
+                    <div v-if="hasDiffData" class="flex space-x-1 bg-muted p-1 rounded-lg border">
                         <button
                             @click="$emit('update:activeSection', 'overview')"
                             :class="[
                                 'flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors',
                                 activeSection === 'overview'
-                                    ? 'bg-background text-foreground shadow-sm'
+                                    ? 'bg-background text-foreground shadow-sm border'
                                     : 'text-muted-foreground hover:text-foreground',
                             ]"
                         >
@@ -124,7 +124,7 @@
                             <label class="text-sm font-medium text-foreground mb-4 block">Object Changes</label>
 
                             <!-- GitHub-style Diff View -->
-                            <div class="border rounded-lg overflow-hidden bg-background">
+                            <div class="border rounded-lg overflow-hidden bg-card">
                                 <div class="bg-muted px-4 py-2 border-b">
                                     <h4 class="text-sm font-medium text-foreground">Changes</h4>
                                 </div>

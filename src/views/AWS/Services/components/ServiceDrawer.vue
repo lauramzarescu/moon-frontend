@@ -1,56 +1,75 @@
 <template :inert="showRestartDialog">
-    <Drawer :autofocus="true" v-model:open="isOpen">
-        <DrawerContent class="h-[calc(100%-theme(spacing.20))]">
-            <DrawerHeader class="border-b">
-                <DrawerTitle class="flex items-center gap-3">
-                    <GearIcon class="h-6 w-6 text-primary" />
-                    <span class="font-bold text-xl">{{ props.row.name }}</span>
+    <Dialog v-model:open="isOpen">
+        <DialogContent class="max-w-7xl w-[95vw] h-[90vh] max-h-[90vh] overflow-hidden flex flex-col">
+            <DialogHeader class="flex-shrink-0 border-b pb-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                            <GearIcon class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <DialogTitle class="text-xl font-semibold">{{ props.row.name }}</DialogTitle>
+                            <DialogDescription class="text-sm text-muted-foreground">
+                                Service configuration and management
+                            </DialogDescription>
+                        </div>
+                    </div>
 
-                    <Button
-                        :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
-                        variant="secondary"
-                        size="sm"
-                        class="h-7 px-2 gap-1"
-                        @click="showRestartDialog = true"
-                    >
-                        <RefreshCwIcon class="h-3.5 w-3.5" />
-                        <span class="text-xs">Restart</span>
-                    </Button>
-                </DrawerTitle>
+                    <div class="flex items-center gap-3 mr-5">
+                        <!-- Update Count Button -->
+                        <UpdateDesiredCountDialog
+                            :current-count="props.row?.desiredCount"
+                            :service-arn="props.row?.taskDefinition.arn"
+                            :cluster-name="props.row?.clusterName"
+                            :service-name="props.row?.name"
+                            @count-updated="handleCountUpdated"
+                        />
 
-                <DrawerDescription class="sr-only"> Configuration for {{ props.row.name }} service</DrawerDescription>
-            </DrawerHeader>
+                        <UpdateServiceImageDialog
+                            :current-image="props.row.containers[0].image"
+                            :container-name="props.row.containers[0].name"
+                            :cluster-name="props.row.clusterName"
+                            :service-name="props.row.name"
+                            :is-cluster-production="props.row.isClusterProduction"
+                        />
 
-            <div class="flex h-[calc(100%-80px)]">
-                <!-- Left Navigation -->
-                <div class="w-64 p-4">
-                    <div class="space-y-1">
-                        <button
-                            v-for="section in ['Overview', 'Containers']"
-                            :key="section"
-                            @click="activeSection = section.toLowerCase()"
-                            :class="[
-                                'w-full text-left px-4 py-3 rounded-lg font-medium',
-                                activeSection === section.toLowerCase() ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/50',
-                            ]"
+                        <!-- Restart Service Button -->
+                        <Button
+                            :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
+                            variant="outline"
+                            size="default"
+                            class="transition-all duration-200 hover:shadow-sm group px-4 py-2"
+                            @click="showRestartDialog = true"
                         >
-                            {{ section }}
-                        </button>
+                            <RefreshCwIcon class="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
+                            Restart Service
+                        </Button>
                     </div>
                 </div>
 
-                <!-- Right Content -->
-                <div class="flex-1 p-6 overflow-auto">
-                    <ServiceOverviewTab :row="props.row" v-if="activeSection === 'overview'" class="space-y-6" />
-
-                    <!-- Container Section -->
-                    <div v-if="activeSection === 'containers'" class="space-y-6">
-                        <ServiceContainerTab :row="props.row" class="space-y-6" />
-                    </div>
+                <!-- Tab Navigation -->
+                <div class="flex gap-2 mt-4">
+                    <Button
+                        v-for="section in ['Overview', 'Containers']"
+                        :key="section"
+                        @click="activeSection = section.toLowerCase()"
+                        :variant="activeSection === section.toLowerCase() ? 'default' : 'ghost'"
+                        size="sm"
+                        class="transition-all duration-200"
+                        :class="[activeSection === section.toLowerCase() ? 'shadow-sm' : 'hover:bg-muted/50']"
+                    >
+                        {{ section }}
+                    </Button>
                 </div>
+            </DialogHeader>
+
+            <!-- Content Area -->
+            <div class="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
+                <ServiceOverviewTab :row="props.row" v-if="activeSection === 'overview'" />
+                <ServiceContainerTab :row="props.row" v-if="activeSection === 'containers'" />
             </div>
-        </DrawerContent>
-    </Drawer>
+        </DialogContent>
+    </Dialog>
 
     <!-- Restart Service Confirmation Dialog -->
     <RestartServiceDialog
@@ -65,7 +84,7 @@
 </template>
 
 <script setup lang="ts" generic="TData extends ServiceInterface">
-import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { GearIcon } from '@radix-icons/vue';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import { computed, ref, watch } from 'vue';
@@ -75,6 +94,8 @@ import { Button } from '@/components/ui/button';
 import { RefreshCwIcon } from 'lucide-vue-next';
 import { AwsService } from '@/services/aws.service.ts';
 import RestartServiceDialog from '@/views/AWS/Services/components/RestartServiceDialog.vue';
+import UpdateDesiredCountDialog from '@/views/AWS/Services/components/UpdateDesiredCountDialog.vue';
+import UpdateServiceImageDialog from '@/views/AWS/Services/components/UpdateServiceImageDialog.vue';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
 
@@ -115,5 +136,13 @@ const handleRestartService = async (data: { serviceName: string; clusterName: st
         clusterName: data.clusterName,
     });
     emit('dialog-close');
+};
+
+const handleCountUpdated = () => {
+    // Handle count update if needed
+};
+
+const handleImageUpdated = () => {
+    // Handle image update if needed
 };
 </script>

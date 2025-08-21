@@ -1,49 +1,53 @@
 <template>
     <!-- Combined Task Definition and Service Metrics -->
-    <Card class="mb-4 overflow-hidden border-none" :inert="isDialogOpen">
+    <Card class="mb-6 overflow-hidden transition-all duration-200 hover:shadow-md" :inert="isDialogOpen">
         <div class="flex">
-            <div class="w-2 h-full bg-primary"></div>
+            <div class="w-1 h-full bg-gradient-to-b from-primary to-primary/60"></div>
             <div class="flex-1">
-                <CardHeader class="py-3">
+                <CardHeader class="py-4">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="p-2 rounded-lg bg-primary/10">
-                                <ServerIcon class="w-4 h-4 text-primary" />
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-lg bg-primary/10 transition-colors duration-200 hover:bg-primary/15">
+                                <ServerIcon class="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                                <CardTitle class="text-base">{{ props.row?.taskDefinition?.family ?? 'N/A' }} </CardTitle>
-                                <CardDescription class="text-xs">Task Definition Configuration</CardDescription>
+                                <CardTitle class="text-lg font-semibold">{{ props.row?.taskDefinition?.family ?? 'N/A' }} </CardTitle>
+                                <CardDescription class="text-sm text-muted-foreground">Task Definition Configuration</CardDescription>
                             </div>
                         </div>
-                        <Badge class="text-xs px-2 py-1 rounded-md bg-primary/10 text-primary border-none">
+                        <Badge class="text-sm px-3 py-1.5 rounded-lg bg-primary/10 text-primary border-none font-medium">
                             Revision {{ props.row?.taskDefinition?.revision ?? 'N/A' }}
                         </Badge>
                     </div>
                 </CardHeader>
 
-                <CardContent>
-                    <div class="grid grid-cols-2 gap-3 mb-4">
+                <CardContent class="pt-0">
+                    <div class="grid grid-cols-2 gap-4 mb-6">
                         <!-- Status -->
-                        <div class="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <div class="p-1.5 bg-blue-100 dark:bg-blue-900 rounded-md">
-                                <ActivityIcon class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <div
+                            class="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-all duration-200 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                        >
+                            <div class="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                                <ActivityIcon class="w-4 h-4 text-blue-600 dark:text-blue-400" />
                             </div>
                             <div>
-                                <div class="text-xs text-blue-700 dark:text-blue-300">Status</div>
-                                <div class="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                <div class="text-sm font-medium text-blue-700 dark:text-blue-300">Status</div>
+                                <div class="text-base font-semibold text-blue-600 dark:text-blue-400">
                                     {{ props.row?.taskDefinition?.status ?? 'N/A' }}
                                 </div>
                             </div>
                         </div>
 
                         <!-- Registration Time -->
-                        <div class="flex items-center gap-2 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                            <div class="p-1.5 bg-purple-100 dark:bg-purple-900 rounded-md">
-                                <CalendarIcon class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                        <div
+                            class="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg transition-all duration-200 hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                        >
+                            <div class="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                                <CalendarIcon class="w-4 h-4 text-purple-600 dark:text-purple-400" />
                             </div>
                             <div>
-                                <div class="text-xs text-purple-700 dark:text-purple-300">Registered</div>
-                                <div class="text-xs font-semibold text-purple-600 dark:text-purple-400">
+                                <div class="text-sm font-medium text-purple-700 dark:text-purple-300">Registered</div>
+                                <div class="text-sm font-semibold text-purple-600 dark:text-purple-400">
                                     {{
                                         props.row?.taskDefinition?.registeredAt
                                             ? new Date(props.row.taskDefinition.registeredAt).toLocaleString()
@@ -60,21 +64,7 @@
                     <div class="grid grid-cols-3 gap-4">
                         <!-- Desired Count -->
                         <CustomWidget title="Desired Count" :value="props.row?.desiredCount ?? 'N/A'" :icon="ServerIcon">
-                            <template #icon>
-                                <div class="flex items-center gap-2">
-                                    <UpdateDesiredCountDialog
-                                        inert
-                                        autofocus
-                                        :current-count="props.row?.desiredCount"
-                                        :service-arn="props.row?.taskDefinition.arn"
-                                        :cluster-name="props.row?.clusterName"
-                                        :service-name="props.row?.name"
-                                        @count-updated="handleCountUpdated"
-                                        @dialog-close="handleDialogToggle(false)"
-                                        @dialog-open="handleDialogToggle(true)"
-                                    />
-                                </div>
-                            </template>
+                            <template #icon> </template>
                         </CustomWidget>
 
                         <!-- Running Tasks -->
@@ -89,35 +79,33 @@
     </Card>
 
     <!-- Latest Deployment Status -->
-    <Card class="overflow-hidden mb-4 border-none" v-if="latestDeployment">
+    <Card class="overflow-hidden mb-6 transition-all duration-200 hover:shadow-md" v-if="latestDeployment">
         <div class="flex">
             <div
-                class="w-2 h-full"
+                class="w-1 h-full transition-all duration-300"
                 :class="{
-                    'bg-green-500': latestDeployment.status === 'PRIMARY' || latestDeployment.status === 'ACTIVE',
-                    'bg-red-500': latestDeployment.status === 'FAILED',
-                    'bg-yellow-500': latestDeployment.status === 'PENDING',
+                    'bg-gradient-to-b from-green-500 to-green-400':
+                        latestDeployment.status === 'PRIMARY' || latestDeployment.status === 'ACTIVE',
+                    'bg-gradient-to-b from-red-500 to-red-400': latestDeployment.status === 'FAILED',
+                    'bg-gradient-to-b from-yellow-500 to-yellow-400': latestDeployment.status === 'PENDING',
                 }"
             ></div>
 
             <div class="flex-1">
-                <CardHeader class="py-3">
+                <CardHeader class="py-4">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="p-2 rounded-lg bg-primary/10">
-                                <RocketIcon class="w-4 h-4 text-primary" />
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-lg bg-primary/10 transition-colors duration-200 hover:bg-primary/15">
+                                <RocketIcon class="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                                <CardTitle class="text-base">Latest Deployment</CardTitle>
-                                <CardDescription class="text-xs">
+                                <CardTitle class="text-lg font-semibold">Latest Deployment</CardTitle>
+                                <CardDescription class="text-sm text-muted-foreground">
                                     Deployed {{ new Date(latestDeployment.createdAt).toLocaleString() }}
                                 </CardDescription>
                             </div>
                         </div>
-                        <Badge
-                            :variant="getStatusVariant(latestDeployment.status)"
-                            class="text-xs px-2 py-1 rounded-md bg-primary/10 text-primary border-none"
-                        >
+                        <Badge :variant="getStatusVariant(latestDeployment.status)" class="text-sm px-3 py-1.5 rounded-lg font-medium">
                             {{ latestDeployment.status }}
                         </Badge>
                     </div>
@@ -134,12 +122,12 @@
                         <CustomWidget title="Rollout State" :value="latestDeployment.rolloutState" :icon="InfoIcon"></CustomWidget>
                     </div>
 
-                    <Alert v-if="latestDeployment.rolloutStateReason" class="mt-2">
-                        <AlertTitle class="text-sm font-medium">Deployment Details</AlertTitle>
-                        <AlertDescription class="text-sm mt-1">
+                    <div v-if="latestDeployment.rolloutStateReason" class="mt-4 p-4 bg-muted/30 border border-border rounded-lg">
+                        <h4 class="text-sm font-medium text-foreground mb-2">Deployment Details</h4>
+                        <p class="text-sm text-muted-foreground">
                             {{ latestDeployment.rolloutStateReason }}
-                        </AlertDescription>
-                    </Alert>
+                        </p>
+                    </div>
                 </CardContent>
             </div>
         </div>
@@ -262,12 +250,11 @@
 
 <script setup lang="ts" generic="TData extends ServiceInterface">
 import { ActivityIcon, AlertTriangleIcon, CalendarIcon, Clock8Icon, InfoIcon, RocketIcon, ServerIcon, XCircleIcon } from 'lucide-vue-next';
-import UpdateDesiredCountDialog from './UpdateDesiredCountDialog.vue';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import { Badge } from '@/components/ui/badge';
 import { computed, ref } from 'vue';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 import CustomWidget from '@/components/ui/custom-widget/CustomWidget.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';

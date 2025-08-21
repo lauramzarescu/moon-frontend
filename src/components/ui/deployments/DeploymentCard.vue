@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { AuditLog } from '@/views/Settings/components/AuditLogs/schema';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import UpdateServiceImageDialog from '@/views/AWS/Services/components/UpdateServiceImageDialog.vue';
 import Progress from '@/components/ui/progress/Progress.vue';
-import { Server, Clock, RotateCcw, Play, ChevronDown } from 'lucide-vue-next';
+import { Check, Clock, Copy, Info, Play, Rocket, RotateCcw, Server } from 'lucide-vue-next';
+import { copyToClipboard as copyToClipboardHelper } from '@/composables/useClipboard';
 
 const props = defineProps<{ deployment: AuditLog }>();
 const emit = defineEmits<{
@@ -23,7 +25,6 @@ const cluster = computed(() => (info.value.cluster as string) || 'N/A');
 const oldImage = computed(() => (info.value.oldServiceImage as string) || 'N/A');
 const newImage = computed(() => (info.value.newServiceImage as string) || 'N/A');
 
-// Status and progress (best-effort from info)
 const rawStatus = computed(() => ((info.value.status as string) || '').toLowerCase());
 const status = computed<'success' | 'failed' | 'in_progress' | 'warning' | 'updated'>(() => {
     if (rawStatus.value === 'success') return 'success';
@@ -58,16 +59,18 @@ const formatRelative = (date: Date) => {
 
 const createdAt = computed(() => new Date(props.deployment.createdAt));
 
-// Expand controls
-const openDetails = ref(false);
-
-// Confirm dialogs
 const rollbackOpen = ref(false);
 const redeployOpen = ref(false);
+
+const copiedDesc = ref(false);
+const onCopyDescription = async (text: string) => {
+    copiedDesc.value = await copyToClipboardHelper(text);
+    setTimeout(() => (copiedDesc.value = false), 2000);
+};
 </script>
 
 <template>
-    <div class="rounded-lg border p-4 shadow-sm relative overflow-hidden transition-colors">
+    <div class="rounded-lg bg-card border p-4 shadow-sm relative overflow-hidden transition-colors">
         <!-- Header -->
         <div class="flex items-start justify-between gap-3">
             <div class="flex items-center gap-3">
@@ -76,7 +79,9 @@ const redeployOpen = ref(false);
                 </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <span class="font-medium">{{ service || 'Unknown service' }}</span>
+                        <span class="font-medium inline-flex items-center gap-1">
+                            {{ service || 'Unknown service' }}
+                        </span>
                     </div>
                     <div class="text-xs text-muted-foreground mt-1 flex items-center gap-2">
                         <span>{{ email }}</span>
@@ -87,24 +92,51 @@ const redeployOpen = ref(false);
             </div>
             <div class="flex items-center gap-2">
                 <!-- Quick actions -->
+                <Tooltip>
+                    <TooltipTrigger as-child>
+                        <button
+                            class="inline-flex items-center text-muted-foreground hover:text-foreground ml-2"
+                            title="View technical details"
+                        >
+                            <Info class="h-3.5 w-3.5" />
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent class="max-w-[480px] p-0">
+                        <div class="text-xs bg-background rounded border overflow-auto max-h-72">
+                            <pre class="text-foreground whitespace-pre-wrap break-all p-3">{{
+                                JSON.stringify(props.deployment.details, null, 2)
+                            }}</pre>
+                        </div>
+                    </TooltipContent>
+                </Tooltip>
                 <Button
                     size="sm"
                     variant="outline"
-                    class="h-7 px-2 border-red-500/40 text-red-300 hover:bg-red-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="h-7 px-3 disabled:cursor-not-allowed border-blue-500/40 dark:text-blue-300 text-blue-600 hover:bg-blue-500/10"
                     :disabled="!oldImage || oldImage === newImage"
                     @click="rollbackOpen = true"
                 >
-                    <RotateCcw class="h-3 w-3 mr-1" /> Rollback</Button
+                    <RotateCcw class="h-3 w-3" /> Rollback</Button
                 >
 
                 <Button
                     size="sm"
                     variant="outline"
-                    class="h-7 px-2 border-blue-500/40 text-blue-300 hover:bg-blue-500/10"
+                    class="h-7 px-3 border-red-500/40 dark:text-red-300 text-red-600 hover:bg-red-500/10"
                     @click="redeployOpen = true"
                 >
-                    <Play class="h-3 w-3 mr-1" /> Redeploy</Button
+                    <Play class="h-3 w-3" /> Redeploy</Button
                 >
+                <span v-if="cluster" class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-muted border">
+                    <Server class="h-3 w-3 text-muted-foreground" /> {{ cluster }}
+                </span>
+                <span
+                    v-if="cluster && String(cluster).toLowerCase().includes('prod')"
+                    class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400"
+                    title="Production deployment"
+                >
+                    <Rocket class="h-3 w-3" /> prod
+                </span>
             </div>
         </div>
 
@@ -127,41 +159,24 @@ const redeployOpen = ref(false);
             <Progress :model-value="progress || 0" />
         </div>
 
-        <!-- Context badges -->
-        <div class="mt-3 flex flex-wrap gap-2">
-            <span v-if="cluster" class="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-muted border">
-                <Server class="h-3 w-3 text-muted-foreground" /> {{ cluster }}
-            </span>
-        </div>
+        <!-- Context badges moved near actions -->
 
         <!-- Description -->
-        <div v-if="props.deployment.details?.info && (info.description as string | undefined)" class="mt-3 text-sm">
+        <div v-if="props.deployment.details?.info && (info.description as string | undefined)" class="mt-3 text-sm group">
             <span class="text-muted-foreground">Description:</span>
-            <span class="text-foreground font-medium ml-2">{{ info.description as string }}</span>
+            <span class="text-foreground font-medium ml-2 break-all">{{ info.description as string }}</span>
+            <button
+                v-if="info.description"
+                class="inline-flex items-center gap-1 text-xs ml-4 text-muted-foreground hover:text-foreground transition-all duration-200 opacity-0 group-hover:opacity-100"
+                :aria-label="copiedDesc ? 'Copied' : 'Copy description'"
+                :title="copiedDesc ? 'Copied' : 'Copy description'"
+                @click="onCopyDescription(String(info.description))"
+            >
+                <component :is="copiedDesc ? Check : Copy" class="h-3.5 w-3.5" />
+                <span>{{ copiedDesc ? 'Copied' : '' }}</span>
+            </button>
         </div>
 
-        <!-- Expandable: Changes / Technical details -->
-        <div class="mt-3">
-            <div class="mt-3">
-                <Collapsible v-model:open="openDetails">
-                    <div class="flex items-center justify-between">
-                        <div class="text-sm font-medium">Technical details</div>
-                        <CollapsibleTrigger
-                            class="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <ChevronDown class="h-4 w-4 transition-transform duration-200" :class="openDetails ? 'rotate-180' : ''" />
-                        </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent
-                        class="overflow-hidden data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up"
-                    >
-                        <div class="mt-2 text-xs bg-muted/30 rounded border p-3 overflow-auto">
-                            <pre class="whitespace-pre-wrap break-all">{{ JSON.stringify(props.deployment.details, null, 2) }}</pre>
-                        </div>
-                    </CollapsibleContent>
-                </Collapsible>
-            </div>
-        </div>
         <!-- Confirm Rollback Dialog (reuse UpdateServiceImageDialog confirm view) -->
         <UpdateServiceImageDialog
             v-if="service && cluster && oldImage && newImage"

@@ -51,10 +51,15 @@
                                         </div>
                                         {{ env.name }}
                                         <button
-                                            @click="copyToClipboard(env.name)"
-                                            class="invisible group-hover:visible hover:text-primary transition-colors"
+                                            @click.stop="onCopy(env.name)"
+                                            class="inline-flex items-center gap-1 whitespace-nowrap invisible group-hover:visible text-muted-foreground hover:text-foreground transition-all duration-200"
+                                            :aria-label="copiedName === env.name ? 'Copied' : 'Copy name'"
+                                            :title="copiedName === env.name ? 'Copied' : 'Copy name'"
                                         >
-                                            <CopyIcon class="h-4 w-4" />
+                                            <component :is="copiedName === env.name ? Check : Copy" class="h-4 w-4" />
+                                            <span v-if="copiedName === env.name" class="text-xs ml-1 max-w-48 truncate align-middle"
+                                                >Copied</span
+                                            >
                                         </button>
                                     </div>
                                 </TableCell>
@@ -62,10 +67,15 @@
                                     <div class="flex items-center gap-2">
                                         <span class="font-mono bg-muted px-2 py-1 rounded text-sm">{{ env.value }}</span>
                                         <button
-                                            @click="copyToClipboard(env.value)"
-                                            class="invisible group-hover:visible hover:text-primary transition-colors"
+                                            @click.stop="onCopy(env.value)"
+                                            class="inline-flex items-center gap-1 whitespace-nowrap invisible group-hover:visible text-muted-foreground hover:text-foreground transition-all duration-200"
+                                            :aria-label="copiedValue === env.value ? 'Copied' : 'Copy value'"
+                                            :title="copiedValue === env.value ? 'Copied' : 'Copy value'"
                                         >
-                                            <CopyIcon class="h-4 w-4" />
+                                            <component :is="copiedValue === env.value ? Check : Copy" class="h-4 w-4" />
+                                            <span v-if="copiedValue === env.value" class="text-xs ml-1 max-w-48 truncate align-middle"
+                                                >Copied</span
+                                            >
                                         </button>
                                     </div>
                                 </TableCell>
@@ -97,10 +107,15 @@
                                         </div>
                                         {{ secret.name }}
                                         <button
-                                            @click="copyToClipboard(secret.name)"
-                                            class="invisible group-hover:visible hover:text-primary transition-colors"
+                                            @click.stop="onCopy(secret.name)"
+                                            class="min-w-0 inline-flex items-center gap-1 text-xs ml-4 text-muted-foreground hover:text-foreground transition-all duration-200 opacity-0 group-hover:opacity-100"
+                                            :aria-label="copiedName === secret.name ? 'Copied' : 'Copy name'"
+                                            :title="copiedName === secret.name ? 'Copied' : 'Copy name'"
                                         >
-                                            <CopyIcon class="h-4 w-4" />
+                                            <component :is="copiedName === secret.name ? Check : Copy" class="h-4 w-4" />
+                                            <span v-if="copiedName === secret.name" class="text-xs ml-1 max-w-48 truncate align-middle"
+                                                >Copied</span
+                                            >
                                         </button>
                                     </div>
                                 </TableCell>
@@ -108,10 +123,15 @@
                                     <div class="flex items-center gap-2">
                                         <span class="font-mono bg-muted px-2 py-1 rounded text-sm">{{ secret.value }}</span>
                                         <button
-                                            @click="copyToClipboard(secret.value)"
-                                            class="invisible group-hover:visible hover:text-primary transition-colors"
+                                            @click.stop="onCopy(secret.value)"
+                                            class="inline-flex items-center gap-1 whitespace-nowrap invisible group-hover:visible text-muted-foreground hover:text-foreground transition-all duration-200"
+                                            :aria-label="copiedValue === secret.value ? 'Copied' : 'Copy value'"
+                                            :title="copiedValue === secret.value ? 'Copied' : 'Copy value'"
                                         >
-                                            <CopyIcon class="h-4 w-4" />
+                                            <component :is="copiedValue === secret.value ? Check : Copy" class="h-4 w-4" />
+                                            <span v-if="copiedValue === secret.value" class="text-xs ml-1 max-w-48 truncate align-middle"
+                                                >Copied</span
+                                            >
                                         </button>
                                     </div>
                                 </TableCell>
@@ -157,8 +177,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/toast';
-import { CopyIcon, EditIcon, GlobeIcon, KeyIcon, MoreHorizontalIcon, SettingsIcon, TrashIcon } from 'lucide-vue-next';
-import { computed, reactive } from 'vue';
+import { Check, Copy, EditIcon, GlobeIcon, KeyIcon, MoreHorizontalIcon, SettingsIcon, TrashIcon } from 'lucide-vue-next';
+import { computed, reactive, ref } from 'vue';
+import { copyToClipboard as copyToClipboardHelper } from '@/composables/useClipboard';
 import { AwsService } from '@/services/aws.service';
 import AddEnvironmentVariableDialog from './AddEnvironmentVariableDialog.vue';
 import EditEnvironmentVariableDialog from './EditEnvironmentVariableDialog.vue';
@@ -188,6 +209,23 @@ const editDialog = reactive({
     type: 'environment' as 'environment' | 'secret',
 });
 
+const copiedName = ref<string | null>(null);
+const copiedValue = ref<string | null>(null);
+
+const onCopy = async (text: string) => {
+    const ok = await copyToClipboardHelper(text);
+    if (!ok) return;
+    if (text) {
+        // set both to support either field
+        copiedName.value = text;
+        copiedValue.value = text;
+        setTimeout(() => {
+            if (copiedName.value === text) copiedName.value = null;
+            if (copiedValue.value === text) copiedValue.value = null;
+        }, 2000);
+    }
+};
+
 // Add dialog state
 const addDialog = reactive({
     isOpen: false,
@@ -200,23 +238,6 @@ const sortedEnvironmentVariables = computed(() => {
 const sortedSecrets = computed(() => {
     return [...props.container.environmentVariables.secrets].sort((a, b) => a.name.localeCompare(b.name));
 });
-
-const copyToClipboard = async (text: string) => {
-    try {
-        await navigator.clipboard.writeText(text);
-        toast({
-            variant: 'success',
-            title: 'Copied to clipboard',
-            duration: 2000,
-        });
-    } catch (err) {
-        toast({
-            variant: 'destructive',
-            title: 'Failed to copy',
-            duration: 2000,
-        });
-    }
-};
 
 const openEditDialog = (variable: { name: string; value: string }) => {
     editDialog.variableName = variable.name;
