@@ -4,6 +4,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { UserService } from '@/services/user.service.ts';
 import type { UserDeviceInfo } from '@/views/Settings/components/Team/schema.ts';
+import { Trash2Icon } from 'lucide-vue-next';
 
 const userService = new UserService();
 const devices = ref<UserDeviceInfo[]>([]);
@@ -96,7 +97,7 @@ watch(
         <div v-else-if="devices.length === 0" class="text-center py-8 text-muted-foreground">No authorized devices found</div>
 
         <div v-else class="space-y-3">
-            <div v-for="device in devices" :key="device.id" class="flex items-center justify-between p-4 border rounded-lg">
+            <div v-for="device in devices" :key="device.id" class="bg-card flex items-center justify-between p-4 border rounded-lg">
                 <div class="flex-1">
                     <div class="flex items-center gap-2 mb-1">
                         <span class="font-medium">{{ getBrowserInfo(device.userAgent) }}</span>
@@ -109,12 +110,14 @@ watch(
                     <div class="text-xs text-muted-foreground mt-1">Device ID: {{ device.fingerprint }}</div>
                 </div>
 
-                <Button variant="destructive" size="sm" :disabled="removing === device.id" @click="removeDevice(device.id)">
-                    <span v-if="removing === device.id" class="flex items-center gap-2">
-                        <div class="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
-                        Removing...
-                    </span>
-                    <span v-else>Remove</span>
+                <Button
+                    @click="removeDevice(device.id)"
+                    :disabled="removing === device.id"
+                    size="sm"
+                    variant="ghost"
+                    class="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                    <Trash2Icon class="h-4 w-4" />
                 </Button>
             </div>
         </div>

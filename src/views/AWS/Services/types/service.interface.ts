@@ -3,6 +3,7 @@ import type { InstanceStateName } from 'aws-sdk/clients/ec2';
 
 export interface ServiceInterface {
     name: string;
+    arn?: string;
     clusterName: string;
     isClusterProduction: boolean;
     desiredCount: number;

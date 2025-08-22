@@ -101,6 +101,15 @@ const router = createRouter({
             },
         },
         {
+            path: '/aws/github-links',
+            name: 'github-links',
+            component: () => import('@/views/AWS/GithubRepoLinksView.vue'),
+            meta: {
+                title: 'GitHub Repository Links',
+            },
+        },
+
+        {
             path: '/settings',
             component: () => import('@/views/Settings/SettingsView.vue'),
             meta: {

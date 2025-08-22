@@ -38,6 +38,11 @@ const data = {
             icon: Clock,
         },
         {
+            title: 'GitHub Links',
+            url: '/aws/github-links',
+            icon: ServerStackIcon,
+        },
+        {
             title: 'Scheduled Tasks',
             url: '/aws/scheduled-tasks',
             icon: CalendarClockIcon,
