@@ -81,8 +81,8 @@
                                 <PopoverContent class="w-80">
                                     <div class="space-y-2">
                                         <template v-if="repoLinkId">
-                                            <Label class="text-xs">Branch</Label>
-                                            <Input v-model="branchInput" placeholder="main | develop | feature/x ..." />
+                                            <Label class="text-xs">Branch (Leave blank for main branch)</Label>
+                                            <Input v-model="branchInput" placeholder="e.g., main, develop, feature/..." />
                                             <div class="flex justify-end gap-2">
                                                 <Button size="sm" variant="ghost" @click="branchInput = ''">Clear</Button>
                                                 <Button size="sm" @click="handleFetchCommit" :disabled="commitLoading">
