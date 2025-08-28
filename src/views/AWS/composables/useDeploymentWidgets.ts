@@ -128,7 +128,7 @@ export function useDeploymentWidgets() {
         };
     };
 
-    // Methods
+
     const fetchDeploymentsCount = async (startDate?: string, endDate?: string) => {
         deploymentsCountLoading.value = true;
         deploymentsCountError.value = null;
@@ -211,7 +211,7 @@ export function useDeploymentWidgets() {
         hasChartData,
         hasSingleDataPoint,
 
-        // Methods
+
         fetchDeploymentsCount,
         fetchDeploymentsTimeline,
         fetchAllWidgetData,

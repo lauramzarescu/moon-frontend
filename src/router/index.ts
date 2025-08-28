@@ -85,6 +85,14 @@ const router = createRouter({
             },
         },
         {
+            path: '/aws/env-variables',
+            name: 'env-variables',
+            component: () => import('@/views/AWS/EnvVariablesView.vue'),
+            meta: {
+                title: 'Environment Variables',
+            },
+        },
+        {
             path: '/aws/scheduled-tasks',
             name: 'scheduled-tasks',
             component: () => import('@/views/AWS/ScheduledTasksView.vue'),

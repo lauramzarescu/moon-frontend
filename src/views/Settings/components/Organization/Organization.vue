@@ -117,7 +117,7 @@ const requires2FAVerification = computed(() => {
     return true;
 });
 
-// Methods
+
 const loadOrganizationData = async () => {
     try {
         isLoading.value = true;

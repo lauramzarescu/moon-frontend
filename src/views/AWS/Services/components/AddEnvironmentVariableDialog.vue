@@ -1,7 +1,7 @@
 <template>
     <Dialog :modal="true" v-model:open="isOpen" class="z-10">
-        <DialogTrigger as-child>
-            <Button disabled variant="outline" size="sm" class="gap-2">
+        <DialogTrigger v-if="!hideTrigger" as-child>
+            <Button :disabled="false" variant="outline" size="sm" class="gap-2">
                 <PlusIcon class="h-4 w-4" />
                 Add Variable
             </Button>
@@ -154,6 +154,7 @@ const props = defineProps<{
     serviceName: string;
     containerName: string;
     open?: boolean;
+    hideTrigger?: boolean;
 }>();
 
 const emit = defineEmits<{

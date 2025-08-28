@@ -14,8 +14,8 @@
                                 <CardDescription class="text-xs">Configuration and Secrets</CardDescription>
                             </div>
                         </div>
-                        <!-- Action Buttons -->
                         <div class="flex items-center gap-2">
+                            <Button variant="outline" size="sm" @click="goToCentral"> Central Manager </Button>
                             <SecretsComparisonDialog
                                 :services="services"
                                 :filteredServices="[service]"
@@ -187,7 +187,9 @@ import type { RemoveEnvironmentVariablesInput } from '@/views/AWS/Services/compo
 import SecretsComparisonDialog from '@/views/AWS/Services/components/EnvironmentVariablesComparison/SecretsComparisonDialog.vue';
 import { storeToRefs } from 'pinia';
 import { useDataStore } from '@/stores/dataStore.ts';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const { services } = storeToRefs(useDataStore());
 const { toast } = useToast();
 const awsService = new AwsService();
@@ -201,7 +203,6 @@ const emit = defineEmits<{
     (e: 'refresh'): void;
 }>();
 
-// Edit dialog state
 const editDialog = reactive({
     isOpen: false,
     variableName: '',
@@ -226,7 +227,6 @@ const onCopy = async (text: string) => {
     }
 };
 
-// Add dialog state
 const addDialog = reactive({
     isOpen: false,
 });
@@ -270,6 +270,10 @@ const deleteVariable = async (variableName: string) => {
             description: error instanceof Error ? error.message : 'An unexpected error occurred',
         });
     }
+};
+
+const goToCentral = () => {
+    router.push('/aws/env-variables');
 };
 
 const handleRefresh = () => {

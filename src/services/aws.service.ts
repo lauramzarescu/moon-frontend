@@ -5,13 +5,38 @@ import type { ClusterResponseInterface } from '@/types/response/cluster.interfac
 import {
     type AddEnvironmentVariablesInput,
     addEnvironmentVariablesSchema,
+    type BulkUpdateEnvironmentVariablesInput,
+    bulkUpdateEnvironmentVariablesSchema,
+    type CompareEnvironmentVariablesInput,
+    compareEnvironmentVariablesSchema,
+    type CopyEnvironmentVariablesInput,
+    copyEnvironmentVariablesSchema,
     type EditEnvironmentVariablesInput,
     editEnvironmentVariablesSchema,
     type GetEnvironmentVariablesInput,
     getEnvironmentVariablesSchema,
+    type GetEnvironmentVariableVersionInput,
+    getEnvironmentVariableVersionSchema,
+    type GetEnvironmentVariableVersionsInput,
+    getEnvironmentVariableVersionsSchema,
     type RemoveEnvironmentVariablesInput,
     removeEnvironmentVariablesSchema,
-} from '@/views/AWS/Services/components/environment-variable.schema.ts'; // Keep legacy interfaces for backward compatibility if needed
+    type RollbackEnvironmentVariablesInput,
+    rollbackEnvironmentVariablesSchema,
+} from '@/views/AWS/Services/components/environment-variable.schema.ts';
+
+// Import API response types
+import type {
+    AddEnvironmentVariablesResponse,
+    EditEnvironmentVariablesResponse,
+    RemoveEnvironmentVariablesResponse,
+    GetVersionsListResponse,
+    GetVariablesFromVersionResponse,
+    CopyVariablesBetweenServicesResponse,
+    RollbackToVersionResponse,
+    CompareVersionsResponse,
+    BulkUpdateWithVersioningResponse,
+} from '@/types/aws/environment-variable-api.types';
 
 // Keep legacy interfaces for backward compatibility if needed
 export interface EnvironmentVariable {
@@ -117,11 +142,11 @@ export class AwsService extends ApiService {
         }
     }
 
-    async addEnvironmentVariables(data: AddEnvironmentVariablesInput) {
+    async addEnvironmentVariables(data: AddEnvironmentVariablesInput): Promise<AddEnvironmentVariablesResponse> {
         try {
             addEnvironmentVariablesSchema.parse(data);
 
-            return await this.post<AddEnvironmentVariablesInput, any>(`${this.resource}/services/environment-variables`, data, {
+            return await this.post<AddEnvironmentVariablesInput, AddEnvironmentVariablesResponse>(`${this.resource}/services/environment-variables`, data, {
                 credentials: 'include',
             });
         } catch (error) {
@@ -130,11 +155,11 @@ export class AwsService extends ApiService {
         }
     }
 
-    async editEnvironmentVariables(data: EditEnvironmentVariablesInput) {
+    async editEnvironmentVariables(data: EditEnvironmentVariablesInput): Promise<EditEnvironmentVariablesResponse> {
         try {
             editEnvironmentVariablesSchema.parse(data);
 
-            return await this.put<EditEnvironmentVariablesInput, any>(`${this.resource}/services/environment-variables`, data, {
+            return await this.put<EditEnvironmentVariablesInput, EditEnvironmentVariablesResponse>(`${this.resource}/services/environment-variables`, data, {
                 credentials: 'include',
             });
         } catch (error) {
@@ -143,11 +168,11 @@ export class AwsService extends ApiService {
         }
     }
 
-    async removeEnvironmentVariables(data: RemoveEnvironmentVariablesInput) {
+    async removeEnvironmentVariables(data: RemoveEnvironmentVariablesInput): Promise<RemoveEnvironmentVariablesResponse> {
         try {
             removeEnvironmentVariablesSchema.parse(data);
 
-            return await this.delete<any>(`${this.resource}/services/environment-variables`, {
+            return await this.delete<RemoveEnvironmentVariablesResponse>(`${this.resource}/services/environment-variables`, {
                 credentials: 'include',
                 body: JSON.stringify(data),
                 headers: {
@@ -156,6 +181,125 @@ export class AwsService extends ApiService {
             });
         } catch (error) {
             console.error('Failed to remove environment variables:', error);
+            throw error;
+        }
+    }
+
+    async getEnvironmentVariableVersions(data: GetEnvironmentVariableVersionsInput): Promise<GetVersionsListResponse> {
+        try {
+            getEnvironmentVariableVersionsSchema.parse(data);
+
+            const params = new URLSearchParams({
+                clusterName: data.clusterName,
+                serviceName: data.serviceName,
+                containerName: data.containerName,
+            });
+
+            return await this.get<GetVersionsListResponse>(
+                `${this.resource}/services/environment-variables/versions?${params}`,
+                {},
+                {
+                    credentials: 'include',
+                },
+            );
+        } catch (error) {
+            console.error('Failed to get environment variable versions:', error);
+            throw error;
+        }
+    }
+
+    async getEnvironmentVariableVersion(data: GetEnvironmentVariableVersionInput): Promise<GetVariablesFromVersionResponse> {
+        try {
+            getEnvironmentVariableVersionSchema.parse(data);
+
+            const params = new URLSearchParams({
+                clusterName: data.clusterName,
+                serviceName: data.serviceName,
+                containerName: data.containerName,
+                revision: data.revision.toString(),
+            });
+
+            return await this.get<GetVariablesFromVersionResponse>(
+                `${this.resource}/services/environment-variables/version?${params}`,
+                {},
+                {
+                    credentials: 'include',
+                },
+            );
+        } catch (error) {
+            console.error('Failed to get environment variable version:', error);
+            throw error;
+        }
+    }
+
+    async copyEnvironmentVariables(data: CopyEnvironmentVariablesInput): Promise<CopyVariablesBetweenServicesResponse> {
+        try {
+            copyEnvironmentVariablesSchema.parse(data);
+
+            return await this.post<CopyEnvironmentVariablesInput, CopyVariablesBetweenServicesResponse>(`${this.resource}/services/environment-variables/copy`, data, {
+                credentials: 'include',
+            });
+        } catch (error) {
+            console.error('Failed to copy environment variables:', error);
+            throw error;
+        }
+    }
+
+    async rollbackEnvironmentVariables(data: RollbackEnvironmentVariablesInput): Promise<RollbackToVersionResponse> {
+        try {
+            rollbackEnvironmentVariablesSchema.parse(data);
+
+            return await this.post<RollbackEnvironmentVariablesInput, RollbackToVersionResponse>(
+                `${this.resource}/services/environment-variables/rollback`,
+                data,
+                {
+                    credentials: 'include',
+                },
+            );
+        } catch (error) {
+            console.error('Failed to rollback environment variables:', error);
+            throw error;
+        }
+    }
+
+    async compareEnvironmentVariables(data: CompareEnvironmentVariablesInput): Promise<CompareVersionsResponse> {
+        try {
+            compareEnvironmentVariablesSchema.parse(data);
+
+            const params = new URLSearchParams({
+                clusterName: data.clusterName,
+                serviceName: data.serviceName,
+                containerName: data.containerName,
+                revision1: data.revision1.toString(),
+                revision2: data.revision2.toString(),
+            });
+
+            return await this.get<CompareVersionsResponse>(
+                `${this.resource}/services/environment-variables/compare?${params}`,
+                {},
+                {
+                    credentials: 'include',
+                },
+            );
+        } catch (error) {
+            console.error('Failed to compare environment variables:', error);
+            throw error;
+        }
+    }
+
+    async bulkUpdateEnvironmentVariables(data: BulkUpdateEnvironmentVariablesInput): Promise<BulkUpdateWithVersioningResponse> {
+        try {
+            bulkUpdateEnvironmentVariablesSchema.parse(data);
+
+            return await this.put<BulkUpdateEnvironmentVariablesInput, BulkUpdateWithVersioningResponse>(
+                `${this.resource}/services/environment-variables/bulk-update-versioning`,
+                data,
+                {
+                    credentials: 'include',
+                },
+            );
+        } catch (error) {
+            console.error('Failed to bulk update environment variables:', error);
             throw error;
         }
     }

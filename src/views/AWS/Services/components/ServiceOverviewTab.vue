@@ -300,7 +300,6 @@ const getTaskId = (taskArn: string | undefined) => {
 };
 
 const handleCountUpdated = () => {
-    // Emit an event to refresh the service data
     emit('refresh-service');
 };
 </script>

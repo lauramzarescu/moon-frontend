@@ -235,7 +235,6 @@ const isLoading = ref(false);
 const validationError = ref('');
 const awsService = new AwsService();
 
-// External open control
 watch(
     () => props.open,
     (val) => {

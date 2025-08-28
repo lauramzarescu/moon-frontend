@@ -75,7 +75,7 @@ export function useAuditLogs() {
         return pages;
     });
 
-    // Methods
+
     const fetchAuditLogs = async (page: number = paginationMeta.value?.page || 1) => {
         loading.value = true;
         error.value = null;
@@ -201,7 +201,7 @@ export function useAuditLogs() {
         hasDiffData,
         visiblePages,
 
-        // Methods
+
         fetchAuditLogs,
         goToPage,
         handleItemsPerPageChange,
