@@ -22,13 +22,6 @@
                                 :is-filtered="true"
                                 :show-all-services="true"
                             />
-                            <AddEnvironmentVariableDialog
-                                v-model:open="addDialog.isOpen"
-                                :cluster-name="service.clusterName"
-                                :service-name="service.name"
-                                :container-name="container.name"
-                                @variable-added="handleRefresh"
-                            />
                         </div>
                     </div>
                 </CardHeader>
@@ -121,15 +114,17 @@
                                 </TableCell>
                                 <TableCell class="group">
                                     <div class="flex items-center gap-2">
-                                        <span class="font-mono bg-muted px-2 py-1 rounded text-sm">{{ secret.value }}</span>
+                                        <span class="font-mono bg-muted px-2 py-1 rounded text-sm">{{ secret.valueFrom }}</span>
                                         <button
-                                            @click.stop="onCopy(secret.value)"
+                                            @click.stop="onCopy(secret.valueFrom)"
                                             class="inline-flex items-center gap-1 whitespace-nowrap invisible group-hover:visible text-muted-foreground hover:text-foreground transition-all duration-200"
-                                            :aria-label="copiedValue === secret.value ? 'Copied' : 'Copy value'"
-                                            :title="copiedValue === secret.value ? 'Copied' : 'Copy value'"
+                                            :aria-label="copiedValue === secret.valueFrom ? 'Copied' : 'Copy value'"
+                                            :title="copiedValue === secret.valueFrom ? 'Copied' : 'Copy value'"
                                         >
-                                            <component :is="copiedValue === secret.value ? Check : Copy" class="h-4 w-4" />
-                                            <span v-if="copiedValue === secret.value" class="text-xs ml-1 max-w-48 truncate align-middle"
+                                            <component :is="copiedValue === secret.valueFrom ? Check : Copy" class="h-4 w-4" />
+                                            <span
+                                                v-if="copiedValue === secret.valueFrom"
+                                                class="text-xs ml-1 max-w-48 truncate align-middle"
                                                 >Copied</span
                                             >
                                         </button>
@@ -181,7 +176,6 @@ import { Check, Copy, EditIcon, GlobeIcon, KeyIcon, MoreHorizontalIcon, Settings
 import { computed, reactive, ref } from 'vue';
 import { copyToClipboard as copyToClipboardHelper } from '@/composables/useClipboard';
 import { AwsService } from '@/services/aws.service';
-import AddEnvironmentVariableDialog from './AddEnvironmentVariableDialog.vue';
 import EditEnvironmentVariableDialog from './EditEnvironmentVariableDialog.vue';
 import type { RemoveEnvironmentVariablesInput } from '@/views/AWS/Services/components/environment-variable.schema';
 import SecretsComparisonDialog from '@/views/AWS/Services/components/EnvironmentVariablesComparison/SecretsComparisonDialog.vue';
@@ -273,7 +267,14 @@ const deleteVariable = async (variableName: string) => {
 };
 
 const goToCentral = () => {
-    router.push('/aws/env-variables');
+    // Navigate to environment page with service information to auto-open the dialog
+    router.push({
+        path: '/aws/environment',
+        query: {
+            openService: props.service.name,
+            clusterName: props.service.clusterName,
+        },
+    });
 };
 
 const handleRefresh = () => {

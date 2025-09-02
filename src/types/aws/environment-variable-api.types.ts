@@ -3,8 +3,15 @@
  * Generated from environment-variables-schemas-and-types.json
  */
 
+import { BulkOperationType, ComparisonStatus, TaskDefinitionStatus } from './environment-variable.enums';
+
 // Base schemas
 export interface EnvironmentVariable {
+    name: string;
+    value: string;
+}
+
+export interface Secret {
     name: string;
     value: string;
 }
@@ -16,6 +23,7 @@ export interface EnvironmentVariableVersion {
     status: string;
     family: string;
     environmentVariables: EnvironmentVariable[];
+    secrets: Secret[];
 }
 
 export interface ServiceInfo {
@@ -44,13 +52,19 @@ export interface VersionComparison {
     removed: EnvironmentVariable[];
     modified: VariableChange[];
     unchanged: EnvironmentVariable[];
+    addedSecrets: Secret[];
+    removedSecrets: Secret[];
+    modifiedSecrets: VariableChange[];
+    unchangedSecrets: Secret[];
 }
 
 export interface BulkOperation {
     containerName: string;
-    operation: 'add' | 'edit' | 'replace' | 'remove';
+    operation: BulkOperationType;
     environmentVariables?: EnvironmentVariable[];
+    secrets?: Secret[];
     variableNames?: string[];
+    secretNames?: string[];
 }
 
 export interface ErrorResponse {
@@ -63,21 +77,24 @@ export interface AddEnvironmentVariablesRequest {
     clusterName: string;
     serviceName: string;
     containerName: string;
-    environmentVariables: EnvironmentVariable[];
+    environmentVariables?: EnvironmentVariable[];
+    secrets?: Secret[];
 }
 
 export interface EditEnvironmentVariablesRequest {
     clusterName: string;
     serviceName: string;
     containerName: string;
-    environmentVariables: EnvironmentVariable[];
+    environmentVariables?: EnvironmentVariable[];
+    secrets?: Secret[];
 }
 
 export interface RemoveEnvironmentVariablesRequest {
     clusterName: string;
     serviceName: string;
     containerName: string;
-    variableNames: string[];
+    variableNames?: string[];
+    secretNames?: string[];
 }
 
 export interface GetVersionsListRequest {
@@ -101,6 +118,17 @@ export interface CopyVariablesBetweenServicesRequest {
     targetServiceName: string;
     targetContainerName: string;
     sourceRevision?: number;
+    variableNames?: string[];
+}
+
+export interface MoveVariablesBetweenServicesRequest {
+    sourceClusterName: string;
+    sourceServiceName: string;
+    sourceContainerName: string;
+    targetClusterName: string;
+    targetServiceName: string;
+    targetContainerName: string;
+    variableNames: string[];
 }
 
 export interface RollbackToVersionRequest {
@@ -131,6 +159,7 @@ export interface AddEnvironmentVariablesResponse {
     serviceName: string;
     containerName: string;
     addedVariables: number;
+    addedSecrets: number;
     newTaskDefinitionArn: string;
 }
 
@@ -140,6 +169,7 @@ export interface EditEnvironmentVariablesResponse {
     serviceName: string;
     containerName: string;
     updatedVariables: number;
+    updatedSecrets: number;
     newTaskDefinitionArn: string;
 }
 
@@ -149,7 +179,9 @@ export interface RemoveEnvironmentVariablesResponse {
     serviceName: string;
     containerName: string;
     removedVariables: number;
+    removedSecrets: number;
     variableNames: string[];
+    secretNames: string[];
     newTaskDefinitionArn: string;
 }
 
@@ -169,13 +201,24 @@ export interface GetVariablesFromVersionResponse {
     containerName: string;
     revision: number;
     totalVariables: number;
+    totalSecrets: number;
     environmentVariables: EnvironmentVariable[];
+    secrets: Secret[];
 }
 
 export interface CopyVariablesBetweenServicesResponse {
     message: string;
     source: ServiceInfo;
     target: ServiceInfoWithoutRevision;
+    newTaskDefinitionArn: string;
+}
+
+export interface MoveVariablesBetweenServicesResponse {
+    message: string;
+    source: ServiceInfo;
+    target: ServiceInfoWithoutRevision;
+    movedVariables: number;
+    variableNames: string[];
     newTaskDefinitionArn: string;
 }
 

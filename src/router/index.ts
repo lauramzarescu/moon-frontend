@@ -85,11 +85,11 @@ const router = createRouter({
             },
         },
         {
-            path: '/aws/env-variables',
-            name: 'env-variables',
+            path: '/aws/environment',
+            name: 'environment',
             component: () => import('@/views/AWS/EnvVariablesView.vue'),
             meta: {
-                title: 'Environment Variables',
+                title: 'Environment',
             },
         },
         {

@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:open="isOpen">
-        <DialogContent class="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent class="max-w-7xl max-h-[90vh] flex flex-col min-h-0">
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-3">
                     <div class="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
@@ -13,16 +13,17 @@
                             <Badge :variant="service?.status === 'ACTIVE' ? 'default' : 'secondary'" class="text-xs">
                                 {{ service?.status }}
                             </Badge>
+                            <Badge v-if="hasStoredUnsavedChanges" variant="destructive" class="text-xs">
+                                {{ unsavedChangesCount }} Unsaved Changes
+                            </Badge>
                         </div>
                     </div>
                 </DialogTitle>
-                <DialogDescription>
-                    Manage environment variables and secrets for this service
-                </DialogDescription>
+                <DialogDescription> Manage environment variables and secrets for this service </DialogDescription>
             </DialogHeader>
 
             <!-- Version Selector and Actions -->
-            <div class="flex items-center justify-between gap-3 py-3 border-b">
+            <div class="flex items-center justify-between gap-3 pt-3 pb-3">
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2">
                         <Label class="text-sm font-medium">Version:</Label>
@@ -34,7 +35,10 @@
                                         Loading...
                                     </div>
                                     <span v-else>
-                                        {{ availableVersions.find(v => v.revision.toString() === selectedVersion)?.label || 'Select version' }}
+                                        {{
+                                            availableVersions.find((v) => v.revision.toString() === selectedVersion)?.label ||
+                                            'Select version'
+                                        }}
                                     </span>
                                 </SelectValue>
                             </SelectTrigger>
@@ -51,33 +55,18 @@
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        @click="openVersionComparison"
-                        class="hover:shadow-sm transition-all duration-200"
-                    >
+                    <Button size="sm" variant="outline" @click="openVersionComparison" class="hover:shadow-sm transition-all duration-200">
                         <GitCompareIcon class="h-4 w-4 mr-2" />
                         Compare
                     </Button>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        @click="openBulkAdd"
-                        class="hover:shadow-sm transition-all duration-200"
-                    >
+                    <Button size="sm" variant="outline" @click="openBulkAdd" class="hover:shadow-sm transition-all duration-200">
                         <PlusIcon class="h-4 w-4 mr-2" />
                         Add Variable
                     </Button>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        @click="openBulkOperations"
-                        class="hover:shadow-sm transition-all duration-200"
-                    >
+                    <Button size="sm" variant="outline" @click="openBulkOperations" class="hover:shadow-sm transition-all duration-200">
                         <SettingsIcon class="h-4 w-4 mr-2" />
                         Bulk Operations
                     </Button>
@@ -85,18 +74,18 @@
             </div>
 
             <!-- Container Tabs -->
-            <div class="flex-1 overflow-hidden flex flex-col">
-                <div class="border-b">
-                    <div class="flex space-x-1 p-1">
+            <div class="flex-1 flex flex-col min-h-0">
+                <div class="border-y">
+                    <div class="flex items-center gap-2 px-4 py-2.5">
                         <button
                             v-for="container in service?.containers"
                             :key="container.name"
                             @click="selectedContainer = container.name"
                             :class="[
-                                'px-3 py-2 text-sm font-medium rounded-md transition-all duration-200',
+                                'inline-flex items-center justify-center px-4 py-0 h-9 text-sm font-medium rounded-full transition-all duration-200',
                                 selectedContainer === container.name
-                                    ? 'bg-primary text-primary-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                                    ? 'bg-primary text-primary-foreground shadow-none'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                             ]"
                         >
                             {{ container.name }}
@@ -105,29 +94,29 @@
                 </div>
 
                 <!-- Variables Content -->
-                <div class="flex-1 overflow-hidden p-4">
-                    <div class="h-full overflow-y-auto">
-                        <div v-if="isLoadingVersionData" class="flex items-center justify-center h-32">
-                            <div class="flex items-center gap-2 text-muted-foreground">
-                                <Loader2Icon class="h-5 w-5 animate-spin" />
-                                Loading version data...
-                            </div>
-                        </div>
-                        <EnvironmentVariablesTable
-                            v-else-if="currentContainer"
-                            :container="currentContainer"
-                            :service-name="service?.name"
-                            :cluster-name="service?.clusterName"
-                            :selected-version="selectedVersion"
-                            @edit="handleEdit"
-                            @delete="handleDelete"
-                            @bulk-select="handleBulkSelect"
-                            @add-new="handleAddNew"
-                        />
-                        <div v-else class="flex items-center justify-center h-32 text-muted-foreground">
-                            No container selected
+                <div class="flex-1 min-h-0 p-4 overflow-y-auto relative">
+                    <div v-if="isLoadingVersionData" class="flex items-center justify-center h-32">
+                        <div class="flex items-center gap-2 text-muted-foreground">
+                            <Loader2Icon class="h-5 w-5 animate-spin" />
+                            Loading version data...
                         </div>
                     </div>
+                    <EnvironmentVariablesTable
+                        v-else-if="currentContainer"
+                        ref="environmentVariablesTableRef"
+                        :container="currentContainer"
+                        :service-name="service?.name"
+                        :cluster-name="service?.clusterName"
+                        :selected-version="selectedVersion"
+                        :is-latest="isLatestVersion"
+                        @edit="handleEdit"
+                        @delete="handleDelete"
+                        @bulk-select="handleBulkSelect"
+                        @add-new="handleAddNew"
+                        @pending-changes="handlePendingChanges"
+                        @save-all-changes="handleSaveAllChanges"
+                    />
+                    <div v-else class="flex items-center justify-center h-32 text-muted-foreground">No container selected</div>
                 </div>
             </div>
 
@@ -139,29 +128,39 @@
                     <span>{{ totalSecretsCount }} secrets</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <Button variant="outline" @click="closeDialog">
-                        Cancel
+                    <Button variant="outline" @click="closeDialog" :disabled="isSaving || isDeleting"> Cancel </Button>
+                    <Button @click="saveChanges" :disabled="!hasPendingChanges || isSaving || isDeleting">
+                        <div v-if="isSaving" class="flex items-center gap-2">
+                            <div class="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
+                            Saving...
+                        </div>
+                        <span v-else>Save Changes</span>
                     </Button>
-                    <Button @click="saveChanges" :disabled="!hasChanges">
-                        Save Changes
-                    </Button>
+                </div>
+            </div>
+
+            <!-- Global Loading Overlay covering the entire dialog -->
+            <div
+                v-if="isDeleting || isSaving"
+                class="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+            >
+                <div class="flex items-center gap-3 bg-card border rounded-lg px-4 py-3 shadow-lg">
+                    <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                    <span class="text-sm font-medium">
+                        {{ isDeleting ? 'Deleting variables...' : 'Saving changes...' }}
+                    </span>
                 </div>
             </div>
         </DialogContent>
     </Dialog>
 
     <!-- Sub-dialogs -->
-    <BulkAddDialog
-        v-model:open="bulkAddDialog.isOpen"
-        :service="service"
-        :container="selectedContainer"
-        @added="handleRefresh"
-    />
+    <BulkAddDialog v-model:open="bulkAddDialog.isOpen" :service="service" :container="selectedContainer" @added="handleBulkAdded" />
 
     <BulkOperationsDialog
         v-model:open="bulkOperationsDialog.isOpen"
         :service="service"
-        :selected-variables="selectedVariables"
+        :selected-variables="effectiveSelectedVariables"
         @completed="handleRefresh"
     />
 
@@ -174,29 +173,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, nextTick, reactive, ref, watch } from 'vue';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-    ServerIcon,
-    GitCompareIcon,
-    PlusIcon,
-    SettingsIcon,
-    Loader2Icon
-} from 'lucide-vue-next';
-import type { ServiceInterface, ContainerInterface } from '@/views/AWS/Services/types/service.interface';
+import { GitCompareIcon, Loader2Icon, PlusIcon, ServerIcon, SettingsIcon } from 'lucide-vue-next';
+import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface';
 import { AwsService } from '@/services/aws.service';
-import type {
-    GetVersionsResponse,
-    GetVersionResponse,
-    EnvironmentVariableVersion
-} from '@/types/aws';
+import { useToast } from '@/components/ui/toast';
+import { useDataStore } from '@/stores/dataStore';
+import { storeToRefs } from 'pinia';
+import { VariableType } from '@/types/aws/environment-variable.enums';
+import { useUnsavedChanges } from '../composables/useUnsavedChanges';
 
 // Import sub-components
-import EnvironmentVariablesTable from './EnvironmentVariablesTable.vue';
+import EnvironmentVariablesTable from './EnvironmentVariablesTableWrapper.vue';
 import BulkAddDialog from './BulkAddDialog.vue';
 import BulkOperationsDialog from './BulkOperationsDialog.vue';
 import VersionComparisonDialog from './VersionComparisonDialog.vue';
@@ -212,14 +205,26 @@ const emit = defineEmits<{
 }>();
 
 const awsService = new AwsService();
+const { toast } = useToast();
+const store = useDataStore();
+const { services } = storeToRefs(store);
+const { hasUnsavedChanges, getUnsavedChangesCount } = useUnsavedChanges();
+
+// Component refs
+const environmentVariablesTableRef = ref<any>(null);
 
 // Reactive state
 const selectedContainer = ref<string>('');
 const selectedVersion = ref<string>('');
 const selectedVariables = ref<string[]>([]);
 const hasChanges = ref(false);
+const hasPendingChanges = ref(false);
 const versionEnvironmentVariables = ref<any>(null);
 const isLoadingVersionData = ref(false);
+
+// Loading states for operations
+const isDeleting = ref(false);
+const isSaving = ref(false);
 
 // Dialog states
 const bulkAddDialog = reactive({ isOpen: false });
@@ -232,17 +237,38 @@ const isOpen = computed({
     set: (value) => emit('update:open', value),
 });
 
-const currentContainer = computed(() => {
-    if (!props.service || !selectedContainer.value) return null;
+// Get the current service from the store to ensure reactivity to data changes
+const service = computed(() => {
+    if (!props.service) return null;
 
-    const baseContainer = props.service.containers.find(c => c.name === selectedContainer.value);
+    // Find the current service in the store's services array
+    const currentService = services.value.find((s) => s.name === props.service?.name && s.clusterName === props.service?.clusterName);
+
+    return currentService || props.service;
+});
+
+// Unsaved changes detection
+const hasStoredUnsavedChanges = computed(() => {
+    if (!service.value) return false;
+    return hasUnsavedChanges(service.value.name, service.value.clusterName);
+});
+
+const unsavedChangesCount = computed(() => {
+    if (!service.value) return 0;
+    return getUnsavedChangesCount(service.value.name, service.value.clusterName);
+});
+
+const currentContainer = computed(() => {
+    if (!service.value || !selectedContainer.value) return null;
+
+    const baseContainer = service.value.containers.find((c) => c.name === selectedContainer.value);
     if (!baseContainer) return null;
 
-    // If we have version-specific data, merge it with the base container
+    // If we have version-specific data, use it; otherwise use base container
     if (versionEnvironmentVariables.value) {
         return {
             ...baseContainer,
-            environmentVariables: versionEnvironmentVariables.value
+            environmentVariables: versionEnvironmentVariables.value,
         };
     }
 
@@ -250,25 +276,25 @@ const currentContainer = computed(() => {
 });
 
 // Real version management using API
-const availableVersions = ref<Array<{revision: number, label: string, arn: string, registeredAt: string}>>([]);
+const availableVersions = ref<Array<{ revision: number; label: string; arn: string; registeredAt: string }>>([]);
 const isLoadingVersions = ref(false);
 
 const loadVersions = async () => {
-    if (!props.service || !selectedContainer.value) return;
+    if (!service.value || !selectedContainer.value) return;
 
     isLoadingVersions.value = true;
     try {
         const response = await awsService.getEnvironmentVariableVersions({
-            clusterName: props.service.clusterName,
-            serviceName: props.service.name,
-            containerName: selectedContainer.value
+            clusterName: service.value.clusterName,
+            serviceName: service.value.name,
+            containerName: selectedContainer.value,
         });
 
         availableVersions.value = response.versions.map((version: any) => ({
             revision: version.revision,
             label: `v${version.revision} (${new Date(version.registeredAt).toLocaleDateString()})`,
             arn: version.arn,
-            registeredAt: version.registeredAt
+            registeredAt: version.registeredAt,
         }));
 
         // Set current version as the latest
@@ -278,7 +304,7 @@ const loadVersions = async () => {
     } catch (error: any) {
         console.error('Failed to load versions:', error);
         // Fallback to mock data
-        const baseVersion = props.service.taskDefinition.revision;
+        const baseVersion = service.value.taskDefinition.revision;
         availableVersions.value = [
             { revision: baseVersion, label: `v${baseVersion} (current)`, arn: '', registeredAt: new Date().toISOString() },
             { revision: baseVersion - 1, label: `v${baseVersion - 1}`, arn: '', registeredAt: new Date().toISOString() },
@@ -291,47 +317,97 @@ const loadVersions = async () => {
 };
 
 const totalVariablesCount = computed(() => {
-    if (!props.service) return 0;
-    return props.service.containers.reduce((total, container) => {
+    if (!service.value) return 0;
+    return service.value.containers.reduce((total, container) => {
         return total + (container.environmentVariables.environment?.length || 0);
     }, 0);
 });
 
+const isLatestVersion = computed(() => {
+    if (!availableVersions.value || availableVersions.value.length === 0) return true;
+    return selectedVersion.value === availableVersions.value[0].revision.toString();
+});
+
 const totalSecretsCount = computed(() => {
-    if (!props.service) return 0;
-    return props.service.containers.reduce((total, container) => {
+    if (!service.value) return 0;
+    return service.value.containers.reduce((total, container) => {
         return total + (container.environmentVariables.secrets?.length || 0);
     }, 0);
 });
 
+// Generate all variable IDs for bulk operations when none are selected
+const allVariableIds = computed(() => {
+    if (!service.value) return [];
+
+    const variableIds: string[] = [];
+
+    service.value.containers.forEach((container) => {
+        // Add environment variables
+        container.environmentVariables.environment?.forEach((envVar) => {
+            variableIds.push(`env-${envVar.name}`);
+        });
+
+        // Add secrets
+        container.environmentVariables.secrets?.forEach((secret) => {
+            variableIds.push(`secret-${secret.name}`);
+        });
+    });
+
+    return variableIds;
+});
+
+// Use all variables if none are manually selected
+const effectiveSelectedVariables = computed(() => {
+    return selectedVariables.value.length > 0 ? selectedVariables.value : allVariableIds.value;
+});
+
 // Watchers
-watch(() => props.service, (newService) => {
-    if (newService && newService.containers.length > 0) {
-        selectedContainer.value = newService.containers[0].name;
-        loadVersions();
-    }
-}, { immediate: true });
+watch(
+    () => service.value,
+    async (newService) => {
+        if (newService && newService.containers.length > 0) {
+            selectedContainer.value = newService.containers[0].name;
+            versionEnvironmentVariables.value = null;
+            await nextTick();
+            loadVersions();
+        } else {
+            versionEnvironmentVariables.value = null;
+        }
+    },
+    { immediate: true },
+);
 
 watch(selectedContainer, () => {
     if (selectedContainer.value) {
+        // Reset version-specific data when switching containers
+        versionEnvironmentVariables.value = null;
         loadVersions();
     }
 });
 
 watch(selectedVersion, async (newVersion) => {
     if (newVersion && selectedContainer.value) {
-        isLoadingVersionData.value = true;
-        try {
-            const revision = parseInt(newVersion);
-            versionEnvironmentVariables.value = await loadVersionData(revision);
-        } catch (error) {
-            console.error('Failed to load version data:', error);
-        } finally {
-            isLoadingVersionData.value = false;
+        // Check if this is the latest version
+        const isLatest = availableVersions.value.length > 0 && newVersion === availableVersions.value[0].revision.toString();
+
+        // Only load version data if it's not the latest version
+        if (!isLatest) {
+            isLoadingVersionData.value = true;
+            try {
+                const revision = parseInt(newVersion);
+                versionEnvironmentVariables.value = await loadVersionData(revision);
+            } catch (error) {
+                console.error('Failed to load version data:', error);
+                versionEnvironmentVariables.value = null;
+            } finally {
+                isLoadingVersionData.value = false;
+            }
+        } else {
+            // For latest version, clear version data to use base container
+            versionEnvironmentVariables.value = null;
         }
     }
 });
-
 
 const openVersionComparison = () => {
     versionComparisonDialog.isOpen = true;
@@ -345,44 +421,83 @@ const openBulkOperations = () => {
     bulkOperationsDialog.isOpen = true;
 };
 
-const handleEdit = async (variable: any) => {
-    if (!props.service || !selectedContainer.value) return;
-
-    try {
-        await awsService.editEnvironmentVariables({
-            clusterName: props.service.clusterName,
-            serviceName: props.service.name,
-            containerName: selectedContainer.value,
-            environmentVariables: [{
-                name: variable.name,
-                value: variable.value
-            }]
-        });
-
-        hasChanges.value = true;
-        emit('refresh');
-    } catch (error: any) {
-        console.error('Failed to edit variable:', error);
-        // Handle error - could show toast notification
-    }
+const handleEdit = (variable: any) => {
+    // This function is no longer used for API calls
+    // All edits are now handled through the batch save functionality
+    // The table component handles storing edits locally until Save Changes is clicked
 };
 
-const handleDelete = async (variable: any) => {
-    if (!props.service || !selectedContainer.value) return;
+const handleDelete = async (deleteData: any) => {
+    if (!service.value || !selectedContainer.value) return;
 
+    isDeleting.value = true;
     try {
-        await awsService.removeEnvironmentVariables({
-            clusterName: props.service.clusterName,
-            serviceName: props.service.name,
-            containerName: selectedContainer.value,
-            variableNames: [variable.name]
-        });
+        if (deleteData.isBulk) {
+            // Handle bulk delete - separate environment variables and secrets
+            const environmentVariables = deleteData.variables.filter((v: any) => v.type === VariableType.ENVIRONMENT);
+            const secrets = deleteData.variables.filter((v: any) => v.type === VariableType.SECRET);
+
+            const payload: any = {
+                clusterName: service.value.clusterName,
+                serviceName: service.value.name,
+                containerName: selectedContainer.value,
+            };
+
+            if (environmentVariables.length > 0) {
+                payload.variableNames = environmentVariables.map((v: any) => v.name);
+            }
+
+            if (secrets.length > 0) {
+                payload.secretNames = secrets.map((v: any) => v.name);
+            }
+
+            await awsService.removeEnvironmentVariables(payload);
+
+            toast({
+                variant: 'success',
+                title: 'Variables Deleted',
+                description: `Successfully deleted ${environmentVariables.length} environment variables and ${secrets.length} secrets.`,
+            });
+        } else {
+            // Handle single delete
+            const payload: any = {
+                clusterName: service.value.clusterName,
+                serviceName: service.value.name,
+                containerName: selectedContainer.value,
+            };
+
+            if (deleteData.type === VariableType.ENVIRONMENT) {
+                payload.variableNames = [deleteData.name];
+            } else if (deleteData.type === VariableType.SECRET) {
+                payload.secretNames = [deleteData.name];
+            }
+
+            await awsService.removeEnvironmentVariables(payload);
+
+            const variableTypeLabel = deleteData.type === VariableType.SECRET ? 'Secret' : 'Variable';
+            toast({
+                variant: 'success',
+                title: `${variableTypeLabel} Deleted`,
+                description: `Successfully deleted ${deleteData.name}.`,
+            });
+        }
 
         hasChanges.value = true;
+
+        // Refresh data from backend
+        store.manualRefresh();
+
+        // Emit refresh to parent to reload service data
         emit('refresh');
     } catch (error: any) {
-        console.error('Failed to delete variable:', error);
-        // Handle error - could show toast notification
+        console.error('Failed to delete variable(s):', error);
+        toast({
+            variant: 'destructive',
+            title: 'Failed to Delete',
+            description: error.message || 'An unexpected error occurred while deleting variables.',
+        });
+    } finally {
+        isDeleting.value = false;
     }
 };
 
@@ -390,52 +505,191 @@ const handleBulkSelect = (variables: string[]) => {
     selectedVariables.value = variables;
 };
 
-const handleAddNew = async (variable: any) => {
-    if (!props.service || !selectedContainer.value || !variable.name) return;
+const handleAddNew = (variable: any) => {
+    // This is called when "Add Public Variable" or "Add Secret" is clicked
+    // It should only show the inputs, not make any API calls
+    // The actual API call happens when Save Changes button is clicked
+};
 
+const handleBulkAdded = () => {
+    // Called when bulk add dialog completes successfully
+    store.manualRefresh();
+    emit('refresh');
+};
+
+const handlePendingChanges = (hasPending: boolean) => {
+    hasPendingChanges.value = hasPending;
+};
+
+// AWS Systems Manager parameter name validation
+const validateParameterName = (name: string): { isValid: boolean; error?: string } => {
+    if (!name || name.length === 0) {
+        return { isValid: false, error: 'Parameter name cannot be empty' };
+    }
+
+    if (name.length > 2048) {
+        return { isValid: false, error: 'Parameter name cannot exceed 2048 characters' };
+    }
+
+    if (!/^[a-zA-Z0-9]/.test(name)) {
+        return { isValid: false, error: 'Parameter name must start with a letter or number' };
+    }
+
+    if (!/^[a-zA-Z0-9_.\-/]+$/.test(name)) {
+        return { isValid: false, error: 'Parameter name can only contain letters, numbers, and the symbols: _ . - /' };
+    }
+
+    return { isValid: true };
+};
+
+const handleSaveAllChanges = async (changes: { newVariables: any[]; editedVariables: any[] }) => {
+    if (!service.value || !selectedContainer.value) return;
+
+    isSaving.value = true;
     try {
-        await awsService.addEnvironmentVariables({
-            clusterName: props.service.clusterName,
-            serviceName: props.service.name,
-            containerName: selectedContainer.value,
-            environmentVariables: [{
-                name: variable.name,
-                value: variable.value || ''
-            }]
-        });
+        // Validate secret names before processing
+        const allSecrets = [...changes.newVariables.filter((v) => v.isSecret), ...changes.editedVariables.filter((v) => v.isSecret)];
+
+        for (const secret of allSecrets) {
+            const validation = validateParameterName(secret.name);
+            if (!validation.isValid) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Invalid Secret Name',
+                    description: `Secret "${secret.name}": ${validation.error}`,
+                });
+                return;
+            }
+        }
+        // Process new variables (POST requests)
+        if (changes.newVariables.length > 0) {
+            // Separate environment variables and secrets
+            const newEnvVars = changes.newVariables.filter((v) => !v.isSecret);
+            const newSecrets = changes.newVariables.filter((v) => v.isSecret);
+
+            const addPayload: any = {
+                clusterName: service.value.clusterName,
+                serviceName: service.value.name,
+                containerName: selectedContainer.value,
+            };
+
+            if (newEnvVars.length > 0) {
+                addPayload.environmentVariables = newEnvVars.map((v) => ({
+                    name: v.name,
+                    value: v.value,
+                }));
+            }
+
+            if (newSecrets.length > 0) {
+                addPayload.secrets = newSecrets.map((v) => ({
+                    name: v.name,
+                    valueFrom: v.value,
+                }));
+            }
+
+            if (newEnvVars.length > 0 || newSecrets.length > 0) {
+                await awsService.addEnvironmentVariables(addPayload);
+            }
+        }
+
+        // Process edited variables (PUT requests)
+        if (changes.editedVariables.length > 0) {
+            // Separate environment variables and secrets
+            const editedEnvVars = changes.editedVariables.filter((v) => !v.isSecret);
+            const editedSecrets = changes.editedVariables.filter((v) => v.isSecret);
+
+            const editPayload: any = {
+                clusterName: service.value.clusterName,
+                serviceName: service.value.name,
+                containerName: selectedContainer.value,
+            };
+
+            if (editedEnvVars.length > 0) {
+                editPayload.environmentVariables = editedEnvVars.map((v) => ({
+                    name: v.name,
+                    value: v.value,
+                }));
+            }
+
+            if (editedSecrets.length > 0) {
+                editPayload.secrets = editedSecrets.map((v) => ({
+                    name: v.name,
+                    valueFrom: v.value,
+                }));
+            }
+
+            if (editedEnvVars.length > 0 || editedSecrets.length > 0) {
+                await awsService.editEnvironmentVariables(editPayload);
+            }
+        }
 
         hasChanges.value = true;
+        hasPendingChanges.value = false;
+
+        // Refresh data from backend
+        store.manualRefresh();
+
+        // Emit refresh to parent to reload service data
         emit('refresh');
+
+        const newEnvCount = changes.newVariables.filter((v) => !v.isSecret).length;
+        const newSecretCount = changes.newVariables.filter((v) => v.isSecret).length;
+        const editedEnvCount = changes.editedVariables.filter((v) => !v.isSecret).length;
+        const editedSecretCount = changes.editedVariables.filter((v) => v.isSecret).length;
+
+        toast({
+            variant: 'success',
+            title: 'Changes Saved',
+            description: `Successfully saved ${newEnvCount + newSecretCount} new variables (${newEnvCount} env, ${newSecretCount} secrets) and ${editedEnvCount + editedSecretCount} edited variables (${editedEnvCount} env, ${editedSecretCount} secrets).`,
+        });
     } catch (error: any) {
-        console.error('Failed to add variable:', error);
-        // Handle error - could show toast notification
+        console.error('Failed to save changes:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Failed to Save Changes',
+            description: error.message || 'An unexpected error occurred while saving changes.',
+        });
+    } finally {
+        isSaving.value = false;
     }
 };
 
 const saveChanges = () => {
-    // Save all pending changes
-    hasChanges.value = false;
-    emit('refresh');
+    // Trigger the table to save all pending changes
+    if (environmentVariablesTableRef.value) {
+        environmentVariablesTableRef.value.saveAllChanges();
+    }
 };
 
 const closeDialog = () => {
+    // Reset any pending changes before closing
+    if (environmentVariablesTableRef.value && hasPendingChanges.value) {
+        environmentVariablesTableRef.value.clearPendingChanges();
+    }
+
     isOpen.value = false;
     hasChanges.value = false;
+    hasPendingChanges.value = false;
     selectedVariables.value = [];
+    versionEnvironmentVariables.value = null;
+    selectedVersion.value = '';
 };
 
 const loadVersionData = async (revision: number) => {
-    if (!props.service || !selectedContainer.value) return null;
+    if (!service.value || !selectedContainer.value) return null;
 
     try {
         const response = await awsService.getEnvironmentVariableVersion({
-            clusterName: props.service.clusterName,
-            serviceName: props.service.name,
+            clusterName: service.value.clusterName,
+            serviceName: service.value.name,
             containerName: selectedContainer.value,
-            revision
+            revision,
         });
 
-        return response.environmentVariables;
+        const base = service.value.containers.find((c) => c.name === selectedContainer.value);
+        const secrets = base?.environmentVariables?.secrets || [];
+        const envList = response.environmentVariables || [];
+        return { environment: envList, secrets } as any;
     } catch (error: any) {
         console.error('Failed to load version data:', error);
         return null;

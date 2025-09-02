@@ -93,7 +93,6 @@ const emit = defineEmits<{
     (e: 'click'): void;
 }>();
 
-// Computed properties for environment variables and secrets count
 const environmentVariablesCount = computed(() => {
     return props.service.containers.reduce((total, container) => {
         return total + (container.environmentVariables.environment?.length || 0);
@@ -106,7 +105,6 @@ const secretsCount = computed(() => {
     }, 0);
 });
 
-// Current revision from task definition
 const currentVersion = computed(() => {
     return `Revision ${props.service.taskDefinition.revision}`;
 });

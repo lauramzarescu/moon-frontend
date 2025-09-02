@@ -42,7 +42,7 @@ export interface ContainerInterface {
     environmentVariables: {
         environment: Array<{ name: string; value: string }>;
         environmentFiles: any[];
-        secrets: any[];
+        secrets: Array<{ name: string; valueFrom: string }>;
     };
 }
 

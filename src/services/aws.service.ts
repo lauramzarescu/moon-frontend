@@ -5,8 +5,6 @@ import type { ClusterResponseInterface } from '@/types/response/cluster.interfac
 import {
     type AddEnvironmentVariablesInput,
     addEnvironmentVariablesSchema,
-    type BulkUpdateEnvironmentVariablesInput,
-    bulkUpdateEnvironmentVariablesSchema,
     type CompareEnvironmentVariablesInput,
     compareEnvironmentVariablesSchema,
     type CopyEnvironmentVariablesInput,
@@ -19,6 +17,8 @@ import {
     getEnvironmentVariableVersionSchema,
     type GetEnvironmentVariableVersionsInput,
     getEnvironmentVariableVersionsSchema,
+    type MoveEnvironmentVariablesInput,
+    moveEnvironmentVariablesSchema,
     type RemoveEnvironmentVariablesInput,
     removeEnvironmentVariablesSchema,
     type RollbackEnvironmentVariablesInput,
@@ -28,17 +28,16 @@ import {
 // Import API response types
 import type {
     AddEnvironmentVariablesResponse,
-    EditEnvironmentVariablesResponse,
-    RemoveEnvironmentVariablesResponse,
-    GetVersionsListResponse,
-    GetVariablesFromVersionResponse,
-    CopyVariablesBetweenServicesResponse,
-    RollbackToVersionResponse,
     CompareVersionsResponse,
-    BulkUpdateWithVersioningResponse,
+    CopyVariablesBetweenServicesResponse,
+    EditEnvironmentVariablesResponse,
+    GetVariablesFromVersionResponse,
+    GetVersionsListResponse,
+    MoveVariablesBetweenServicesResponse,
+    RemoveEnvironmentVariablesResponse,
+    RollbackToVersionResponse,
 } from '@/types/aws/environment-variable-api.types';
 
-// Keep legacy interfaces for backward compatibility if needed
 export interface EnvironmentVariable {
     name: string;
     value: string;
@@ -55,23 +54,6 @@ export interface UpdateEnvironmentVariablesInput {
     containerName: string;
     environmentVariables: EnvironmentVariable[];
     secrets: Secret[];
-}
-
-export interface AddEnvironmentVariableInput {
-    clusterName: string;
-    serviceName: string;
-    containerName: string;
-    type: 'environment' | 'secret';
-    name: string;
-    value: string;
-}
-
-export interface RemoveEnvironmentVariableInput {
-    clusterName: string;
-    serviceName: string;
-    containerName: string;
-    type: 'environment' | 'secret';
-    name: string;
 }
 
 export class AwsService extends ApiService {
@@ -146,9 +128,13 @@ export class AwsService extends ApiService {
         try {
             addEnvironmentVariablesSchema.parse(data);
 
-            return await this.post<AddEnvironmentVariablesInput, AddEnvironmentVariablesResponse>(`${this.resource}/services/environment-variables`, data, {
-                credentials: 'include',
-            });
+            return await this.post<AddEnvironmentVariablesInput, AddEnvironmentVariablesResponse>(
+                `${this.resource}/services/environment-variables`,
+                data,
+                {
+                    credentials: 'include',
+                },
+            );
         } catch (error) {
             console.error('Failed to add environment variables:', error);
             throw error;
@@ -159,9 +145,13 @@ export class AwsService extends ApiService {
         try {
             editEnvironmentVariablesSchema.parse(data);
 
-            return await this.put<EditEnvironmentVariablesInput, EditEnvironmentVariablesResponse>(`${this.resource}/services/environment-variables`, data, {
-                credentials: 'include',
-            });
+            return await this.put<EditEnvironmentVariablesInput, EditEnvironmentVariablesResponse>(
+                `${this.resource}/services/environment-variables`,
+                data,
+                {
+                    credentials: 'include',
+                },
+            );
         } catch (error) {
             console.error('Failed to edit environment variables:', error);
             throw error;
@@ -236,11 +226,32 @@ export class AwsService extends ApiService {
         try {
             copyEnvironmentVariablesSchema.parse(data);
 
-            return await this.post<CopyEnvironmentVariablesInput, CopyVariablesBetweenServicesResponse>(`${this.resource}/services/environment-variables/copy`, data, {
-                credentials: 'include',
-            });
+            return await this.post<CopyEnvironmentVariablesInput, CopyVariablesBetweenServicesResponse>(
+                `${this.resource}/services/environment-variables/copy`,
+                data,
+                {
+                    credentials: 'include',
+                },
+            );
         } catch (error) {
             console.error('Failed to copy environment variables:', error);
+            throw error;
+        }
+    }
+
+    async moveEnvironmentVariables(data: MoveEnvironmentVariablesInput): Promise<MoveVariablesBetweenServicesResponse> {
+        try {
+            moveEnvironmentVariablesSchema.parse(data);
+
+            return await this.post<MoveEnvironmentVariablesInput, MoveVariablesBetweenServicesResponse>(
+                `${this.resource}/services/environment-variables/move`,
+                data,
+                {
+                    credentials: 'include',
+                },
+            );
+        } catch (error) {
+            console.error('Failed to move environment variables:', error);
             throw error;
         }
     }
@@ -283,23 +294,6 @@ export class AwsService extends ApiService {
             );
         } catch (error) {
             console.error('Failed to compare environment variables:', error);
-            throw error;
-        }
-    }
-
-    async bulkUpdateEnvironmentVariables(data: BulkUpdateEnvironmentVariablesInput): Promise<BulkUpdateWithVersioningResponse> {
-        try {
-            bulkUpdateEnvironmentVariablesSchema.parse(data);
-
-            return await this.put<BulkUpdateEnvironmentVariablesInput, BulkUpdateWithVersioningResponse>(
-                `${this.resource}/services/environment-variables/bulk-update-versioning`,
-                data,
-                {
-                    credentials: 'include',
-                },
-            );
-        } catch (error) {
-            console.error('Failed to bulk update environment variables:', error);
             throw error;
         }
     }

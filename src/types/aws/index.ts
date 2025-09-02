@@ -4,6 +4,7 @@
  */
 
 export * from './environment-variable-api.types';
+export * from './environment-variable.enums';
 
 export type {
     EnvironmentVariable,

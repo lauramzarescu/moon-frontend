@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Sidebar, SidebarContent, SidebarHeader, type SidebarProps, SidebarRail } from '@/components/ui/sidebar';
-import { BlocksIcon, CalendarClockIcon, Clock, PackageIcon, SettingsIcon } from 'lucide-vue-next';
+import { BlocksIcon, CalendarClockIcon, Clock, PackageIcon, VariableIcon } from 'lucide-vue-next';
 import TeamSwitcher from '@/components/Sidebar/components/TeamSwitcher.vue';
 import NavAws from '@/components/Sidebar/components/NavAws.vue';
 import { MoonIcon } from '@radix-icons/vue';
@@ -33,9 +33,9 @@ const data = {
             icon: BlocksIcon,
         },
         {
-            title: 'Env Variables',
-            url: '/aws/env-variables',
-            icon: SettingsIcon,
+            title: 'Environment',
+            url: '/aws/environment',
+            icon: VariableIcon,
         },
         {
             title: 'Timeline',

@@ -9,18 +9,14 @@
                     <SettingsIcon class="h-5 w-5" />
                 </div>
                 <div>
-                    <h2 class="text-lg font-semibold leading-tight tracking-tight glitch-text">Environment Variables & Secrets</h2>
-                    <p class="text-sm text-muted-foreground">Service-based environment variable management</p>
+                    <h2 class="text-lg font-semibold leading-tight tracking-tight glitch-text">Public Variables & Secrets</h2>
+                    <p class="text-sm text-muted-foreground">Service-based variable management</p>
                 </div>
             </div>
             <div class="flex items-center gap-3">
                 <Button size="sm" variant="outline" class="hover:shadow-sm group transition-all duration-200" @click="refreshServices">
                     <RefreshCwIcon class="h-4 w-4 mr-2 transition-transform duration-200 group-hover:rotate-180" />
                     Refresh
-                </Button>
-                <Button size="sm" class="hover:shadow-sm transition-all duration-200" @click="openVersionComparison">
-                    <GitCompareIcon class="h-4 w-4 mr-2" />
-                    Compare Versions
                 </Button>
             </div>
         </div>
@@ -86,11 +82,12 @@ import ProviderHeader from '@/components/ui/provider-header/ProviderHeader.vue';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GitCompareIcon, RefreshCwIcon, SearchIcon, ServerIcon, SettingsIcon } from 'lucide-vue-next';
-import { computed, reactive, ref, TransitionGroup } from 'vue';
+import { RefreshCwIcon, SearchIcon, ServerIcon, SettingsIcon } from 'lucide-vue-next';
+import { computed, onMounted, reactive, ref, TransitionGroup, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useDataStore } from '@/stores/dataStore.ts';
 import { useToast } from '@/components/ui/toast';
+import { useRoute, useRouter } from 'vue-router';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface';
 import ServiceCard from './EnvVariablesView/components/ServiceCard.vue';
 import ServiceEnvironmentDialog from './EnvVariablesView/components/ServiceEnvironmentDialog.vue';
@@ -99,6 +96,8 @@ import VersionComparisonDialog from './EnvVariablesView/components/VersionCompar
 const store = useDataStore();
 const { services } = storeToRefs(store);
 const { toast } = useToast();
+const route = useRoute();
+const router = useRouter();
 
 // Reactive state
 const searchQuery = ref('');
@@ -134,14 +133,9 @@ const filteredServices = computed(() => {
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
 });
 
-
 const openServiceDialog = (service: ServiceInterface) => {
     serviceDialog.service = service;
     serviceDialog.isOpen = true;
-};
-
-const openVersionComparison = () => {
-    versionComparisonDialog.isOpen = true;
 };
 
 const refreshServices = () => {
@@ -156,6 +150,69 @@ const refreshServices = () => {
 const handleRefresh = () => {
     store.manualRefresh();
 };
+
+// Auto-open service dialog based on query parameters
+const checkAndOpenServiceDialog = () => {
+    const openServiceName = route.query.openService as string;
+    const clusterName = route.query.clusterName as string;
+
+    if (openServiceName && clusterName) {
+        // Find the service in the services list
+        const targetService = services.value.find((service) => service.name === openServiceName && service.clusterName === clusterName);
+
+        if (targetService) {
+            // Add a small delay to ensure the page has loaded properly
+            setTimeout(() => {
+                // Open the service dialog
+                openServiceDialog(targetService);
+
+                // Show a toast to indicate the service was auto-opened
+                toast({
+                    variant: 'success',
+                    title: 'Service Opened',
+                    description: `Opened environment variables for ${targetService.name}`,
+                });
+            }, 300);
+
+            // Clear the query parameters to avoid reopening on refresh
+            router.replace({
+                path: route.path,
+                query: { ...route.query, openService: undefined, clusterName: undefined },
+            });
+        } else {
+            // Service not found, show error toast
+            toast({
+                variant: 'destructive',
+                title: 'Service Not Found',
+                description: `Could not find service "${openServiceName}" in cluster "${clusterName}"`,
+            });
+
+            // Clear the query parameters
+            router.replace({
+                path: route.path,
+                query: { ...route.query, openService: undefined, clusterName: undefined },
+            });
+        }
+    }
+};
+
+// Watch for changes in services data and query parameters
+watch(
+    [services, () => route.query],
+    () => {
+        if (services.value.length > 0) {
+            checkAndOpenServiceDialog();
+        }
+    },
+    { immediate: true },
+);
+
+// Also check on mount in case services are already loaded
+onMounted(() => {
+    if (services.value.length > 0) {
+        checkAndOpenServiceDialog();
+    }
+});
 </script>
 
 <style scoped>

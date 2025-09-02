@@ -114,9 +114,18 @@ const unlink = async (link: ServiceRepositoryRecord) => {
         unlinkingId.value = link.id;
         await githubService.deleteServiceRepository(link.id);
         links.value = links.value.filter((l) => l.id !== link.id);
-        toast({ title: 'Unlinked', description: `${link.owner}/${link.repo} disconnected from service` });
+
+        toast({
+            title: 'Unlinked',
+            variant: 'success',
+            description: `${link.owner}/${link.repo} disconnected from service`,
+        });
     } catch (e: any) {
-        toast({ title: 'Failed to unlink', description: e?.message || 'Unexpected error', variant: 'destructive' });
+        toast({
+            title: 'Failed to unlink',
+            description: e?.message || 'Unexpected error',
+            variant: 'destructive',
+        });
     } finally {
         unlinkingId.value = null;
     }

@@ -1,8 +1,3 @@
-export enum VariableType {
-    ENVIRONMENT = 'environment',
-    SECRET = 'secret',
-}
-
 export enum VariableStatus {
     COMMON = 'common',
     UNIQUE = 'unique',
@@ -20,10 +15,16 @@ export enum ColorType {
     PURPLE = 'purple',
 }
 
+/**
+ * ServiceVariable interface that uses service interface structure
+ * - isSecret: boolean to distinguish between environment variables and secrets
+ * - Based on ContainerInterface.environmentVariables.environment vs .secrets
+ */
 export interface ServiceVariable {
     name: string;
-    value: string;
-    type: VariableType;
+    value?: string;
+    valueFrom?: string;
+    isSecret: boolean;
     serviceName: string;
 }
 
@@ -33,6 +34,12 @@ export interface ServiceData {
     containers: any[];
 }
 
+/**
+ * ComparisonData interface that separates variables by type
+ * - envVars: Environment variables (isSecret: false)
+ * - secrets: Secret variables (isSecret: true)
+ * - Uses isSecret property instead of VariableType enum
+ */
 export interface ComparisonData {
     envVars: ServiceVariable[];
     secrets: ServiceVariable[];

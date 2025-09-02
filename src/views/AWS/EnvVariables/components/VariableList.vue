@@ -12,7 +12,7 @@
         <SelectContent>
           <SelectGroup>
             <SelectItem value="all">All</SelectItem>
-            <SelectItem value="environment">Environment</SelectItem>
+            <SelectItem value="public">Public</SelectItem>
             <SelectItem value="secret">Secret</SelectItem>
           </SelectGroup>
         </SelectContent>
@@ -37,8 +37,8 @@
             </div>
           </div>
           <div class="flex items-center gap-2">
-            <Badge :class="row.type === 'secret' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'">
-              {{ row.type === 'secret' ? 'Secret' : 'Env' }}
+            <Badge :class="row.isSecret ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'">
+              {{ row.isSecret ? 'Secret' : 'Public' }}
             </Badge>
             <DropdownMenu>
               <DropdownMenuTrigger as-child>
@@ -47,7 +47,7 @@
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem v-if="row.type === 'environment'" @click="$emit('edit', row)">
+                <DropdownMenuItem v-if="!row.isSecret" @click="$emit('edit', row)">
                   <EditIcon class="h-4 w-4 mr-2" />
                   Edit
                 </DropdownMenuItem>
@@ -74,13 +74,14 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { Check, Copy, EditIcon, MoreHorizontalIcon, SearchIcon, TrashIcon } from 'lucide-vue-next'
 import { computed, ref, watch } from 'vue'
 
-interface Row { id: string; clusterName: string; serviceName: string; containerName: string; type: 'environment'|'secret'; name: string; value: string }
+
+interface Row { id: string; clusterName: string; serviceName: string; containerName: string; isSecret: boolean; name: string; value: string }
 
 const props = defineProps<{ rows: Row[]; selected?: { cluster: string | null; service: string | null; container: string | null } | null }>()
 const emit = defineEmits<{ (e: 'edit', row: Row): void; (e: 'delete', row: Row): void; (e: 'copy', text: string): void }>()
 
 const searchLocal = ref('')
-const typeFilter = ref<'all'|'environment'|'secret'>('all')
+const typeFilter = ref<'all'|'public'|'secret'>('all')
 const copied = ref<string | null>(null)
 
 const visibleRows = computed(() => {
@@ -89,7 +90,7 @@ const visibleRows = computed(() => {
     if (props.selected?.cluster && r.clusterName !== props.selected.cluster) return false
     if (props.selected?.service && r.serviceName !== props.selected.service) return false
     if (props.selected?.container && r.containerName !== props.selected.container) return false
-    if (typeFilter.value !== 'all' && r.type !== typeFilter.value) return false
+    if (typeFilter.value !== 'all' && ((typeFilter.value === 'secret' && !r.isSecret) || (typeFilter.value === 'public' && r.isSecret))) return false
     if (!q) return true
     return r.name.toLowerCase().includes(q) || r.value.toLowerCase().includes(q)
   })
