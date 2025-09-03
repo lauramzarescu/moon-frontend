@@ -17,6 +17,7 @@ const {
     deploymentsCount,
     deploymentsCountLoading,
     deploymentsDelta,
+    deploymentsPreviousCount,
     deploymentsTimelineLoading,
     chartData,
     chartOptions,
@@ -28,11 +29,9 @@ const {
 filters.action = 'aws:service:updated';
 pagination.limit = 1000;
 
-// Infinite scroll state
 const isLoadingMore = ref(false);
 const hasMoreData = ref(true);
 
-// Date formatting utilities using Moment.js
 const formatDate = (dateInput: Date | string | moment.Moment) => {
     const date = moment(dateInput);
     if (!date.isValid()) return 'Invalid Date';
@@ -340,19 +339,44 @@ watch(auditLogs, () => {
         <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch max-w-5xl">
             <!-- Current window with delta -->
             <div class="rounded-lg border bg-card p-4">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 mb-3">
                     <div class="p-2 rounded-md bg-teal-500/10 border border-teal-500/20">
                         <TrendingUp class="h-4 w-4 text-teal-400" />
                     </div>
                     <span class="text-xs text-muted-foreground">Deployments</span>
                 </div>
-                <div v-if="deploymentsCountLoading" class="flex items-center justify-center mt-2 h-12">
+                <div v-if="deploymentsCountLoading" class="flex items-center justify-center mt-2 h-20">
                     <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
                 </div>
-                <div v-else class="flex items-baseline gap-2 mt-2">
-                    <div class="text-3xl font-semibold text-foreground">{{ deploymentsCount }}</div>
-                    <div :class="['text-xs font-medium', deploymentsDelta >= 0 ? 'text-emerald-500' : 'text-red-500']">
-                        {{ deploymentsDelta >= 0 ? '+' : '' }}{{ deploymentsDelta }}%
+                <div v-else class="space-y-3">
+                    <!-- Current count with delta -->
+                    <div class="flex items-baseline gap-2">
+                        <div class="text-3xl font-semibold text-foreground">{{ deploymentsCount }}</div>
+                        <div
+                            :class="[
+                                'text-xs font-medium px-1.5 py-0.5 rounded-full',
+                                deploymentsDelta >= 0 ? 'text-emerald-600' : 'text-red-600',
+                            ]"
+                        >
+                            {{ deploymentsDelta > 0 ? '+' : '' }}{{ deploymentsDelta || 0 }}%
+                        </div>
+                    </div>
+
+                    <!-- Previous period comparison -->
+                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Previous period:</span>
+                        <span class="font-medium">{{ deploymentsPreviousCount }}</span>
+                    </div>
+
+                    <!-- Change indicator -->
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-muted-foreground">Change:</span>
+                        <div class="flex items-center gap-1">
+                            <span :class="['font-medium', deploymentsDelta >= 0 ? 'text-emerald-600' : 'text-red-600']">
+                                {{ deploymentsDelta > 0 ? '+' : '' }}{{ Math.abs(deploymentsCount - deploymentsPreviousCount) }}
+                            </span>
+                            <span class="text-muted-foreground">deployments</span>
+                        </div>
                     </div>
                 </div>
             </div>

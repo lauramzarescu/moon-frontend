@@ -4,6 +4,8 @@ import { AuditLogEnum } from '@/views/Settings/components/AuditLogs/schema.ts';
 
 export interface DeploymentsCountResponse {
     count: number;
+    previousCount: number;
+    delta: number;
 }
 
 export interface DeploymentsTimelineResponse {

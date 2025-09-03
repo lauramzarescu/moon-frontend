@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue';
 import moment from 'moment';
-import { AuditLogService } from '@/services/audit-log.service';
+import { AuditLogService, type DeploymentsCountResponse } from '@/services/audit-log.service';
 
 export function useDeploymentWidgets() {
     const auditLogService = new AuditLogService();
@@ -9,23 +9,13 @@ export function useDeploymentWidgets() {
     const deploymentsCount = ref<number>(0);
     const deploymentsCountLoading = ref(false);
     const deploymentsCountError = ref<string | null>(null);
+    const deploymentsDelta = ref<number>(0);
+    const deploymentsPreviousCount = ref<number>(0);
 
     // State for deployments timeline widget
     const deploymentsTimeline = ref<{ data: number[]; labels?: string[] }>({ data: [] });
     const deploymentsTimelineLoading = ref(false);
     const deploymentsTimelineError = ref<string | null>(null);
-
-    // State for previous period comparison (for percentage calculation)
-    const previousPeriodCount = ref<number>(0);
-
-    // Computed properties
-    const deploymentsDelta = computed(() => {
-        const current = deploymentsCount.value;
-        const previous = previousPeriodCount.value;
-        if (previous === 0) return current > 0 ? 100 : 0;
-
-        return Math.round(((current - previous) / previous) * 100);
-    });
 
     // Computed property to check if chart has data
     const hasChartData = computed(() => {
@@ -111,24 +101,6 @@ export function useDeploymentWidgets() {
         }
     }));
 
-    // Helper function to calculate previous period dates using Moment.js
-    const calculatePreviousPeriod = (startDate: string, endDate: string) => {
-        if (!startDate || !endDate) return { prevStart: '', prevEnd: '' };
-
-        const start = moment(startDate);
-        const end = moment(endDate);
-        const diffDays = end.diff(start, 'days');
-
-        const prevEnd = start.clone().subtract(1, 'day');
-        const prevStart = prevEnd.clone().subtract(diffDays, 'days');
-
-        return {
-            prevStart: prevStart.format('YYYY-MM-DD'),
-            prevEnd: prevEnd.format('YYYY-MM-DD'),
-        };
-    };
-
-
     const fetchDeploymentsCount = async (startDate?: string, endDate?: string) => {
         deploymentsCountLoading.value = true;
         deploymentsCountError.value = null;
@@ -143,28 +115,13 @@ export function useDeploymentWidgets() {
 
             const response = await auditLogService.getDeploymentsCount(params);
             deploymentsCount.value = response.count;
-
-            // Fetch previous period for comparison
-            if (startDate && endDate) {
-                const { prevStart, prevEnd } = calculatePreviousPeriod(startDate, endDate);
-                try {
-                    const prevResponse = await auditLogService.getDeploymentsCount({
-                        filter_startDate: prevStart,
-                        filter_endDate: prevEnd,
-                        tz,
-                    });
-                    previousPeriodCount.value = prevResponse.count;
-                } catch (prevError) {
-                    console.warn('Failed to fetch previous period data:', prevError);
-                    previousPeriodCount.value = 0;
-                }
-            } else {
-                previousPeriodCount.value = 0;
-            }
+            deploymentsDelta.value = response.delta;
+            deploymentsPreviousCount.value = response.previousCount;
         } catch (error) {
             deploymentsCountError.value = error instanceof Error ? error.message : 'Failed to fetch deployments count';
             deploymentsCount.value = 0;
-            previousPeriodCount.value = 0;
+            deploymentsDelta.value = 0;
+            deploymentsPreviousCount.value = 0;
         } finally {
             deploymentsCountLoading.value = false;
         }
@@ -202,16 +159,16 @@ export function useDeploymentWidgets() {
         deploymentsTimeline,
         deploymentsTimelineLoading,
         deploymentsTimelineError,
-        previousPeriodCount,
+        deploymentsDelta,
+        deploymentsPreviousCount,
 
         // Computed
-        deploymentsDelta,
         chartData,
         chartOptions,
         hasChartData,
         hasSingleDataPoint,
 
-
+        // Methods
         fetchDeploymentsCount,
         fetchDeploymentsTimeline,
         fetchAllWidgetData,
