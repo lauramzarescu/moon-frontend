@@ -24,7 +24,7 @@
         <!-- Search and Filter Section -->
         <div class="flex items-center gap-3">
             <div class="relative flex-1 max-w-md">
-                <Input v-model="searchQuery" placeholder="Search services..." class="pl-10 transition-all duration-200 focus:shadow-md" />
+                <Input v-model="searchQuery" placeholder="Search services, variables, secrets..." class="pl-10 transition-all duration-200 focus:shadow-md" />
                 <SearchIcon class="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             </div>
             <Select v-model="clusterFilter">
@@ -63,7 +63,7 @@
                     </div>
                     <h3 class="text-lg font-medium mb-2">No services found</h3>
                     <p class="text-muted-foreground max-w-sm">
-                        {{ searchQuery ? 'Try adjusting your search criteria' : 'No services available in the selected cluster' }}
+                        {{ searchQuery ? 'No services found matching your search in service names, variables, or secrets' : 'No services available in the selected cluster' }}
                     </p>
                 </div>
             </div>
@@ -98,12 +98,9 @@ const { services } = storeToRefs(store);
 const { toast } = useToast();
 const route = useRoute();
 const router = useRouter();
-
-// Reactive state
 const searchQuery = ref('');
 const clusterFilter = ref<string>('all');
 
-// Dialog states
 const serviceDialog = reactive({
     isOpen: false,
     service: null as ServiceInterface | null,
@@ -127,7 +124,30 @@ const filteredServices = computed(() => {
     // Filter by search query
     if (searchQuery.value.trim()) {
         const query = searchQuery.value.toLowerCase().trim();
-        filtered = filtered.filter((s) => s.name.toLowerCase().includes(query) || s.clusterName.toLowerCase().includes(query));
+        filtered = filtered.filter((service) => {
+            // Search in service name and cluster name
+            const serviceMatches = service.name.toLowerCase().includes(query) ||
+                                 service.clusterName.toLowerCase().includes(query);
+
+            // Search in environment variables and secrets
+            const variableMatches = service.containers.some((container) => {
+                // Search in environment variables
+                const envVarMatches = container.environmentVariables.environment?.some((envVar) =>
+                    envVar.name.toLowerCase().includes(query) ||
+                    envVar.value.toLowerCase().includes(query)
+                ) || false;
+
+                // Search in secrets
+                const secretMatches = container.environmentVariables.secrets?.some((secret) =>
+                    secret.name.toLowerCase().includes(query) ||
+                    secret.valueFrom.toLowerCase().includes(query)
+                ) || false;
+
+                return envVarMatches || secretMatches;
+            });
+
+            return serviceMatches || variableMatches;
+        });
     }
 
     return filtered.sort((a, b) => a.name.localeCompare(b.name));
