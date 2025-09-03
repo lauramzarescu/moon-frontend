@@ -19,15 +19,15 @@
                 </thead>
                 <tbody>
                     <TransitionGroup name="fade-move">
-                        <tr
-                            v-for="row in rows"
-                            :key="row.id"
-                            class="group hover:bg-muted/20 transition-all duration-150 border-b"
-                        >
-                            <td class="sticky left-0 bg-card/95 backdrop-blur-sm z-10 border-r border-border shadow-sm group-hover:bg-muted/30 p-2">
+                        <tr v-for="row in rows" :key="row.id" class="group hover:bg-muted/20 transition-all duration-150 border-b">
+                            <td
+                                class="sticky left-0 bg-card/95 backdrop-blur-sm z-10 border-r border-border shadow-sm group-hover:bg-muted/30 p-2"
+                            >
                                 <Badge variant="secondary" class="text-xs">{{ row.clusterName }}</Badge>
                             </td>
-                            <td class="sticky left-48 bg-card/95 backdrop-blur-sm z-10 border-r border-border shadow-sm group-hover:bg-muted/30 p-2">
+                            <td
+                                class="sticky left-48 bg-card/95 backdrop-blur-sm z-10 border-r border-border shadow-sm group-hover:bg-muted/30 p-2"
+                            >
                                 <span class="font-medium">{{ row.serviceName }}</span>
                             </td>
                             <td class="p-2">
@@ -56,11 +56,7 @@
                                     </button>
                                 </div>
                             </td>
-                            <td
-                                @keydown.stop="onKeydown($event, row)"
-                                @dblclick="startEdit(row)"
-                                class="align-top p-2"
-                            >
+                            <td @keydown.stop="onKeydown($event, row)" @dblclick="startEdit(row)" class="align-top p-2">
                                 <div v-if="isEditing(row)" class="flex items-start gap-2">
                                     <Textarea
                                         ref="editRef"
