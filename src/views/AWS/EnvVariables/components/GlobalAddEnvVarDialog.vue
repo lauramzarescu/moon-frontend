@@ -1,7 +1,7 @@
 <template>
     <Dialog v-model:open="isOpen" :modal="true">
         <DialogTrigger v-if="showTrigger" as-child>
-            <Button variant="outline" size="sm" class="gap-2 hover:shadow-sm">
+            <Button variant="outline" size="sm" class="gap-2 hover:shadow-sm" :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)">
                 <PlusIcon class="h-4 w-4" />
                 Add Variable
             </Button>
@@ -76,7 +76,7 @@
 
             <DialogFooter>
                 <Button variant="outline" @click="close" :disabled="loading">Cancel</Button>
-                <Button @click="submit" :disabled="loading">
+                <Button @click="submit" :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE) || loading">
                     <Loader2Icon v-if="loading" class="h-4 w-4 animate-spin mr-2" />
                     Add Variable
                 </Button>
@@ -103,6 +103,8 @@ import {
     type AddEnvironmentVariablesInput,
     addEnvironmentVariablesSchema,
 } from '@/views/AWS/Services/components/environment-variable.schema';
+import { PermissionEnum } from '@/enums/user/user.enum.ts';
+import { usePermissions } from '@/composables/usePermissions.ts';
 
 const props = withDefaults(
     defineProps<{
@@ -120,6 +122,7 @@ const isOpen = computed({ get: () => props.open ?? false, set: (v) => emit('upda
 const loading = ref(false);
 const aws = new AwsService();
 const { toast } = useToast();
+const { hasPermission } = usePermissions();
 
 const { services } = storeToRefs(useDataStore());
 

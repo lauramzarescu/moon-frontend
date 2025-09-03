@@ -62,11 +62,23 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <Button size="sm" variant="outline" @click="openBulkAdd" class="hover:shadow-sm transition-all duration-200">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
+                        @click="openBulkAdd"
+                        class="hover:shadow-sm transition-all duration-200"
+                    >
                         <PlusIcon class="h-4 w-4 mr-2" />
                         Add Variable
                     </Button>
-                    <Button size="sm" variant="outline" @click="openBulkOperations" class="hover:shadow-sm transition-all duration-200">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
+                        @click="openBulkOperations"
+                        class="hover:shadow-sm transition-all duration-200"
+                    >
                         <SettingsIcon class="h-4 w-4 mr-2" />
                         Bulk Operations
                     </Button>
@@ -193,6 +205,8 @@ import EnvironmentVariablesTable from './EnvironmentVariablesTableWrapper.vue';
 import BulkAddDialog from './BulkAddDialog.vue';
 import BulkOperationsDialog from './BulkOperationsDialog.vue';
 import VersionComparisonDialog from './VersionComparisonDialog.vue';
+import { PermissionEnum } from '@/enums/user/user.enum.ts';
+import { usePermissions } from '@/composables/usePermissions.ts';
 
 const props = defineProps<{
     open: boolean;
@@ -206,6 +220,7 @@ const emit = defineEmits<{
 
 const awsService = new AwsService();
 const { toast } = useToast();
+const { hasPermission } = usePermissions();
 const store = useDataStore();
 const { services } = storeToRefs(store);
 const { hasUnsavedChanges, getUnsavedChangesCount } = useUnsavedChanges();

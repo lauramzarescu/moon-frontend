@@ -233,18 +233,18 @@
                                                                 >
                                                                     {{ getVariableTypeLabel(item.isSecret) }}
                                                                 </Badge>
-                                                                <Badge
-                                                                    v-if="item.status !== 'unchanged'"
-                                                                    variant="outline"
-                                                                    class="text-[10px] h-6 px-2.5 py-0 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
-                                                                    @click="onCopyToVersion(item)"
-                                                                >
-                                                                    <component
-                                                                        :is="copiedTo === item.name ? CheckIcon : CopyIcon"
-                                                                        class="h-3.5 w-3.5 mr-1 transition-transform duration-200"
-                                                                    />
-                                                                    Copy to {{ toVersion }}
-                                                                </Badge>
+                                                                <!--                                                                <Badge-->
+                                                                <!--                                                                    v-if="item.status !== 'unchanged'"-->
+                                                                <!--                                                                    variant="outline"-->
+                                                                <!--                                                                    class="text-[10px] h-6 px-2.5 py-0 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"-->
+                                                                <!--                                                                    @click="onCopyToVersion(item)"-->
+                                                                <!--                                                                >-->
+                                                                <!--                                                                    <component-->
+                                                                <!--                                                                        :is="copiedTo === item.name ? CheckIcon : CopyIcon"-->
+                                                                <!--                                                                        class="h-3.5 w-3.5 mr-1 transition-transform duration-200"-->
+                                                                <!--                                                                    />-->
+                                                                <!--                                                                    Copy to {{ toVersion }}-->
+                                                                <!--                                                                </Badge>-->
                                                             </div>
                                                         </div>
 
@@ -649,7 +649,7 @@ watch(
             }
         }
     },
-    { immediate: true }
+    { immediate: true },
 );
 
 watch(

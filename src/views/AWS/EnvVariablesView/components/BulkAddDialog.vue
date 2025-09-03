@@ -36,7 +36,12 @@
                 <div v-if="activeMethod === BulkAddMethod.INDIVIDUAL" class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-medium">Add Variables One by One</h3>
-                        <Button size="sm" @click="addNewVariable" class="hover:shadow-sm transition-all duration-200">
+                        <Button
+                            size="sm"
+                            @click="addNewVariable"
+                            :disabled="!hasPermission(PermissionEnum.AWS_SERVICE_WRITE)"
+                            class="hover:shadow-sm transition-all duration-200"
+                        >
                             <PlusIcon class="h-4 w-4 mr-2" />
                             Add Variable
                         </Button>
@@ -226,7 +231,11 @@
                         <!-- Container Selection -->
                         <div class="space-y-2">
                             <Label for="copy-container">Source Container</Label>
-                            <Select v-model="copyFromService.selectedContainer" @update:model-value="onContainerChange" :disabled="!copyFromService.selectedService">
+                            <Select
+                                v-model="copyFromService.selectedContainer"
+                                @update:model-value="onContainerChange"
+                                :disabled="!copyFromService.selectedService"
+                            >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select container" />
                                 </SelectTrigger>
@@ -253,13 +262,15 @@
                     <div v-else-if="copyFromService.copiedVariables.length > 0" class="space-y-3">
                         <div class="flex items-center justify-between">
                             <h4 class="font-medium">Variables to Copy</h4>
-                            <Badge variant="secondary" class="text-xs">
-                                {{ copyFromService.copiedVariables.length }} variables
-                            </Badge>
+                            <Badge variant="secondary" class="text-xs"> {{ copyFromService.copiedVariables.length }} variables </Badge>
                         </div>
                         <div class="border rounded-lg max-h-48 overflow-y-auto">
                             <div class="space-y-1 p-3">
-                                <div v-for="(variable, index) in copyFromService.copiedVariables" :key="index" class="flex items-center gap-2 text-sm">
+                                <div
+                                    v-for="(variable, index) in copyFromService.copiedVariables"
+                                    :key="index"
+                                    class="flex items-center gap-2 text-sm"
+                                >
                                     <Badge :variant="!variable.isSecret ? 'default' : 'secondary'" class="text-xs">
                                         {{ !variable.isSecret ? 'PUBLIC' : 'SECRET' }}
                                     </Badge>
@@ -274,7 +285,10 @@
                     </div>
 
                     <!-- Empty State -->
-                    <div v-else-if="copyFromService.selectedService && copyFromService.selectedContainer" class="text-center py-8 text-muted-foreground">
+                    <div
+                        v-else-if="copyFromService.selectedService && copyFromService.selectedContainer"
+                        class="text-center py-8 text-muted-foreground"
+                    >
                         <p>No environment variables found in the selected container.</p>
                     </div>
                 </div>
@@ -322,6 +336,8 @@ import {
 } from '@/views/AWS/Services/components/environment-variable.schema';
 import { useDataStore } from '@/stores/dataStore';
 import { storeToRefs } from 'pinia';
+import { PermissionEnum } from '@/enums/user/user.enum.ts';
+import { usePermissions } from '@/composables/usePermissions.ts';
 
 interface Variable {
     id: string;
@@ -342,6 +358,7 @@ const emit = defineEmits<{
 }>();
 
 const { toast } = useToast();
+const { hasPermission } = usePermissions();
 const awsService = new AwsService();
 const store = useDataStore();
 const { services } = storeToRefs(store);
@@ -413,13 +430,13 @@ const parsedVariables = computed(() => {
 
 // Available services for copy operations (excluding current service)
 const availableServices = computed(() => {
-    return services.value.filter(s => s.name !== props.service?.name);
+    return services.value.filter((s) => s.name !== props.service?.name);
 });
 
 // Available containers for selected service
 const availableContainers = computed(() => {
-    const service = services.value.find(s => s.name === copyFromService.value.selectedService);
-    return service?.containers.map(c => c.name) || [];
+    const service = services.value.find((s) => s.name === copyFromService.value.selectedService);
+    return service?.containers.map((c) => c.name) || [];
 });
 
 const totalVariablesCount = computed(() => {
@@ -464,15 +481,15 @@ const onContainerChange = async () => {
 
     copyFromService.value.isLoadingVariables = true;
     try {
-        const sourceService = services.value.find(s => s.name === copyFromService.value.selectedService);
-        const sourceContainer = sourceService?.containers.find(c => c.name === copyFromService.value.selectedContainer);
+        const sourceService = services.value.find((s) => s.name === copyFromService.value.selectedService);
+        const sourceContainer = sourceService?.containers.find((c) => c.name === copyFromService.value.selectedContainer);
 
         if (sourceContainer?.environmentVariables) {
             const variables: Variable[] = [];
 
             // Add environment variables
             if (sourceContainer.environmentVariables.environment) {
-                sourceContainer.environmentVariables.environment.forEach(env => {
+                sourceContainer.environmentVariables.environment.forEach((env) => {
                     variables.push({
                         id: `copy-env-${env.name}`,
                         name: env.name,
@@ -484,7 +501,7 @@ const onContainerChange = async () => {
 
             // Add secrets
             if (sourceContainer.environmentVariables.secrets) {
-                sourceContainer.environmentVariables.secrets.forEach(secret => {
+                sourceContainer.environmentVariables.secrets.forEach((secret) => {
                     variables.push({
                         id: `copy-secret-${secret.name}`,
                         name: secret.name,
