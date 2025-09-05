@@ -4,30 +4,12 @@ import { jwtDecode } from 'jwt-decode';
 import type { JwtInterface } from '@/types/jwt/jwt.interface.ts';
 import Cookies from 'js-cookie';
 import { config } from '../../app.config.ts';
-import { debounce } from 'lodash';
 
 export class ApiService {
     protected jwt: string | null | undefined = null;
     private baseUrl = config.BACKEND_URL;
     private pendingRequests: Map<string, Promise<any>> = new Map();
 
-    // Create debounced request method with 300ms delay
-    private debouncedRequest = debounce(
-        async <T>(url: string, options: RequestInit, requestKey: string): Promise<T> => {
-            try {
-                const result = await this.executeRequest<T>(url, options);
-                // Remove from pending requests after completion
-                this.pendingRequests.delete(requestKey);
-                return result;
-            } catch (error) {
-                // Also remove on error
-                this.pendingRequests.delete(requestKey);
-                throw error;
-            }
-        },
-        300,
-        { leading: true, trailing: false },
-    );
 
     constructor() {
         this.jwt = Cookies.get('token');
@@ -68,25 +50,27 @@ export class ApiService {
     }
 
     async request<T>(url: string, options: RequestInit = {}): Promise<T> {
-        // Check if the token exists and is expired before making the request
         if (this.jwt && this.isTokenExpired(this.jwt)) {
             await this.handleTokenExpiration();
             throw new Error('JWT token expired');
         }
 
-        // Generate a unique key for this request
         const method = options.method || 'GET';
         const requestKey = `${method}-${url}-${JSON.stringify(options.body || '')}`;
 
-        // If this exact request is already pending, return the existing promise
         if (this.pendingRequests.has(requestKey)) {
             return this.pendingRequests.get(requestKey) as Promise<T>;
         }
 
-        // Create a new debounced request
-        const promise = this.debouncedRequest(url, options, requestKey) as Promise<T>;
-        this.pendingRequests.set(requestKey, promise);
+        const promise = (async () => {
+            try {
+                return await this.executeRequest<T>(url, options);
+            } finally {
+                this.pendingRequests.delete(requestKey);
+            }
+        })();
 
+        this.pendingRequests.set(requestKey, promise);
         return promise;
     }
 

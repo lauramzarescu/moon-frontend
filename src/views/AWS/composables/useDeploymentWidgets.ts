@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import moment from 'moment';
-import { AuditLogService, type DeploymentsCountResponse } from '@/services/audit-log.service';
+import { AuditLogService } from '@/services/audit-log.service';
+import { withDelay } from '@/utils.ts';
 
 export function useDeploymentWidgets() {
     const auditLogService = new AuditLogService();
@@ -66,7 +67,7 @@ export function useDeploymentWidgets() {
                 cornerRadius: 6,
                 displayColors: false,
                 callbacks: {
-                    title: function(context: any) {
+                    title: function (context: any) {
                         const dataIndex = context[0]?.dataIndex;
                         const labels = deploymentsTimeline.value.labels;
 
@@ -82,23 +83,23 @@ export function useDeploymentWidgets() {
                         // Fallback to generic label
                         return `Data Point ${dataIndex + 1}`;
                     },
-                    label: function(context: any) {
+                    label: function (context: any) {
                         const value = context.parsed.y;
                         const deploymentText = value === 1 ? 'deployment' : 'deployments';
                         return `${value} ${deploymentText}`;
-                    }
-                }
-            }
+                    },
+                },
+            },
         },
         scales: { x: { display: false }, y: { display: false } },
         elements: {
             line: { borderJoinStyle: 'round', capBezierPoints: true },
-            point: { radius: hasSingleDataPoint.value ? 4 : 0 }
+            point: { radius: hasSingleDataPoint.value ? 4 : 0 },
         },
         interaction: {
             intersect: false,
-            mode: 'index'
-        }
+            mode: 'index',
+        },
     }));
 
     const fetchDeploymentsCount = async (startDate?: string, endDate?: string) => {
@@ -114,9 +115,15 @@ export function useDeploymentWidgets() {
             if (tz) params.tz = tz;
 
             const response = await auditLogService.getDeploymentsCount(params);
-            deploymentsCount.value = response.count;
-            deploymentsDelta.value = response.delta;
-            deploymentsPreviousCount.value = response.previousCount;
+
+            // Validate and sanitize response values
+            const count = !isNaN(response.count) ? response.count : 0;
+            const delta = !isNaN(response.delta) ? response.delta : 0;
+            const previousCount = !isNaN(response.previousCount) ? response.previousCount : 0;
+
+            deploymentsCount.value = count;
+            deploymentsDelta.value = delta;
+            deploymentsPreviousCount.value = previousCount;
         } catch (error) {
             deploymentsCountError.value = error instanceof Error ? error.message : 'Failed to fetch deployments count';
             deploymentsCount.value = 0;
@@ -135,6 +142,7 @@ export function useDeploymentWidgets() {
             const params: { filter_startDate?: string; filter_endDate?: string; tz?: string } = {};
             if (startDate) params.filter_startDate = startDate;
             if (endDate) params.filter_endDate = endDate;
+
             params.tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
             deploymentsTimeline.value = await auditLogService.getDeploymentsTimeline(params);
@@ -147,8 +155,12 @@ export function useDeploymentWidgets() {
     };
 
     const fetchAllWidgetData = async (startDate?: string, endDate?: string) => {
-        await fetchDeploymentsCount(startDate, endDate);
-        setTimeout(async () => await fetchDeploymentsTimeline(startDate, endDate), 301); // 300 is the debounce time in generic.service.ts
+        await withDelay(async () => {
+            await Promise.allSettled([
+                fetchDeploymentsCount(startDate, endDate),
+                fetchDeploymentsTimeline(startDate, endDate),
+            ]);
+        });
     };
 
     return {
