@@ -730,13 +730,22 @@
     }
 
     ::-webkit-scrollbar {
-        width: 6px;
+        width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
     }
 
     ::-webkit-scrollbar-thumb {
-        border-radius: 5px;
-        background-color: var(--color-slate-800);
-        color: var(--color-slate-950);
-        -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+        background: var(--muted);
+        border-radius: 100px;
+        border: 2px solid transparent;
+        background-clip: content-box;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--border);
+        background-clip: content-box;
     }
 }

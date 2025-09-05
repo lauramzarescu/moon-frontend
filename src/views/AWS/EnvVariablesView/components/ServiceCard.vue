@@ -5,25 +5,14 @@
     >
         <div class="p-4">
             <!-- Header -->
-            <div class="flex items-start justify-between mb-3">
+            <div class="flex items-start justify-between mb-8">
                 <div class="flex items-center gap-3">
-                    <div
-                        class="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/20 transition-all duration-300"
-                    >
-                        <ServerIcon class="h-5 w-5 text-primary" />
+                    <div class="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                        <ServerIcon class="h-4 w-4" />
                     </div>
-                    <div>
-                        <h3 class="font-semibold text-base group-hover:text-primary transition-colors duration-200">
-                            {{ service.name }}
-                        </h3>
-                        <div class="flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" class="text-xs px-2 py-0.5">
-                                {{ service.clusterName }}
-                            </Badge>
-                            <Badge :variant="service.status === 'ACTIVE' ? 'default' : 'secondary'" class="text-xs px-2 py-0.5">
-                                {{ service.status }}
-                            </Badge>
-                        </div>
+                    <div class="flex items-center flex-wrap gap-2">
+                        <span class="text-lg font-semibold mr-1">{{ service?.name }}</span>
+                        <Badge variant="secondary" class="text-xs">{{ service?.clusterName }}</Badge>
                     </div>
                 </div>
                 <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -34,21 +23,21 @@
             <!-- Environment Variables Summary -->
             <div class="space-y-2">
                 <div class="flex items-center justify-between text-sm">
-                    <span class="text-muted-foreground flex items-center gap-1">
+                    <span class="text-muted-foreground flex items-center gap-3">
                         <GlobeIcon class="h-3 w-3" />
                         Environment Variables
                     </span>
                     <span class="font-medium">{{ environmentVariablesCount }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm">
-                    <span class="text-muted-foreground flex items-center gap-1">
+                    <span class="text-muted-foreground flex items-center gap-3">
                         <KeyIcon class="h-3 w-3" />
                         Secrets
                     </span>
                     <span class="font-medium">{{ secretsCount }}</span>
                 </div>
                 <div class="flex items-center justify-between text-sm border-t pt-2">
-                    <span class="text-muted-foreground flex items-center gap-1">
+                    <span class="text-muted-foreground flex items-center gap-3">
                         <ContainerIcon class="h-3 w-3" />
                         Containers
                     </span>
