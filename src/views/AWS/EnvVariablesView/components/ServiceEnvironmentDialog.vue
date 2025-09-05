@@ -6,20 +6,18 @@
                     <div class="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
                         <ServerIcon class="h-4 w-4" />
                     </div>
-                    <div>
-                        <span class="text-lg">{{ service?.name }}</span>
-                        <div class="flex items-center gap-2 mt-1">
-                            <Badge variant="secondary" class="text-xs">{{ service?.clusterName }}</Badge>
-                            <Badge :variant="service?.status === 'ACTIVE' ? 'default' : 'secondary'" class="text-xs">
-                                {{ service?.status }}
-                            </Badge>
-                            <Badge v-if="hasStoredUnsavedChanges" variant="destructive" class="text-xs">
-                                {{ unsavedChangesCount }} Unsaved Changes
-                            </Badge>
-                        </div>
+                    <div class="flex items-center flex-wrap gap-2">
+                        <span class="text-lg font-semibold mr-1">{{ service?.name }}</span>
+                        <Badge variant="secondary" class="text-xs">{{ service?.clusterName }}</Badge>
+                        <Badge :variant="service?.status === 'ACTIVE' ? 'default' : 'secondary'" class="text-xs">
+                            {{ service?.status }}
+                        </Badge>
+                        <Badge v-if="hasStoredUnsavedChanges" variant="destructive" class="text-xs">
+                            {{ unsavedChangesCount }} Unsaved Changes
+                        </Badge>
                     </div>
                 </DialogTitle>
-                <DialogDescription> Manage environment variables and secrets for this service </DialogDescription>
+                <DialogDescription class="mt-3"> Manage environment variables and secrets for this service </DialogDescription>
             </DialogHeader>
 
             <!-- Version Selector and Actions -->
@@ -28,7 +26,7 @@
                     <div class="flex items-center gap-2">
                         <Label class="text-sm font-medium">Version:</Label>
                         <Select v-model="selectedVersion" :disabled="isLoadingVersions">
-                            <SelectTrigger class="w-[200px]">
+                            <SelectTrigger class="w-[260px]">
                                 <SelectValue>
                                     <div v-if="isLoadingVersions" class="flex items-center gap-2">
                                         <Loader2Icon class="h-3 w-3 animate-spin" />
@@ -45,11 +43,14 @@
                             <SelectContent>
                                 <SelectGroup>
                                     <SelectItem
-                                        v-for="version in availableVersions"
+                                        v-for="(version, idx) in availableVersions"
                                         :key="version.revision"
                                         :value="version.revision.toString()"
                                     >
-                                        {{ version.label }}
+                                        <div class="flex items-center justify-between gap-3">
+                                            <span>{{ version.label }}</span>
+                                            <Badge v-if="idx === 0" variant="outline" class="text-[10px]">Latest</Badge>
+                                        </div>
                                     </SelectItem>
                                 </SelectGroup>
                             </SelectContent>
@@ -87,17 +88,17 @@
 
             <!-- Container Tabs -->
             <div class="flex-1 flex flex-col min-h-0">
-                <div class="border-y">
-                    <div class="flex items-center gap-2 px-4 py-2.5">
+                <div class="border-b">
+                    <div class="flex items-center px-3 py-1">
                         <button
                             v-for="container in service?.containers"
                             :key="container.name"
                             @click="selectedContainer = container.name"
                             :class="[
-                                'inline-flex items-center justify-center px-4 py-0 h-9 text-sm font-medium rounded-full transition-all duration-200',
+                                'inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-t-md border-b-2 transition-all duration-200 -mb-px',
                                 selectedContainer === container.name
-                                    ? 'bg-primary text-primary-foreground shadow-none'
-                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+                                    ? 'bg-background text-foreground border-primary'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/30 border-transparent',
                             ]"
                         >
                             {{ container.name }}
@@ -186,6 +187,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue';
+import moment from 'moment';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -294,6 +296,8 @@ const currentContainer = computed(() => {
 const availableVersions = ref<Array<{ revision: number; label: string; arn: string; registeredAt: string }>>([]);
 const isLoadingVersions = ref(false);
 
+const formatVersionDate = (dateStr: string) => moment(dateStr).format('MMM D, YYYY [at] h:mm A');
+
 const loadVersions = async () => {
     if (!service.value || !selectedContainer.value) return;
 
@@ -307,7 +311,7 @@ const loadVersions = async () => {
 
         availableVersions.value = response.versions.map((version: any) => ({
             revision: version.revision,
-            label: `v${version.revision} (${new Date(version.registeredAt).toLocaleDateString()})`,
+            label: `v${version.revision} — ${formatVersionDate(version.registeredAt)}`,
             arn: version.arn,
             registeredAt: version.registeredAt,
         }));
@@ -320,10 +324,11 @@ const loadVersions = async () => {
         console.error('Failed to load versions:', error);
         // Fallback to mock data
         const baseVersion = service.value.taskDefinition.revision;
+        const nowIso = new Date().toISOString();
         availableVersions.value = [
-            { revision: baseVersion, label: `v${baseVersion} (current)`, arn: '', registeredAt: new Date().toISOString() },
-            { revision: baseVersion - 1, label: `v${baseVersion - 1}`, arn: '', registeredAt: new Date().toISOString() },
-            { revision: baseVersion - 2, label: `v${baseVersion - 2}`, arn: '', registeredAt: new Date().toISOString() },
+            { revision: baseVersion, label: `v${baseVersion} — ${formatVersionDate(nowIso)}`, arn: '', registeredAt: nowIso },
+            { revision: baseVersion - 1, label: `v${baseVersion - 1} — ${formatVersionDate(nowIso)}`, arn: '', registeredAt: nowIso },
+            { revision: baseVersion - 2, label: `v${baseVersion - 2} — ${formatVersionDate(nowIso)}`, arn: '', registeredAt: nowIso },
         ];
         selectedVersion.value = baseVersion.toString();
     } finally {

@@ -1,5 +1,5 @@
 <template>
-    <div class="grid grid-cols-12 gap-4 px-4 py-3 border-b last:border-b-0 hover:bg-muted/20 transition-colors group">
+    <div class="grid grid-cols-12 gap-4 px-4 py-3 border-b last:border-b-0 transition-colors group">
         <!-- Checkbox -->
         <div class="col-span-1 flex items-center">
             <Checkbox :checked="isSelected" @update:checked="(checked) => onSelect(variableId, checked)" />
