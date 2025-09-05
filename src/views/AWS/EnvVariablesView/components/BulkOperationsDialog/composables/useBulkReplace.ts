@@ -169,6 +169,7 @@ export function useBulkReplace(service: Ref<ServiceInterface | null>, getVariabl
             toast({
                 title: 'Replace Successful',
                 description: `Successfully replaced ${getTotalMatches()} occurrence(s) in ${findMatches.value.length} variable(s)`,
+                variant: 'success',
             });
 
             return true;

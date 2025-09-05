@@ -32,11 +32,7 @@
                             <SelectValue placeholder="Select container" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem
-                                v-for="container in destinationContainers"
-                                :key="container"
-                                :value="container"
-                            >
+                            <SelectItem v-for="container in destinationContainers" :key="container" :value="container">
                                 {{ container }}
                             </SelectItem>
                         </SelectContent>
@@ -71,17 +67,13 @@
                             No variables selected
                         </div>
                         <div v-else class="space-y-3">
-                            <div
-                                v-for="[containerName, variables] in variablesByContainer"
-                                :key="containerName"
-                                class="space-y-2"
-                            >
+                            <div v-for="[containerName, variables] in variablesByContainer" :key="containerName" class="space-y-2">
                                 <div class="text-sm font-medium text-muted-foreground">{{ containerName }}</div>
                                 <div class="space-y-1">
                                     <div
                                         v-for="variable in variables"
                                         :key="variable.name"
-                                        class="flex items-center justify-between text-sm p-2 bg-background rounded border"
+                                        class="flex items-center justify-between text-sm p-2 bg-background rounded"
                                     >
                                         <div class="flex items-center gap-2">
                                             <Badge :variant="variable.isSecret ? 'secondary' : 'default'" class="text-xs">
@@ -90,7 +82,7 @@
                                             <span class="font-mono">{{ variable.name }}</span>
                                         </div>
                                         <span class="text-muted-foreground truncate max-w-32">
-                                            {{ variable.isSecret ? '••••••••' : variable.value }}
+                                            {{ variable.value }}
                                         </span>
                                     </div>
                                 </div>
@@ -99,7 +91,10 @@
                     </div>
                 </div>
 
-                <div v-if="copyDestination.service && copyDestination.container" class="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div
+                    v-if="copyDestination.service && copyDestination.container"
+                    class="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800"
+                >
                     <div class="flex items-start gap-2">
                         <InfoIcon class="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                         <div class="text-sm">
@@ -107,7 +102,8 @@
                                 {{ copyDestination.operation === BulkOperationType.MOVE ? 'Move' : 'Copy' }} Preview
                             </div>
                             <div class="text-blue-700 dark:text-blue-300 mt-1">
-                                {{ totalSelectedCount }} variable(s) will be {{ copyDestination.operation === BulkOperationType.MOVE ? 'moved' : 'copied' }} to
+                                {{ totalSelectedCount }} variable(s) will be
+                                {{ copyDestination.operation === BulkOperationType.MOVE ? 'moved' : 'copied' }} to
                                 <span class="font-mono">{{ copyDestination.service }}/{{ copyDestination.container }}</span>
                             </div>
                         </div>
@@ -138,12 +134,15 @@ interface Props {
     };
     copySelectedOnly: boolean;
     destinationContainers: string[];
-    variablesByContainer: Map<string, Array<{
-        name: string;
-        value: string;
-        isSecret: boolean;
-        container: string;
-    }>>;
+    variablesByContainer: Map<
+        string,
+        Array<{
+            name: string;
+            value: string;
+            isSecret: boolean;
+            container: string;
+        }>
+    >;
     totalSelectedCount: number;
 }
 

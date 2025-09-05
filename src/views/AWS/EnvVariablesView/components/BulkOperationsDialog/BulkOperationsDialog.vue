@@ -9,12 +9,12 @@
                         {{ isUsingAllVariables ? 'All variables' : `${totalSelectedCount} selected` }}
                     </Badge>
                 </DialogTitle>
-                <DialogDescription> Perform bulk operations on selected environment variables and secrets </DialogDescription>
+                <DialogDescription class="mt-2"> Perform bulk operations on selected environment variables and secrets </DialogDescription>
             </DialogHeader>
 
             <!-- Operation Tabs -->
             <div class="border-b">
-                <div class="flex space-x-1 p-1">
+                <div class="flex space-x-2 p-2">
                     <button
                         v-for="operation in operations"
                         :key="operation.key"

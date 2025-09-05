@@ -7,12 +7,12 @@
                     Add Environment Variables
                     <Badge v-if="service" variant="outline" class="ml-2"> {{ service.name }} / {{ container }} </Badge>
                 </DialogTitle>
-                <DialogDescription> Add multiple environment variables and secrets at once </DialogDescription>
+                <DialogDescription class="mt-2"> Add multiple environment variables and secrets at once </DialogDescription>
             </DialogHeader>
 
             <!-- Add Method Tabs -->
             <div class="border-b">
-                <div class="flex space-x-1 p-1">
+                <div class="flex space-x-2 p-2">
                     <button
                         v-for="method in addMethods"
                         :key="method.key"
@@ -52,7 +52,7 @@
                             <div
                                 v-for="(variable, index) in individualVariables"
                                 :key="variable.id"
-                                class="grid grid-cols-12 gap-3 p-3 border rounded-lg hover:bg-muted/20 transition-colors"
+                                class="grid grid-cols-12 bg-card gap-3 p-3 border rounded-lg hover:bg-muted/20 transition-colors"
                             >
                                 <div class="col-span-2 flex items-center">
                                     <Select v-model="variable.isSecret">

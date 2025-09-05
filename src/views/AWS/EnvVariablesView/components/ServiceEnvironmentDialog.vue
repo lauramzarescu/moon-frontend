@@ -17,7 +17,7 @@
                         </Badge>
                     </div>
                 </DialogTitle>
-                <DialogDescription class="mt-3"> Manage environment variables and secrets for this service </DialogDescription>
+                <DialogDescription class="mt-2"> Manage environment variables and secrets for this service </DialogDescription>
             </DialogHeader>
 
             <!-- Version Selector and Actions -->
