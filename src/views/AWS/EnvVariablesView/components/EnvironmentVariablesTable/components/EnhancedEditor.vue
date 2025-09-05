@@ -166,6 +166,11 @@ watch(
     { immediate: true },
 );
 
+watch(isOpen, (open) => {
+    if (!open) emit('close');
+});
+
+
 // Sync local changes back to parent periodically (debounced)
 let syncTimeout: NodeJS.Timeout | null = null;
 const syncToParent = () => {
