@@ -79,7 +79,7 @@ onMounted(() => {
                         <div
                             class="w-24 h-24 p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl hover:scale-105 transition-transform duration-300"
                         >
-                            <img src="@/assets/logos/logo-1.png" alt="Logo" class="w-full h-full object-contain filter drop-shadow-lg" />
+                            <img src="@/assets/logos/logo-4.png" alt="Logo" class="w-full h-full object-contain filter drop-shadow-lg" />
                         </div>
                     </div>
 
@@ -103,7 +103,7 @@ onMounted(() => {
                         <!-- Mobile Logo -->
                         <div class="lg:hidden flex justify-center mb-4">
                             <div class="w-16 h-16 p-3 bg-primary/10 rounded-xl border border-primary/20">
-                                <img src="@/assets/logos/logo-1.png" alt="Logo" class="w-full h-full object-contain" />
+                                <img src="@/assets/logos/logo-4.png" alt="Logo" class="w-full h-full object-contain" />
                             </div>
                         </div>
 
@@ -125,70 +125,142 @@ onMounted(() => {
 <style scoped>
 /* Enhanced floating animations with different speeds */
 @keyframes float-slow {
-    0%, 100% { transform: translateY(0px) scale(1); }
-    50% { transform: translateY(-15px) scale(1.05); }
+    0%,
+    100% {
+        transform: translateY(0px) scale(1);
+    }
+    50% {
+        transform: translateY(-15px) scale(1.05);
+    }
 }
 
 @keyframes float-medium {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-12px) rotate(5deg); }
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-12px) rotate(5deg);
+    }
 }
 
 @keyframes float-fast {
-    0%, 100% { transform: translateY(0px) translateX(0px); }
-    25% { transform: translateY(-8px) translateX(3px); }
-    75% { transform: translateY(-8px) translateX(-3px); }
+    0%,
+    100% {
+        transform: translateY(0px) translateX(0px);
+    }
+    25% {
+        transform: translateY(-8px) translateX(3px);
+    }
+    75% {
+        transform: translateY(-8px) translateX(-3px);
+    }
 }
 
 /* Rotation animations */
 @keyframes rotate-slow {
-    0% { transform: rotate(0deg) scale(1); }
-    50% { transform: rotate(180deg) scale(1.1); }
-    100% { transform: rotate(360deg) scale(1); }
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+    50% {
+        transform: rotate(180deg) scale(1.1);
+    }
+    100% {
+        transform: rotate(360deg) scale(1);
+    }
 }
 
 /* Scale pulse animation */
 @keyframes scale-pulse {
-    0%, 100% { transform: scale(1) opacity(0.7); }
-    50% { transform: scale(1.3) opacity(1); }
+    0%,
+    100% {
+        transform: scale(1) opacity(0.7);
+    }
+    50% {
+        transform: scale(1.3) opacity(1);
+    }
 }
 
 /* Drift animations */
 @keyframes drift-horizontal {
-    0%, 100% { transform: translateX(0px) translateY(0px); }
-    25% { transform: translateX(20px) translateY(-5px); }
-    50% { transform: translateX(0px) translateY(-10px); }
-    75% { transform: translateX(-20px) translateY(-5px); }
+    0%,
+    100% {
+        transform: translateX(0px) translateY(0px);
+    }
+    25% {
+        transform: translateX(20px) translateY(-5px);
+    }
+    50% {
+        transform: translateX(0px) translateY(-10px);
+    }
+    75% {
+        transform: translateX(-20px) translateY(-5px);
+    }
 }
 
 @keyframes drift-vertical {
-    0%, 100% { transform: translateY(0px) translateX(0px); }
-    25% { transform: translateY(-15px) translateX(5px); }
-    50% { transform: translateY(0px) translateX(10px); }
-    75% { transform: translateY(15px) translateX(5px); }
+    0%,
+    100% {
+        transform: translateY(0px) translateX(0px);
+    }
+    25% {
+        transform: translateY(-15px) translateX(5px);
+    }
+    50% {
+        transform: translateY(0px) translateX(10px);
+    }
+    75% {
+        transform: translateY(15px) translateX(5px);
+    }
 }
 
 /* Orbital animations */
 @keyframes orbit {
-    0% { transform: rotate(0deg) translateX(30px) rotate(0deg); }
-    100% { transform: rotate(360deg) translateX(30px) rotate(-360deg); }
+    0% {
+        transform: rotate(0deg) translateX(30px) rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg) translateX(30px) rotate(-360deg);
+    }
 }
 
 @keyframes orbit-reverse {
-    0% { transform: rotate(0deg) translateX(-40px) rotate(0deg); }
-    100% { transform: rotate(-360deg) translateX(-40px) rotate(360deg); }
+    0% {
+        transform: rotate(0deg) translateX(-40px) rotate(0deg);
+    }
+    100% {
+        transform: rotate(-360deg) translateX(-40px) rotate(360deg);
+    }
 }
 
 /* Apply animations */
-.animate-float-slow { animation: float-slow 8s ease-in-out infinite; }
-.animate-float-medium { animation: float-medium 6s ease-in-out infinite; }
-.animate-float-fast { animation: float-fast 4s ease-in-out infinite; }
-.animate-rotate-slow { animation: rotate-slow 12s linear infinite; }
-.animate-scale-pulse { animation: scale-pulse 3s ease-in-out infinite; }
-.animate-drift-horizontal { animation: drift-horizontal 10s ease-in-out infinite; }
-.animate-drift-vertical { animation: drift-vertical 8s ease-in-out infinite; }
-.animate-orbit { animation: orbit 20s linear infinite; }
-.animate-orbit-reverse { animation: orbit-reverse 25s linear infinite; }
+.animate-float-slow {
+    animation: float-slow 8s ease-in-out infinite;
+}
+.animate-float-medium {
+    animation: float-medium 6s ease-in-out infinite;
+}
+.animate-float-fast {
+    animation: float-fast 4s ease-in-out infinite;
+}
+.animate-rotate-slow {
+    animation: rotate-slow 12s linear infinite;
+}
+.animate-scale-pulse {
+    animation: scale-pulse 3s ease-in-out infinite;
+}
+.animate-drift-horizontal {
+    animation: drift-horizontal 10s ease-in-out infinite;
+}
+.animate-drift-vertical {
+    animation: drift-vertical 8s ease-in-out infinite;
+}
+.animate-orbit {
+    animation: orbit 20s linear infinite;
+}
+.animate-orbit-reverse {
+    animation: orbit-reverse 25s linear infinite;
+}
 
 /* Respect user's motion preferences */
 @media (prefers-reduced-motion: reduce) {
@@ -212,7 +284,13 @@ onMounted(() => {
 }
 
 /* Additional blur utilities */
-.blur-xs { filter: blur(2px); }
-.blur-2xl { filter: blur(40px); }
-.blur-3xl { filter: blur(64px); }
+.blur-xs {
+    filter: blur(2px);
+}
+.blur-2xl {
+    filter: blur(40px);
+}
+.blur-3xl {
+    filter: blur(64px);
+}
 </style>
