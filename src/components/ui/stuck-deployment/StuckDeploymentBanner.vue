@@ -2,7 +2,7 @@
     <div v-if="hasStuckDeployments" class="inline-flex">
         <Badge
             variant="destructive"
-            class="cursor-pointer inline-flex items-center gap-1.5 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-900 hover:bg-red-100 dark:hover:bg-red-900 transition-all duration-200 rounded-md px-2 py-1 ring-1 ring-red-500/10"
+            class="cursor-pointer inline-flex items-center gap-1.5 bg-red-50 text-destructive dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-900 hover:bg-red-100 dark:hover:bg-red-900 transition-all duration-200 rounded-md px-2 py-1 ring-1 ring-red-500/10"
             role="button"
             tabindex="0"
             aria-label="View affected (stuck) services"

@@ -88,7 +88,7 @@
                                         size="sm"
                                         variant="ghost"
                                         @click="removeVariable(index)"
-                                        class="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                        class="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                                     >
                                         <TrashIcon class="h-4 w-4" />
                                     </Button>

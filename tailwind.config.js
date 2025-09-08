@@ -23,24 +23,24 @@ module.exports = {
                 background: 'var(--background)',
                 foreground: 'var(--foreground)',
                 primary: {
-                    DEFAULT: 'var(--primary)',
-                    foreground: 'var(--primary-foreground)',
+                    DEFAULT: 'rgb(var(--primary) / <alpha-value>)',
+                    foreground: 'rgb(var(--primary-foreground) / <alpha-value>)',
                 },
                 secondary: {
-                    DEFAULT: 'var(--secondary)',
-                    foreground: 'var(--secondary-foreground)',
+                    DEFAULT: 'rgb(var(--secondary) / <alpha-value>)',
+                    foreground: 'rgb(var(--secondary-foreground) / <alpha-value>)',
                 },
                 destructive: {
-                    DEFAULT: 'var(--destructive)',
-                    foreground: 'var(--destructive-foreground)',
+                    DEFAULT: 'rgb(var(--destructive) / <alpha-value>)',
+                    foreground: 'rgb(var(--destructive-foreground) / <alpha-value>)',
                 },
                 muted: {
                     DEFAULT: 'var(--muted)',
                     foreground: 'var(--muted-foreground)',
                 },
                 accent: {
-                    DEFAULT: 'var(--accent)',
-                    foreground: 'var(--accent-foreground)',
+                    DEFAULT: 'rgb(var(--accent) / <alpha-value>)',
+                    foreground: 'rgb(var(--accent-foreground) / <alpha-value>)',
                 },
                 popover: {
                     DEFAULT: 'var(--popover)',

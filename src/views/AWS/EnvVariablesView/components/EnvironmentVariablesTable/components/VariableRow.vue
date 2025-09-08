@@ -89,7 +89,7 @@
                 <Button
                     size="sm"
                     variant="ghost"
-                    class="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                    class="h-8 w-8 p-0 text-destructive hover:text-destructive/70"
                     @click="cancelNewVariable"
                     title="Cancel"
                 >
@@ -120,7 +120,10 @@
                         Copy Value
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem @click="deleteVariable" class="text-destructive">
+                    <DropdownMenuItem
+                        @click="deleteVariable"
+                        class="text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/10 focus:bg-destructive/10"
+                    >
                         <TrashIcon class="h-4 w-4 mr-2" />
                         Delete
                     </DropdownMenuItem>
