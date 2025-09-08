@@ -117,7 +117,6 @@ const requires2FAVerification = computed(() => {
     return true;
 });
 
-
 const loadOrganizationData = async () => {
     try {
         isLoading.value = true;
@@ -205,7 +204,6 @@ const handle2FAVerification = async (verifyData: { code: string; credential?: an
     if (!verificationModalRef.value || pendingEnforce2FAValue.value === null) return;
 
     verificationModalRef.value.setLoading(true);
-    verificationModalRef.value.clearError();
 
     try {
         if (verifyData.code !== 'webauthn-success') await userService.verify2FACode(verifyData.code);

@@ -56,7 +56,6 @@ const securityLevelColor = computed(() => {
     }
 });
 
-
 const show2FAModal = ref(false);
 const showDisable2FAModal = ref(false);
 const qrCodeUrl = ref('');
@@ -131,7 +130,6 @@ const handle2FADisableVerification = async (verifyData: { code: string; credenti
     if (!verificationModalRef.value) return;
 
     verificationModalRef.value.setLoading(true);
-    verificationModalRef.value.clearError();
 
     try {
         await userService.disable2FA(verifyData.code);
