@@ -1,7 +1,6 @@
-import { useAuthStore } from '@/stores/authStore.ts';
-import { useRouter } from 'vue-router';
 import { jwtDecode } from 'jwt-decode';
 import type { JwtInterface } from '@/types/jwt/jwt.interface.ts';
+import { performSessionLogout } from '@/utils/session-validator';
 import Cookies from 'js-cookie';
 import { config } from '../../app.config.ts';
 
@@ -9,7 +8,6 @@ export class ApiService {
     protected jwt: string | null | undefined = null;
     private baseUrl = config.BACKEND_URL;
     private pendingRequests: Map<string, Promise<any>> = new Map();
-
 
     constructor() {
         this.jwt = Cookies.get('token');
@@ -131,16 +129,8 @@ export class ApiService {
     }
 
     private async handleTokenExpiration() {
-        const authStore = useAuthStore();
-        const router = useRouter();
-
-        // Clear user data
-        authStore.clearUser();
-
-        Cookies.remove('token');
-        Cookies.remove('auth');
-
-        // Redirect to login page
-        await router.push('/login');
+        // Use shared session logout utility
+        const { LogoutReason } = await import('@/enums/logout/logout.enum');
+        await performSessionLogout(LogoutReason.TOKEN_EXPIRED);
     }
 }

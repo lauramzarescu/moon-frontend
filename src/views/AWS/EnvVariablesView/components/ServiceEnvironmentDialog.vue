@@ -60,6 +60,16 @@
                         <GitCompareIcon class="h-4 w-4 mr-2" />
                         Compare
                     </Button>
+                    <Button
+                        v-if="selectedVersion && selectedVersion !== availableVersions[0].revision.toString()"
+                        size="sm"
+                        variant="outline"
+                        @click="restoreToVersion"
+                        class="hover:shadow-sm group transition-all duration-200"
+                    >
+                        <RefreshCwIcon class="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
+                        Restore to this version
+                    </Button>
                 </div>
 
                 <div class="flex items-center gap-2">
@@ -122,7 +132,6 @@
                         :cluster-name="service?.clusterName"
                         :selected-version="selectedVersion"
                         :is-latest="isLatestVersion"
-                        @edit="handleEdit"
                         @delete="handleDelete"
                         @bulk-select="handleBulkSelect"
                         @add-new="handleAddNew"
@@ -193,7 +202,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GitCompareIcon, Loader2Icon, PlusIcon, ServerIcon, SettingsIcon } from 'lucide-vue-next';
+import { GitCompareIcon, Loader2Icon, PlusIcon, RefreshCwIcon, ServerIcon, SettingsIcon } from 'lucide-vue-next';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface';
 import { AwsService } from '@/services/aws.service';
 import { useToast } from '@/components/ui/toast';
@@ -201,8 +210,6 @@ import { useDataStore } from '@/stores/dataStore';
 import { storeToRefs } from 'pinia';
 import { VariableType } from '@/types/aws/environment-variable.enums';
 import { useUnsavedChanges } from '../composables/useUnsavedChanges';
-
-// Import sub-components
 import EnvironmentVariablesTable from './EnvironmentVariablesTableWrapper.vue';
 import BulkAddDialog from './BulkAddDialog.vue';
 import BulkOperationsDialog from './BulkOperationsDialog.vue';
@@ -227,10 +234,7 @@ const store = useDataStore();
 const { services } = storeToRefs(store);
 const { hasUnsavedChanges, getUnsavedChangesCount } = useUnsavedChanges();
 
-// Component refs
 const environmentVariablesTableRef = ref<any>(null);
-
-// Reactive state
 const selectedContainer = ref<string>('');
 const selectedVersion = ref<string>('');
 const selectedVariables = ref<string[]>([]);
@@ -239,22 +243,18 @@ const hasPendingChanges = ref(false);
 const versionEnvironmentVariables = ref<any>(null);
 const isLoadingVersionData = ref(false);
 
-// Loading states for operations
 const isDeleting = ref(false);
 const isSaving = ref(false);
 
-// Dialog states
 const bulkAddDialog = reactive({ isOpen: false });
 const bulkOperationsDialog = reactive({ isOpen: false });
 const versionComparisonDialog = reactive({ isOpen: false });
 
-// Computed properties
 const isOpen = computed({
     get: () => props.open,
     set: (value) => emit('update:open', value),
 });
 
-// Get the current service from the store to ensure reactivity to data changes
 const service = computed(() => {
     if (!props.service) return null;
 
@@ -322,15 +322,6 @@ const loadVersions = async () => {
         }
     } catch (error: any) {
         console.error('Failed to load versions:', error);
-        // Fallback to mock data
-        const baseVersion = service.value.taskDefinition.revision;
-        const nowIso = new Date().toISOString();
-        availableVersions.value = [
-            { revision: baseVersion, label: `v${baseVersion} — ${formatVersionDate(nowIso)}`, arn: '', registeredAt: nowIso },
-            { revision: baseVersion - 1, label: `v${baseVersion - 1} — ${formatVersionDate(nowIso)}`, arn: '', registeredAt: nowIso },
-            { revision: baseVersion - 2, label: `v${baseVersion - 2} — ${formatVersionDate(nowIso)}`, arn: '', registeredAt: nowIso },
-        ];
-        selectedVersion.value = baseVersion.toString();
     } finally {
         isLoadingVersions.value = false;
     }
@@ -381,7 +372,6 @@ const effectiveSelectedVariables = computed(() => {
     return selectedVariables.value.length > 0 ? selectedVariables.value : allVariableIds.value;
 });
 
-// Watchers
 watch(
     () => service.value,
     async (newService) => {
@@ -441,10 +431,33 @@ const openBulkOperations = () => {
     bulkOperationsDialog.isOpen = true;
 };
 
-const handleEdit = (variable: any) => {
-    // This function is no longer used for API calls
-    // All edits are now handled through the batch save functionality
-    // The table component handles storing edits locally until Save Changes is clicked
+const restoreToVersion = async () => {
+    if (!service.value || !selectedContainer.value) return;
+    if (!selectedVersion.value) return;
+    if (selectedVersion.value === availableVersions.value[0].revision.toString()) return;
+
+    try {
+        const revision = parseInt(selectedVersion.value);
+        await awsService.rollbackEnvironmentVariables({
+            clusterName: service.value.clusterName,
+            serviceName: service.value.name,
+            containerName: selectedContainer.value,
+            targetRevision: revision,
+        });
+
+        toast({
+            variant: 'success',
+            title: 'Rollback Successful',
+            description: `Successfully rolled back to version ${revision}.`,
+        });
+    } catch (error: any) {
+        console.error('Failed to rollback:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Rollback Failed',
+            description: error.message || 'Failed to rollback to the selected version.',
+        });
+    }
 };
 
 const handleDelete = async (deleteData: any) => {
