@@ -64,7 +64,7 @@
                         v-if="selectedVersion && selectedVersion !== availableVersions[0].revision.toString()"
                         size="sm"
                         variant="outline"
-                        @click="restoreToVersion"
+                        @click="confirmRestoreToVersion"
                         class="hover:shadow-sm group transition-all duration-200"
                     >
                         <RefreshCwIcon class="h-4 w-4 transition-transform duration-200 group-hover:rotate-180" />
@@ -163,13 +163,13 @@
 
             <!-- Global Loading Overlay covering the entire dialog -->
             <div
-                v-if="isDeleting || isSaving"
+                v-if="isDeleting || isSaving || isRestoring"
                 class="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
             >
                 <div class="flex items-center gap-3 bg-card border rounded-lg px-4 py-3 shadow-lg">
                     <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                     <span class="text-sm font-medium">
-                        {{ isDeleting ? 'Deleting variables...' : 'Saving changes...' }}
+                        {{ isDeleting ? 'Deleting variables...' : isRestoring ? 'Restoring to version...' : 'Saving changes...' }}
                     </span>
                 </div>
             </div>
@@ -192,12 +192,34 @@
         :services="service ? [service] : []"
         :current-version="selectedVersion"
     />
+
+    <!-- Restore Confirmation Dialog -->
+    <Dialog v-model:open="restoreConfirmationDialog.isOpen">
+        <DialogContent class="max-w-md">
+            <DialogHeader>
+                <DialogTitle>Restore to Version</DialogTitle>
+                <DialogDescription>
+                    Are you sure you want to restore to <strong>version {{ selectedVersion }}</strong>?
+                    <br><br>
+                    This will replace the current environment variables with those from the selected version. This action cannot be undone.
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter class="gap-2">
+                <Button variant="outline" @click="restoreConfirmationDialog.isOpen = false">
+                    Cancel
+                </Button>
+                <Button variant="destructive" @click="performRestoreToVersion">
+                    Restore to Version
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue';
 import moment from 'moment';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
@@ -245,10 +267,12 @@ const isLoadingVersionData = ref(false);
 
 const isDeleting = ref(false);
 const isSaving = ref(false);
+const isRestoring = ref(false);
 
 const bulkAddDialog = reactive({ isOpen: false });
 const bulkOperationsDialog = reactive({ isOpen: false });
 const versionComparisonDialog = reactive({ isOpen: false });
+const restoreConfirmationDialog = reactive({ isOpen: false });
 
 const isOpen = computed({
     get: () => props.open,
@@ -431,10 +455,21 @@ const openBulkOperations = () => {
     bulkOperationsDialog.isOpen = true;
 };
 
-const restoreToVersion = async () => {
+const confirmRestoreToVersion = () => {
     if (!service.value || !selectedContainer.value) return;
     if (!selectedVersion.value) return;
     if (selectedVersion.value === availableVersions.value[0].revision.toString()) return;
+
+    restoreConfirmationDialog.isOpen = true;
+};
+
+const performRestoreToVersion = async () => {
+    if (!service.value || !selectedContainer.value) return;
+    if (!selectedVersion.value) return;
+    if (selectedVersion.value === availableVersions.value[0].revision.toString()) return;
+
+    restoreConfirmationDialog.isOpen = false;
+    isRestoring.value = true;
 
     try {
         const revision = parseInt(selectedVersion.value);
@@ -450,6 +485,10 @@ const restoreToVersion = async () => {
             title: 'Rollback Successful',
             description: `Successfully rolled back to version ${revision}.`,
         });
+
+        // Refresh data from backend
+        store.manualRefresh();
+        emit('refresh');
     } catch (error: any) {
         console.error('Failed to rollback:', error);
         toast({
@@ -457,6 +496,8 @@ const restoreToVersion = async () => {
             title: 'Rollback Failed',
             description: error.message || 'Failed to rollback to the selected version.',
         });
+    } finally {
+        isRestoring.value = false;
     }
 };
 
