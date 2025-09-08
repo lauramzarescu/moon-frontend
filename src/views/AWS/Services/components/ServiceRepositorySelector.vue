@@ -28,7 +28,8 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Button } from '@/components/ui/button';
 import { Loader2Icon } from 'lucide-vue-next';
 import { toast } from '@/components/ui/toast/use-toast';
-import { type GithubRepository, GithubService, type ServiceRepositoryRecord } from '@/services/github.service.ts';
+import { GithubService } from '@/services/github.service.ts';
+import type { GithubRepository, ServiceRepositoryRecord } from '@/services/github/schema.ts';
 
 const props = defineProps<{ serviceArn: string | undefined }>();
 

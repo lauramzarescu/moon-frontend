@@ -1,68 +1,66 @@
 import { ApiService } from '@/services/generic.service.ts';
-
-export interface GithubRepository {
-    id: number;
-    name: string;
-    full_name: string;
-    private: boolean;
-    owner: string;
-    default_branch: string;
-    html_url: string;
-}
-
-export interface ServiceRepositoryRecord {
-    id: string;
-    serviceArn: string;
-    owner: string;
-    repo: string;
-    createdAt: string;
-    updatedAt: string;
-    organizationId: string;
-}
-
-export interface LatestCommitResponse {
-    sha: string;
-    message: string;
-    authorName: string | null;
-    authorEmail: string | null;
-    date: string | null;
-    url: string;
-}
+import {
+    type GithubPullRequestList,
+    githubPullRequestListSchema,
+    type GithubRepositoryList,
+    githubRepositoryListSchema,
+    type LatestCommitResponse,
+    latestCommitResponseSchema,
+    type LinkServiceRepositoryRequest,
+    type ServiceRepositoryRecord,
+    type ServiceRepositoryRecordList,
+    serviceRepositoryRecordListSchema,
+    serviceRepositoryRecordSchema,
+} from '@/services/github/schema.ts';
 
 export class GithubService extends ApiService {
-    async listRepositories(org?: string) {
-        return this.get<GithubRepository[]>('/github/repositories', org ? { org } : undefined, { credentials: 'include' });
+    async listRepositories(org?: string): Promise<GithubRepositoryList> {
+        const response = await this.get('/github/repositories', org ? { org } : undefined, { credentials: 'include' });
+        return githubRepositoryListSchema.parse(response);
     }
 
-    async linkServiceRepository(data: { repo: string; serviceArn: string }) {
-        return this.post<typeof data, ServiceRepositoryRecord>('/github/services/repository', data, {
+    async linkServiceRepository(data: LinkServiceRepositoryRequest): Promise<ServiceRepositoryRecord> {
+        const response = await this.post('/github/services/repository', data, {
             credentials: 'include',
         });
+        return serviceRepositoryRecordSchema.parse(response);
     }
 
-    async listServiceRepositories() {
-        return this.get<ServiceRepositoryRecord[]>('/github/services/repositories', undefined, { credentials: 'include' });
+    async listServiceRepositories(): Promise<ServiceRepositoryRecordList> {
+        const response = await this.get('/github/services/repositories', undefined, { credentials: 'include' });
+        return serviceRepositoryRecordListSchema.parse(response);
     }
 
-    async getServiceRepository(id: string) {
-        return this.get<ServiceRepositoryRecord>(`/github/services/${id}/repository`, undefined, { credentials: 'include' });
+    async getServiceRepository(id: string): Promise<ServiceRepositoryRecord> {
+        const response = await this.get(`/github/services/${id}/repository`, undefined, { credentials: 'include' });
+        return serviceRepositoryRecordSchema.parse(response);
     }
 
-    async deleteServiceRepository(id: string) {
-        return this.delete<ServiceRepositoryRecord>(`/github/services/${id}/repository`, { credentials: 'include' });
+    async deleteServiceRepository(id: string): Promise<ServiceRepositoryRecord> {
+        const response = await this.delete(`/github/services/${id}/repository`, { credentials: 'include' });
+        return serviceRepositoryRecordSchema.parse(response);
     }
 
-    async getLatestCommitForService(id: string) {
-        return this.get<LatestCommitResponse>(`/github/deployments/services/${encodeURIComponent(id)}/latest-commit`, undefined, {
+    async getLatestCommitForService(id: string): Promise<LatestCommitResponse> {
+        const response = await this.get(`/github/deployments/services/${encodeURIComponent(id)}/latest-commit`, undefined, {
             credentials: 'include',
         });
+        return latestCommitResponseSchema.parse(response);
     }
 
-    async getLatestCommitForServiceBranch(id: string, branch: string) {
-        return this.get<LatestCommitResponse>(
+    async getLatestCommitForServiceBranch(id: string, branch: string): Promise<LatestCommitResponse> {
+        const response = await this.get(
             `/github/deployments/services/${encodeURIComponent(id)}/latest-commit/${encodeURIComponent(branch)}`,
             undefined,
             { credentials: 'include' },
         );
+        return latestCommitResponseSchema.parse(response);
+    }
+
+    async getPullRequests(repo: string): Promise<GithubPullRequestList> {
+        const response = await this.get(`/github/pull-requests/${encodeURIComponent(repo)}`, undefined, {
+            credentials: 'include',
+        });
+        return githubPullRequestListSchema.parse(response);
     }
 }

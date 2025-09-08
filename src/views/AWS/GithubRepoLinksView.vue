@@ -87,7 +87,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableEmpty, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GithubService, type ServiceRepositoryRecord } from '@/services/github.service.ts';
+import { GithubService } from '@/services/github.service.ts';
+import type { ServiceRepositoryRecord } from '@/services/github/schema.ts';
 import { Loader2Icon, RefreshCwIcon } from 'lucide-vue-next';
 import { toast } from '@/components/ui/toast/use-toast';
 
