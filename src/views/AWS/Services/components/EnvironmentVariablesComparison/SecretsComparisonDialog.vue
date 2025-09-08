@@ -173,12 +173,7 @@ const serviceCardWidth = computed(() => {
 <template>
     <Dialog v-model:open="isOpen">
         <DialogTrigger as-child>
-            <Button
-                variant="outline"
-                size="sm"
-                class="h-8 transition-all duration-200 hover:shadow-md hover:scale-[1.02]"
-                :disabled="isLoading"
-            >
+            <Button variant="outline" size="sm" class="h-8 hover:shadow-md" :disabled="isLoading">
                 <Loader2Icon v-if="isLoading" class="h-4 w-4 mr-2 animate-spin" />
                 <GitCompareIcon v-else class="h-4 w-4" />
                 Compare Variables
