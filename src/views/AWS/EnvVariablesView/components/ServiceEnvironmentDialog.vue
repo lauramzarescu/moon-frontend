@@ -24,11 +24,7 @@
 
             <!-- Container Tabs -->
             <div class="flex-1 flex flex-col min-h-0">
-                <ContainerTabs
-                    v-if="service?.containers"
-                    :containers="service.containers"
-                    v-model:selected-container="selectedContainer"
-                />
+                <ContainerTabs v-if="service?.containers" :containers="service.containers" v-model:selected-container="selectedContainer" />
 
                 <!-- Variables Content -->
                 <div class="flex-1 min-h-0 p-4 overflow-y-auto relative">
@@ -145,7 +141,9 @@ const emit = defineEmits<{
     (e: 'refresh'): void;
 }>();
 
-// Composables
+const frozenService = ref<ServiceInterface | null>(null);
+const dialogWasOpened = ref(false);
+
 const { hasUnsavedChanges, getUnsavedChangesCount } = useUnsavedChanges();
 const {
     isDeleting,
@@ -202,7 +200,22 @@ const isOpen = computed({
     set: (value) => emit('update:open', value),
 });
 
-const service = computed(() => getCurrentService(props.service));
+const service = computed(() => {
+    // When dialog opens, freeze the current service state
+    if (props.open && !dialogWasOpened.value) {
+        frozenService.value = getCurrentService(props.service);
+        dialogWasOpened.value = true;
+    }
+
+    // When dialog closes, reset the frozen state
+    if (!props.open && dialogWasOpened.value) {
+        frozenService.value = null;
+        dialogWasOpened.value = false;
+    }
+
+    // Return frozen service when dialog is open, otherwise return current service
+    return props.open && frozenService.value ? frozenService.value : getCurrentService(props.service);
+});
 
 const hasStoredUnsavedChanges = computed(() => {
     if (!service.value) return false;
@@ -222,7 +235,6 @@ const totalSecretsCount = computed(() => getTotalSecretsCount(service.value));
 
 const effectiveSelectedVariables = computed(() => getEffectiveSelectedVariables(service.value));
 
-// Setup version management watchers
 setupVersionWatchers(
     () => service.value,
     selectedContainer,
@@ -231,7 +243,8 @@ setupVersionWatchers(
     async (revision: number) => {
         if (!service.value || !selectedContainer.value) return null;
         return await loadVersionData(service.value, selectedContainer.value, revision);
-    }
+    },
+    () => props.open,
 );
 
 // Restore version methods
@@ -251,13 +264,7 @@ const performRestoreToVersion = async () => {
     closeRestoreConfirmation();
 
     const revision = parseInt(selectedVersion.value);
-    await performRollback(
-        service.value,
-        selectedContainer.value,
-        revision,
-        isRestoring,
-        () => emit('refresh')
-    );
+    await performRollback(service.value, selectedContainer.value, revision, isRestoring, () => emit('refresh'));
 };
 
 const handleDelete = async (deleteData: any) => {
@@ -487,6 +494,10 @@ const closeDialog = () => {
     selectedVariables.value = [];
     versionEnvironmentVariables.value = null;
     selectedVersion.value = '';
+
+    // Reset frozen state
+    frozenService.value = null;
+    dialogWasOpened.value = false;
 };
 
 const handleRefresh = () => {

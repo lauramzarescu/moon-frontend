@@ -21,6 +21,9 @@ export function useVersionManagement() {
     const currentService = ref<ServiceInterface | null>(null);
     const currentContainer = ref<string>('');
 
+    // Track previous service identity to preserve version selection during data refreshes
+    const previousServiceIdentity = ref<string>('');
+
     // Format version date
     const formatVersionDate = (dateStr: string) => moment(dateStr).format('MMM D, YYYY [at] h:mm A');
 
@@ -30,17 +33,22 @@ export function useVersionManagement() {
         return selectedVersion.value === availableVersions.value[0].revision.toString();
     });
 
-    const loadVersions = async (service: ServiceInterface | null, containerName: string) => {
+    const loadVersions = async (service: ServiceInterface | null, containerName: string, preserveSelectedVersion = false) => {
         if (!service || !containerName) return;
 
         // Store current service and container for load more functionality
         currentService.value = service;
         currentContainer.value = containerName;
 
+        // Store the currently selected version before resetting state
+        const currentSelectedVersion = selectedVersion.value;
+
         // Reset state for new service/container
         availableVersions.value = [];
         pagination.value = null;
-        selectedVersion.value = '';
+        if (!preserveSelectedVersion) {
+            selectedVersion.value = '';
+        }
 
         isLoadingVersions.value = true;
         try {
@@ -61,9 +69,20 @@ export function useVersionManagement() {
 
             pagination.value = response.pagination;
 
-            // Set current version as the latest
             if (availableVersions.value.length > 0) {
-                selectedVersion.value = availableVersions.value[0].revision.toString();
+                if (preserveSelectedVersion && currentSelectedVersion) {
+                    // Check if the previously selected version still exists in the new list
+                    const versionExists = availableVersions.value.some((v) => v.revision.toString() === currentSelectedVersion);
+                    if (versionExists) {
+                        selectedVersion.value = currentSelectedVersion;
+                    } else {
+                        // If the previously selected version no longer exists, fall back to latest
+                        selectedVersion.value = availableVersions.value[0].revision.toString();
+                    }
+                } else {
+                    // Set current version as the latest (default behavior)
+                    selectedVersion.value = availableVersions.value[0].revision.toString();
+                }
             }
         } catch (error: any) {
             console.error('Failed to load versions:', error);
@@ -150,18 +169,39 @@ export function useVersionManagement() {
         versionEnvironmentVariables: { value: any },
         isLoadingVersionData: { value: boolean },
         loadVersionData: (revision: number) => Promise<any>,
+        isDialogOpen?: () => boolean,
     ) => {
         // Watch service changes
         watch(
             service,
-            async (newService) => {
+            async (newService, oldService) => {
                 if (newService && newService.containers.length > 0) {
-                    selectedContainer.value = newService.containers[0].name;
-                    versionEnvironmentVariables.value = null;
-                    await nextTick();
-                    loadVersions(newService, selectedContainer.value);
+                    // Create service identity string for comparison
+                    const newServiceIdentity = `${newService.name}:${newService.clusterName}`;
+                    const oldServiceIdentity = oldService ? `${oldService.name}:${oldService.clusterName}` : '';
+
+                    // Only reload versions if:
+                    // 1. It's a completely new service (different identity)
+                    // 2. Dialog is not open (to prevent refreshes during dialog usage)
+                    const isNewService = newServiceIdentity !== oldServiceIdentity;
+                    const shouldReload = isNewService || !(isDialogOpen && isDialogOpen());
+
+                    if (shouldReload) {
+                        const isSameService = previousServiceIdentity.value === newServiceIdentity;
+
+                        selectedContainer.value = newService.containers[0].name;
+                        versionEnvironmentVariables.value = null;
+                        await nextTick();
+
+                        // Preserve version selection if it's the same service being refreshed
+                        loadVersions(newService, selectedContainer.value, isSameService);
+
+                        // Update the tracked service identity
+                        previousServiceIdentity.value = newServiceIdentity;
+                    }
                 } else {
                     versionEnvironmentVariables.value = null;
+                    previousServiceIdentity.value = '';
                 }
             },
             { immediate: true },
@@ -178,8 +218,7 @@ export function useVersionManagement() {
             },
         );
 
-        // Watch version changes
-        watch(selectedVersion, async (newVersion) => {
+        watch(selectedVersion, async (newVersion, oldVersion) => {
             if (newVersion && selectedContainer.value) {
                 const isLatest = availableVersions.value.length > 0 && newVersion === availableVersions.value[0].revision.toString();
 
