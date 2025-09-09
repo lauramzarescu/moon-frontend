@@ -183,6 +183,8 @@ export class AwsService extends ApiService {
                 clusterName: data.clusterName,
                 serviceName: data.serviceName,
                 containerName: data.containerName,
+                limit: data.limit.toString(),
+                page: data.page.toString(),
             });
 
             return await this.get<GetVersionsListResponse>(

@@ -14,6 +14,12 @@ export function useVersionManagement() {
     const selectedVersion = ref<string>('');
     const availableVersions = ref<Array<{ revision: number; label: string; arn: string; registeredAt: string }>>([]);
     const isLoadingVersions = ref(false);
+    const isLoadingMoreVersions = ref(false);
+    const pagination = ref<{ page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean } | null>(
+        null,
+    );
+    const currentService = ref<ServiceInterface | null>(null);
+    const currentContainer = ref<string>('');
 
     // Format version date
     const formatVersionDate = (dateStr: string) => moment(dateStr).format('MMM D, YYYY [at] h:mm A');
@@ -24,9 +30,17 @@ export function useVersionManagement() {
         return selectedVersion.value === availableVersions.value[0].revision.toString();
     });
 
-    // Load versions from API
     const loadVersions = async (service: ServiceInterface | null, containerName: string) => {
         if (!service || !containerName) return;
+
+        // Store current service and container for load more functionality
+        currentService.value = service;
+        currentContainer.value = containerName;
+
+        // Reset state for new service/container
+        availableVersions.value = [];
+        pagination.value = null;
+        selectedVersion.value = '';
 
         isLoadingVersions.value = true;
         try {
@@ -34,6 +48,8 @@ export function useVersionManagement() {
                 clusterName: service.clusterName,
                 serviceName: service.name,
                 containerName,
+                page: 1,
+                limit: 10,
             });
 
             availableVersions.value = response.versions.map((version: any) => ({
@@ -43,6 +59,8 @@ export function useVersionManagement() {
                 registeredAt: version.registeredAt,
             }));
 
+            pagination.value = response.pagination;
+
             // Set current version as the latest
             if (availableVersions.value.length > 0) {
                 selectedVersion.value = availableVersions.value[0].revision.toString();
@@ -51,6 +69,38 @@ export function useVersionManagement() {
             console.error('Failed to load versions:', error);
         } finally {
             isLoadingVersions.value = false;
+        }
+    };
+
+    const loadMoreVersions = async () => {
+        if (!pagination.value?.hasNextPage || isLoadingMoreVersions.value || !currentService.value || !currentContainer.value) {
+            return;
+        }
+
+        isLoadingMoreVersions.value = true;
+        try {
+            const response = await awsService.getEnvironmentVariableVersions({
+                clusterName: currentService.value.clusterName,
+                serviceName: currentService.value.name,
+                containerName: currentContainer.value,
+                page: pagination.value.page + 1,
+                limit: 10,
+            });
+
+            const newVersions = response.versions.map((version: any) => ({
+                revision: version.revision,
+                label: `v${version.revision} — ${formatVersionDate(version.registeredAt)}`,
+                arn: version.arn,
+                registeredAt: version.registeredAt,
+            }));
+
+            // Append new versions to existing ones
+            availableVersions.value = [...availableVersions.value, ...newVersions];
+            pagination.value = response.pagination;
+        } catch (error: any) {
+            console.error('Failed to load more versions:', error);
+        } finally {
+            isLoadingMoreVersions.value = false;
         }
     };
 
@@ -156,12 +206,15 @@ export function useVersionManagement() {
         selectedVersion,
         availableVersions,
         isLoadingVersions,
+        isLoadingMoreVersions,
+        pagination,
 
         // Computed
         isLatestVersion,
 
         // Methods
         loadVersions,
+        loadMoreVersions,
         performRollback,
         setupVersionWatchers,
         formatVersionDate,

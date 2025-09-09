@@ -3,7 +3,7 @@
  * Generated from environment-variables-schemas-and-types.json
  */
 
-import { BulkOperationType, ComparisonStatus, TaskDefinitionStatus } from './environment-variable.enums';
+import { BulkOperationType } from './environment-variable.enums';
 
 // Base schemas
 export interface EnvironmentVariable {
@@ -192,6 +192,13 @@ export interface GetVersionsListResponse {
     containerName: string;
     totalVersions: number;
     versions: EnvironmentVariableVersion[];
+    pagination: {
+        page: number;
+        limit: number;
+        totalPages: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+    };
 }
 
 export interface GetVariablesFromVersionResponse {

@@ -13,10 +13,13 @@
                 v-model:selected-version="selectedVersion"
                 :available-versions="availableVersions"
                 :is-loading-versions="isLoadingVersions"
+                :is-loading-more-versions="isLoadingMoreVersions"
+                :pagination="pagination"
                 @compare="openVersionComparison"
                 @restore="confirmRestoreToVersion"
                 @add-variable="openBulkAdd"
                 @bulk-operations="openBulkOperations"
+                @load-more="loadMoreVersions"
             />
 
             <!-- Container Tabs -->
@@ -182,8 +185,11 @@ const {
     selectedVersion,
     availableVersions,
     isLoadingVersions,
+    isLoadingMoreVersions,
+    pagination,
     isLatestVersion,
     loadVersions,
+    loadMoreVersions,
     performRollback,
     setupVersionWatchers,
 } = useVersionManagement();

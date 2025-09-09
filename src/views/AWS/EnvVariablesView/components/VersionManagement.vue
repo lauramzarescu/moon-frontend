@@ -30,6 +30,20 @@
                                     <Badge v-if="idx === 0" variant="outline" class="text-[10px]">Latest</Badge>
                                 </div>
                             </SelectItem>
+
+                            <!-- Load More Button -->
+                            <div v-if="pagination?.hasNextPage" class="p-2 border-t">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    @click="$emit('load-more')"
+                                    :disabled="isLoadingMoreVersions"
+                                    class="w-full text-xs h-8"
+                                >
+                                    <Loader2Icon v-if="isLoadingMoreVersions" class="h-3 w-3 mr-2 animate-spin" />
+                                    <span v-else>Load More ({{ pagination.totalPages - pagination.page }} pages left)</span>
+                                </Button>
+                            </div>
                         </SelectGroup>
                     </SelectContent>
                 </Select>
@@ -93,6 +107,8 @@ interface Props {
     selectedVersion: string;
     availableVersions: Array<{ revision: number; label: string; arn: string; registeredAt: string }>;
     isLoadingVersions: boolean;
+    isLoadingMoreVersions?: boolean;
+    pagination?: { page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean } | null;
 }
 
 interface Emits {
@@ -101,6 +117,7 @@ interface Emits {
     (e: 'restore'): void;
     (e: 'add-variable'): void;
     (e: 'bulk-operations'): void;
+    (e: 'load-more'): void;
 }
 
 defineProps<Props>();
