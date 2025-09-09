@@ -41,7 +41,7 @@ const getLoadingText = () => {
                     <!-- Logo with Subtle Animation -->
                     <div class="relative">
                         <div class="w-16 h-16 p-3 bg-card rounded-2xl border shadow-lg">
-                            <img src="@/assets/logos/logo-4.png" alt="Logo" class="w-full h-full object-contain" />
+                            <img src="@/assets/logos/logo-1.png" alt="Logo" class="w-full h-full object-contain" />
                         </div>
                     </div>
 
