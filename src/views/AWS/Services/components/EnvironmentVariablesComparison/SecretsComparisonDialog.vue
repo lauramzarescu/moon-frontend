@@ -148,25 +148,13 @@ const handleGetServiceComparisonData = (service: any) => {
 };
 
 const gridClass = computed(() => {
-    const serviceCount = dialogState.selectedServices.length;
-    // Responsive grid that ensures equal-width cards
-    if (serviceCount === 1) {
-        return 'grid grid-cols-1 max-w-md mx-auto gap-4';
-    } else if (serviceCount === 2) {
-        return 'grid grid-cols-1 lg:grid-cols-2 gap-4';
-    } else if (serviceCount === 3) {
-        return 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4';
-    } else if (serviceCount === 4) {
-        return 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4';
-    } else {
-        // For 5+ services, use a responsive grid that wraps nicely
-        return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4';
-    }
+    // Always use horizontal flex with scrolling
+    return 'flex gap-4 overflow-x-auto pb-2';
 });
 
 const serviceCardWidth = computed(() => {
-    // Equal-width cards with consistent minimum width for readability
-    return 'w-full min-w-0 min-h-[200px]';
+    // Always use fixed width for consistent comparison
+    return 'flex-shrink-0 w-80 min-h-[200px]';
 });
 </script>
 
@@ -294,7 +282,7 @@ const serviceCardWidth = computed(() => {
                                     <div
                                         v-for="i in dialogState.selectedServices.length"
                                         :key="`skeleton-${i}`"
-                                        class="border rounded-lg p-4 bg-muted/20 animate-pulse hover-lift min-h-[200px]"
+                                        :class="[serviceCardWidth, 'border rounded-lg p-4 bg-muted/20 animate-pulse hover-lift']"
                                         :style="{ animationDelay: `${i * 0.1}s` }"
                                         role="presentation"
                                     >
@@ -486,5 +474,35 @@ const serviceCardWidth = computed(() => {
 
 .animate-pulse {
     animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar styling for horizontal scroll */
+.overflow-x-auto {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.7);
+}
+
+/* Smooth scroll behavior */
+.overflow-x-auto {
+    scroll-behavior: smooth;
 }
 </style>
