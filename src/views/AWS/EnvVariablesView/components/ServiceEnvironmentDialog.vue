@@ -112,10 +112,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2Icon } from 'lucide-vue-next';
+import { withDelay } from '@/utils';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface';
 import { VariableType } from '@/types/aws/environment-variable.enums';
 import { useUnsavedChanges } from '../composables/useUnsavedChanges';
@@ -194,26 +195,22 @@ const {
 
 const environmentVariablesTableRef = ref<any>(null);
 
-// Computed properties
 const isOpen = computed({
     get: () => props.open,
     set: (value) => emit('update:open', value),
 });
 
 const service = computed(() => {
-    // When dialog opens, freeze the current service state
     if (props.open && !dialogWasOpened.value) {
         frozenService.value = getCurrentService(props.service);
         dialogWasOpened.value = true;
     }
 
-    // When dialog closes, reset the frozen state
     if (!props.open && dialogWasOpened.value) {
         frozenService.value = null;
         dialogWasOpened.value = false;
     }
 
-    // Return frozen service when dialog is open, otherwise return current service
     return props.open && frozenService.value ? frozenService.value : getCurrentService(props.service);
 });
 
@@ -247,7 +244,6 @@ setupVersionWatchers(
     () => props.open,
 );
 
-// Restore version methods
 const confirmRestoreToVersion = () => {
     if (!service.value || !selectedContainer.value) return;
     if (!selectedVersion.value) return;
@@ -264,7 +260,10 @@ const performRestoreToVersion = async () => {
     closeRestoreConfirmation();
 
     const revision = parseInt(selectedVersion.value);
-    await performRollback(service.value, selectedContainer.value, revision, isRestoring, () => emit('refresh'));
+    await performRollback(service.value, selectedContainer.value, revision, isRestoring, async () => {
+        emit('refresh');
+        await refreshVersionsAndSelectLatest();
+    });
 };
 
 const handleDelete = async (deleteData: any) => {
@@ -273,7 +272,6 @@ const handleDelete = async (deleteData: any) => {
     isDeleting.value = true;
     try {
         if (deleteData.isBulk) {
-            // Handle bulk delete - separate environment variables and secrets
             const environmentVariables = deleteData.variables.filter((v: any) => v.type === VariableType.ENVIRONMENT);
             const secrets = deleteData.variables.filter((v: any) => v.type === VariableType.SECRET);
 
@@ -299,7 +297,6 @@ const handleDelete = async (deleteData: any) => {
                 description: `Successfully deleted ${environmentVariables.length} environment variables and ${secrets.length} secrets.`,
             });
         } else {
-            // Handle single delete
             const payload: any = {
                 clusterName: service.value.clusterName,
                 serviceName: service.value.name,
@@ -324,11 +321,11 @@ const handleDelete = async (deleteData: any) => {
 
         hasChanges.value = true;
 
-        // Refresh data from backend
         store.manualRefresh();
 
-        // Emit refresh to parent to reload service data
         emit('refresh');
+
+        await refreshVersionsAndSelectLatest();
     } catch (error: any) {
         console.error('Failed to delete variable(s):', error);
         toast({
@@ -351,24 +348,22 @@ const handleAddNew = (variable: any) => {
     // The actual API call happens when Save Changes button is clicked
 };
 
-const handleBulkAdded = () => {
-    // Called when bulk add dialog completes successfully
+const handleBulkAdded = async () => {
     store.manualRefresh();
     emit('refresh');
+
+    await refreshVersionsAndSelectLatest();
 };
 
 const handlePendingChanges = (hasPending: boolean) => {
     hasPendingChanges.value = hasPending;
 };
 
-// Event handlers
-
 const handleSaveAllChanges = async (changes: { newVariables: any[]; editedVariables: any[] }) => {
     if (!service.value || !selectedContainer.value) return;
 
     isSaving.value = true;
     try {
-        // Validate secret names before processing
         const allSecrets = [...changes.newVariables.filter((v) => v.isSecret), ...changes.editedVariables.filter((v) => v.isSecret)];
 
         for (const secret of allSecrets) {
@@ -382,9 +377,7 @@ const handleSaveAllChanges = async (changes: { newVariables: any[]; editedVariab
                 return;
             }
         }
-        // Process new variables (POST requests)
         if (changes.newVariables.length > 0) {
-            // Separate environment variables and secrets
             const newEnvVars = changes.newVariables.filter((v) => !v.isSecret);
             const newSecrets = changes.newVariables.filter((v) => v.isSecret);
 
@@ -413,9 +406,7 @@ const handleSaveAllChanges = async (changes: { newVariables: any[]; editedVariab
             }
         }
 
-        // Process edited variables (PUT requests)
         if (changes.editedVariables.length > 0) {
-            // Separate environment variables and secrets
             const editedEnvVars = changes.editedVariables.filter((v) => !v.isSecret);
             const editedSecrets = changes.editedVariables.filter((v) => v.isSecret);
 
@@ -447,11 +438,11 @@ const handleSaveAllChanges = async (changes: { newVariables: any[]; editedVariab
         hasChanges.value = true;
         hasPendingChanges.value = false;
 
-        // Refresh data from backend
         store.manualRefresh();
 
-        // Emit refresh to parent to reload service data
         emit('refresh');
+
+        await refreshVersionsAndSelectLatest();
 
         const newEnvCount = changes.newVariables.filter((v) => !v.isSecret).length;
         const newSecretCount = changes.newVariables.filter((v) => v.isSecret).length;
@@ -476,14 +467,12 @@ const handleSaveAllChanges = async (changes: { newVariables: any[]; editedVariab
 };
 
 const saveChanges = () => {
-    // Trigger the table to save all pending changes
     if (environmentVariablesTableRef.value) {
         environmentVariablesTableRef.value.saveAllChanges();
     }
 };
 
 const closeDialog = () => {
-    // Reset any pending changes before closing
     if (environmentVariablesTableRef.value && hasPendingChanges.value) {
         environmentVariablesTableRef.value.clearPendingChanges();
     }
@@ -500,10 +489,34 @@ const closeDialog = () => {
     dialogWasOpened.value = false;
 };
 
-const handleRefresh = () => {
-    if (service.value && selectedContainer.value) {
-        loadVersions(service.value, selectedContainer.value);
-    }
+const handleRefresh = async () => {
     emit('refresh');
+    await refreshVersionsAndSelectLatest();
+};
+
+const refreshVersionsAndSelectLatest = async () => {
+    if (!service.value || !selectedContainer.value) return;
+
+    try {
+        await withDelay(async () => {
+            // 1) Reload versions for the current service/container (force select latest)
+            await loadVersions(service.value!, selectedContainer.value, false);
+
+            // 2) Load variables for the latest revision and display them in the table
+            const latest = availableVersions.value[0];
+            if (!latest) return;
+
+            await nextTick();
+
+            isLoadingVersionData.value = true;
+            try {
+                versionEnvironmentVariables.value = await loadVersionData(service.value!, selectedContainer.value, latest.revision);
+            } finally {
+                isLoadingVersionData.value = false;
+            }
+        });
+    } catch (error) {
+        console.error('Failed to refresh versions:', error);
+    }
 };
 </script>
