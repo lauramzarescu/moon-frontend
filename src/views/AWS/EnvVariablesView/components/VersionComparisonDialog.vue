@@ -481,6 +481,8 @@ const loadVersions = async () => {
             clusterName: service.clusterName,
             serviceName: service.name,
             containerName: service.containers[0].name,
+            page: 1,
+            limit: 10,
         });
 
         availableVersions.value = response.versions.map((version: any) => ({
@@ -490,27 +492,33 @@ const loadVersions = async () => {
 
         // Set default versions - prioritize currentVersion if provided
         if (availableVersions.value.length >= 2) {
-            if (props.currentVersion) {
-                // If currentVersion is provided, use it as the "To" version
-                const currentRevision = parseInt(props.currentVersion.toString().replace(/\D/g, ''));
-                toVersion.value = currentRevision.toString();
+            const latestRevision = availableVersions.value[0].revision;
 
-                // Find a different version for comparison
-                const otherVersion = availableVersions.value.find((v) => v.revision !== currentRevision);
-                if (otherVersion) {
-                    fromVersion.value = otherVersion.revision.toString();
+            if (props.currentVersion) {
+                const currentRevision = (() => {
+                    const raw = props.currentVersion as any;
+                    const s = typeof raw === 'string' ? raw : String(raw);
+                    const m = s.match(/\d+/);
+                    return m ? parseInt(m[0]) : parseInt(s);
+                })();
+
+                if (currentRevision === latestRevision) {
+                    // If latest selected: compare latest vs previous
+                    toVersion.value = latestRevision.toString();
+                    fromVersion.value = availableVersions.value[1]?.revision.toString() || latestRevision.toString();
                 } else {
-                    fromVersion.value = availableVersions.value[1].revision.toString();
+                    // If a non-latest selected: compare selected vs latest
+                    fromVersion.value = currentRevision.toString();
+                    toVersion.value = latestRevision.toString();
                 }
             } else {
                 // Default behavior: latest vs previous
-                toVersion.value = availableVersions.value[0].revision.toString();
+                toVersion.value = latestRevision.toString();
                 fromVersion.value = availableVersions.value[1].revision.toString();
             }
 
-            // Auto-execute comparison with delay to avoid debouncing issues
             await withDelay(async () => {
-                if (props.open && fromVersion.value !== toVersion.value) {
+                if (props.open && fromVersion.value && toVersion.value && fromVersion.value !== toVersion.value) {
                     await performComparison();
                 }
             });
@@ -520,26 +528,6 @@ const loadVersions = async () => {
         }
     } catch (error: any) {
         console.error('Failed to load versions:', error);
-        // Fallback to mock data
-        const baseVersion = service.taskDefinition.revision;
-        availableVersions.value = [
-            { revision: baseVersion, label: `v${baseVersion} (current)` },
-            { revision: baseVersion - 1, label: `v${baseVersion - 1}` },
-            { revision: baseVersion - 2, label: `v${baseVersion - 2}` },
-        ];
-        if (!toVersion.value) {
-            toVersion.value = baseVersion.toString();
-        }
-        if (!fromVersion.value) {
-            fromVersion.value = (baseVersion - 1).toString();
-        }
-
-        // Auto-execute comparison with fallback data and delay to avoid debouncing
-        await withDelay(async () => {
-            if (props.open && fromVersion.value !== toVersion.value) {
-                await performComparison();
-            }
-        });
     } finally {
         isLoadingVersions.value = false;
     }
@@ -622,31 +610,21 @@ watch(availableVersions, async (newVersions) => {
 watch(
     () => props.currentVersion,
     (newVersion) => {
-        if (newVersion && availableVersions.value.length > 0) {
-            // Handle different version formats (could be "v20", "20", or just a number)
-            let currentRevision: number;
-            if (typeof newVersion === 'string') {
-                // Extract number from version string (handles "v20", "20", etc.)
-                const match = newVersion.match(/\d+/);
-                currentRevision = match ? parseInt(match[0]) : parseInt(newVersion);
-            } else {
-                currentRevision = parseInt(newVersion.toString());
-            }
+        if (!newVersion || availableVersions.value.length === 0) return;
 
-            // Set the current version as "To" version
-            toVersion.value = currentRevision.toString();
+        const latestRevision = availableVersions.value[0].revision;
+        const currentRevision = (() => {
+            const s = typeof newVersion === 'string' ? newVersion : String(newVersion);
+            const m = s.match(/\d+/);
+            return m ? parseInt(m[0]) : parseInt(s);
+        })();
 
-            // Find a different version for comparison (prefer the previous version)
-            const otherVersion = availableVersions.value.find((v) => v.revision !== currentRevision);
-            if (otherVersion) {
-                fromVersion.value = otherVersion.revision.toString();
-            } else if (availableVersions.value.length > 1) {
-                // If no different version found, use the first available different version
-                const differentVersion = availableVersions.value.find((v) => v.revision.toString() !== currentRevision.toString());
-                if (differentVersion) {
-                    fromVersion.value = differentVersion.revision.toString();
-                }
-            }
+        if (currentRevision === latestRevision) {
+            toVersion.value = latestRevision.toString();
+            fromVersion.value = availableVersions.value[1]?.revision.toString() || latestRevision.toString();
+        } else {
+            fromVersion.value = currentRevision.toString();
+            toVersion.value = latestRevision.toString();
         }
     },
     { immediate: true },

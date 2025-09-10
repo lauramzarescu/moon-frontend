@@ -194,7 +194,7 @@ export function useVersionManagement() {
                         await nextTick();
 
                         // Preserve version selection if it's the same service being refreshed
-                        loadVersions(newService, selectedContainer.value, isSameService);
+                        await loadVersions(newService, selectedContainer.value, isSameService);
 
                         // Update the tracked service identity
                         previousServiceIdentity.value = newServiceIdentity;
