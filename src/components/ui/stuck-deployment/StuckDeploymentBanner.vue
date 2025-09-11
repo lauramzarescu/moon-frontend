@@ -35,4 +35,48 @@ const stuckServices = computed(() => {
 });
 
 const hasStuckDeployments = computed(() => stuckServices.value.length > 0);
+
+const singleService = computed(() => {
+    return stuckServices.value.length === 1 ? stuckServices.value[0] : null;
+});
+
+const singleServiceImageComparisons = computed(() => {
+    if (!singleService.value) return [];
+
+    const service = singleService.value;
+    const comparisons: Array<{
+        containerName: string;
+        currentImage: string;
+        targetImage: string;
+    }> = [];
+
+    if (service.deploymentStatus?.currentImages && service.deploymentStatus?.targetImages) {
+        const currentImages = service.deploymentStatus.currentImages;
+        const targetImages = service.deploymentStatus.targetImages;
+
+        // Create a map of target images by container name
+        const targetImageMap = new Map(targetImages.map((img) => [img.containerName, img.image]));
+
+        currentImages.forEach((currentImg) => {
+            const targetImage = targetImageMap.get(currentImg.containerName);
+            if (targetImage) {
+                comparisons.push({
+                    containerName: currentImg.containerName,
+                    currentImage: currentImg.image,
+                    targetImage: targetImage,
+                });
+            }
+        });
+    } else {
+        service.containers?.forEach((container) => {
+            comparisons.push({
+                containerName: container.name,
+                currentImage: container.image,
+                targetImage: 'Updating...',
+            });
+        });
+    }
+
+    return comparisons;
+});
 </script>

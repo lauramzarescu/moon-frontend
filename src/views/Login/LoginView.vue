@@ -79,7 +79,7 @@ onMounted(() => {
                         <div
                             class="w-24 h-24 p-4 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl hover:scale-105 transition-transform duration-300"
                         >
-                            <img src="@/assets/logos/logo-1.png" alt="Logo" class="w-full h-full object-contain filter drop-shadow-lg" />
+                            <img src="@/assets/logos/logo-3.png" alt="Logo" class="w-full h-full object-contain filter drop-shadow-lg" />
                         </div>
                     </div>
 
@@ -103,7 +103,7 @@ onMounted(() => {
                         <!-- Mobile Logo -->
                         <div class="lg:hidden flex justify-center mb-4">
                             <div class="w-16 h-16 p-3 bg-primary/10 rounded-xl border border-primary/20">
-                                <img src="@/assets/logos/logo-1.png" alt="Logo" class="w-full h-full object-contain" />
+                                <img src="@/assets/logos/logo-3.png" alt="Logo" class="w-full h-full object-contain" />
                             </div>
                         </div>
 

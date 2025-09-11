@@ -16,65 +16,32 @@
             <div class="flex items-center gap-4 py-4 border-b">
                 <div class="flex items-center gap-2">
                     <Label class="text-sm font-medium">From:</Label>
-                    <Select v-model="fromVersion" :disabled="isLoadingVersions">
-                        <SelectTrigger class="w-[200px]">
-                            <SelectValue placeholder="Select version">
-                                <div v-if="isLoadingVersions" class="flex items-center gap-2">
-                                    <Loader2Icon class="h-3 w-3 animate-spin" />
-                                    Loading...
-                                </div>
-                                <span v-else-if="fromVersion">
-                                    {{
-                                        availableVersions.find((v) => v.revision.toString() === fromVersion)?.label ||
-                                        `Revision ${fromVersion}`
-                                    }}
-                                </span>
-                            </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem
-                                    v-for="version in availableVersions"
-                                    :key="version.revision"
-                                    :value="version.revision.toString()"
-                                >
-                                    {{ version.label }}
-                                </SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                    <VersionSelect
+                      :model-value="fromVersion"
+                      @update:modelValue="(v: string) => (fromVersion = v)"
+                      :versions="availableVersions"
+                      :is-loading="isLoadingVersions"
+                      :is-loading-more="isLoadingMoreVersions"
+                      :pagination="pagination"
+                      @load-more="loadMoreVersions"
+                      :trigger-class="'w-[200px]'"
+                    />
                 </div>
 
                 <ArrowRightIcon class="h-4 w-4 text-muted-foreground" />
 
                 <div class="flex items-center gap-2">
                     <Label class="text-sm font-medium">To:</Label>
-                    <Select v-model="toVersion" :disabled="isLoadingVersions">
-                        <SelectTrigger class="w-[200px]">
-                            <SelectValue placeholder="Select version">
-                                <div v-if="isLoadingVersions" class="flex items-center gap-2">
-                                    <Loader2Icon class="h-3 w-3 animate-spin" />
-                                    Loading...
-                                </div>
-                                <span v-else-if="toVersion">
-                                    {{
-                                        availableVersions.find((v) => v.revision.toString() === toVersion)?.label || `Revision ${toVersion}`
-                                    }}
-                                </span>
-                            </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectItem
-                                    v-for="version in availableVersions"
-                                    :key="version.revision"
-                                    :value="version.revision.toString()"
-                                >
-                                    {{ version.label }}
-                                </SelectItem>
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
+                    <VersionSelect
+                      :model-value="toVersion"
+                      @update:modelValue="(v: string) => (toVersion = v)"
+                      :versions="availableVersions"
+                      :is-loading="isLoadingVersions"
+                      :is-loading-more="isLoadingMoreVersions"
+                      :pagination="pagination"
+                      @load-more="loadMoreVersions"
+                      :trigger-class="'w-[200px]'"
+                    />
                 </div>
 
                 <div class="flex-1" />
@@ -320,7 +287,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import VersionSelect from './VersionSelect.vue';
 
 import {
     ArrowRightIcon,
@@ -471,6 +438,9 @@ const onCopyName = async (name: string) => {
 const availableVersions = ref<Array<{ revision: number; label: string }>>([]);
 const isLoadingVersions = ref(false);
 
+const isLoadingMoreVersions = ref(false);
+const pagination = ref<{ page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean } | null>(null);
+
 const loadVersions = async () => {
     const service = props.service || (props.services && props.services[0]);
     if (!service || !service.containers.length) return;
@@ -489,6 +459,7 @@ const loadVersions = async () => {
             revision: version.revision,
             label: `v${version.revision} (${new Date(version.registeredAt).toLocaleDateString()})`,
         }));
+        pagination.value = (response as any).pagination || null;
 
         // Set default versions - prioritize currentVersion if provided
         if (availableVersions.value.length >= 2) {
@@ -532,6 +503,36 @@ const loadVersions = async () => {
         isLoadingVersions.value = false;
     }
 };
+
+const loadMoreVersions = async () => {
+    if (isLoadingMoreVersions.value || !pagination.value?.hasNextPage) return;
+
+    const service = props.service || (props.services && props.services[0]);
+    if (!service || !service.containers.length) return;
+
+    isLoadingMoreVersions.value = true;
+    try {
+        const response = await awsService.getEnvironmentVariableVersions({
+            clusterName: service.clusterName,
+            serviceName: service.name,
+            containerName: service.containers[0].name,
+            page: (pagination.value?.page || 1) + 1,
+            limit: pagination.value?.limit || 10,
+        });
+
+        const appended = response.versions.map((version: any) => ({
+            revision: version.revision,
+            label: `v${version.revision} (${new Date(version.registeredAt).toLocaleDateString()})`,
+        }));
+        availableVersions.value = [...availableVersions.value, ...appended];
+        pagination.value = (response as any).pagination || pagination.value;
+    } catch (error) {
+        console.error('Failed to load more versions:', error);
+    } finally {
+        isLoadingMoreVersions.value = false;
+    }
+};
+
 
 const comparisonFilters = computed(() => [
     { key: 'all', label: 'All Changes', icon: GitCompareIcon },

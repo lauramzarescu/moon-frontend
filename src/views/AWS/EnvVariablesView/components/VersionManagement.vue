@@ -3,50 +3,15 @@
         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2">
                 <Label class="text-sm font-medium">Version:</Label>
-                <Select :model-value="selectedVersion" @update:model-value="$emit('update:selectedVersion', $event)" :disabled="isLoadingVersions">
-                    <SelectTrigger class="w-[260px]">
-                        <SelectValue>
-                            <div v-if="isLoadingVersions" class="flex items-center gap-2">
-                                <Loader2Icon class="h-3 w-3 animate-spin" />
-                                Loading...
-                            </div>
-                            <span v-else>
-                                {{
-                                    availableVersions.find((v) => v.revision.toString() === selectedVersion)?.label ||
-                                    'Select version'
-                                }}
-                            </span>
-                        </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectGroup>
-                            <SelectItem
-                                v-for="(version, idx) in availableVersions"
-                                :key="version.revision"
-                                :value="version.revision.toString()"
-                            >
-                                <div class="flex items-center justify-between gap-3">
-                                    <span>{{ version.label }}</span>
-                                    <Badge v-if="idx === 0" variant="outline" class="text-[10px]">Latest</Badge>
-                                </div>
-                            </SelectItem>
-
-                            <!-- Load More Button -->
-                            <div v-if="pagination?.hasNextPage" class="p-2 border-t">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    @click="$emit('load-more')"
-                                    :disabled="isLoadingMoreVersions"
-                                    class="w-full text-xs h-8"
-                                >
-                                    <Loader2Icon v-if="isLoadingMoreVersions" class="h-3 w-3 mr-2 animate-spin" />
-                                    <span v-else>Load More ({{ pagination.totalPages - pagination.page }} pages left)</span>
-                                </Button>
-                            </div>
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
+                <VersionSelect
+                  :model-value="selectedVersion"
+                  @update:modelValue="$emit('update:selectedVersion', $event)"
+                  :versions="availableVersions"
+                  :is-loading="isLoadingVersions"
+                  :is-loading-more="isLoadingMoreVersions"
+                  :pagination="pagination"
+                  @load-more="$emit('load-more')"
+                />
             </div>
             <Button
                 size="sm"
@@ -96,10 +61,9 @@
 
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { GitCompareIcon, Loader2Icon, PlusIcon, RefreshCwIcon, SettingsIcon } from 'lucide-vue-next';
+import { GitCompareIcon, PlusIcon, RefreshCwIcon, SettingsIcon } from 'lucide-vue-next';
+import VersionSelect from './VersionSelect.vue';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
 import { usePermissions } from '@/composables/usePermissions.ts';
 
