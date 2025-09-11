@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue';
 import moment from 'moment';
 import { AuditLogService } from '@/services/audit-log.service';
+import { withDelay } from '@/utils.ts';
 
 export function useDeploymentWidgets() {
     const auditLogService = new AuditLogService();
@@ -9,23 +10,13 @@ export function useDeploymentWidgets() {
     const deploymentsCount = ref<number>(0);
     const deploymentsCountLoading = ref(false);
     const deploymentsCountError = ref<string | null>(null);
+    const deploymentsDelta = ref<number>(0);
+    const deploymentsPreviousCount = ref<number>(0);
 
     // State for deployments timeline widget
     const deploymentsTimeline = ref<{ data: number[]; labels?: string[] }>({ data: [] });
     const deploymentsTimelineLoading = ref(false);
     const deploymentsTimelineError = ref<string | null>(null);
-
-    // State for previous period comparison (for percentage calculation)
-    const previousPeriodCount = ref<number>(0);
-
-    // Computed properties
-    const deploymentsDelta = computed(() => {
-        const current = deploymentsCount.value;
-        const previous = previousPeriodCount.value;
-        if (previous === 0) return current > 0 ? 100 : 0;
-
-        return Math.round(((current - previous) / previous) * 100);
-    });
 
     // Computed property to check if chart has data
     const hasChartData = computed(() => {
@@ -76,7 +67,7 @@ export function useDeploymentWidgets() {
                 cornerRadius: 6,
                 displayColors: false,
                 callbacks: {
-                    title: function(context: any) {
+                    title: function (context: any) {
                         const dataIndex = context[0]?.dataIndex;
                         const labels = deploymentsTimeline.value.labels;
 
@@ -92,43 +83,25 @@ export function useDeploymentWidgets() {
                         // Fallback to generic label
                         return `Data Point ${dataIndex + 1}`;
                     },
-                    label: function(context: any) {
+                    label: function (context: any) {
                         const value = context.parsed.y;
                         const deploymentText = value === 1 ? 'deployment' : 'deployments';
                         return `${value} ${deploymentText}`;
-                    }
-                }
-            }
+                    },
+                },
+            },
         },
         scales: { x: { display: false }, y: { display: false } },
         elements: {
             line: { borderJoinStyle: 'round', capBezierPoints: true },
-            point: { radius: hasSingleDataPoint.value ? 4 : 0 }
+            point: { radius: hasSingleDataPoint.value ? 4 : 0 },
         },
         interaction: {
             intersect: false,
-            mode: 'index'
-        }
+            mode: 'index',
+        },
     }));
 
-    // Helper function to calculate previous period dates using Moment.js
-    const calculatePreviousPeriod = (startDate: string, endDate: string) => {
-        if (!startDate || !endDate) return { prevStart: '', prevEnd: '' };
-
-        const start = moment(startDate);
-        const end = moment(endDate);
-        const diffDays = end.diff(start, 'days');
-
-        const prevEnd = start.clone().subtract(1, 'day');
-        const prevStart = prevEnd.clone().subtract(diffDays, 'days');
-
-        return {
-            prevStart: prevStart.format('YYYY-MM-DD'),
-            prevEnd: prevEnd.format('YYYY-MM-DD'),
-        };
-    };
-
-    // Methods
     const fetchDeploymentsCount = async (startDate?: string, endDate?: string) => {
         deploymentsCountLoading.value = true;
         deploymentsCountError.value = null;
@@ -142,29 +115,20 @@ export function useDeploymentWidgets() {
             if (tz) params.tz = tz;
 
             const response = await auditLogService.getDeploymentsCount(params);
-            deploymentsCount.value = response.count;
 
-            // Fetch previous period for comparison
-            if (startDate && endDate) {
-                const { prevStart, prevEnd } = calculatePreviousPeriod(startDate, endDate);
-                try {
-                    const prevResponse = await auditLogService.getDeploymentsCount({
-                        filter_startDate: prevStart,
-                        filter_endDate: prevEnd,
-                        tz,
-                    });
-                    previousPeriodCount.value = prevResponse.count;
-                } catch (prevError) {
-                    console.warn('Failed to fetch previous period data:', prevError);
-                    previousPeriodCount.value = 0;
-                }
-            } else {
-                previousPeriodCount.value = 0;
-            }
+            // Validate and sanitize response values
+            const count = !isNaN(response.count) ? response.count : 0;
+            const delta = !isNaN(response.delta) ? response.delta : 0;
+            const previousCount = !isNaN(response.previousCount) ? response.previousCount : 0;
+
+            deploymentsCount.value = count;
+            deploymentsDelta.value = delta;
+            deploymentsPreviousCount.value = previousCount;
         } catch (error) {
             deploymentsCountError.value = error instanceof Error ? error.message : 'Failed to fetch deployments count';
             deploymentsCount.value = 0;
-            previousPeriodCount.value = 0;
+            deploymentsDelta.value = 0;
+            deploymentsPreviousCount.value = 0;
         } finally {
             deploymentsCountLoading.value = false;
         }
@@ -178,6 +142,7 @@ export function useDeploymentWidgets() {
             const params: { filter_startDate?: string; filter_endDate?: string; tz?: string } = {};
             if (startDate) params.filter_startDate = startDate;
             if (endDate) params.filter_endDate = endDate;
+
             params.tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
             deploymentsTimeline.value = await auditLogService.getDeploymentsTimeline(params);
@@ -190,8 +155,12 @@ export function useDeploymentWidgets() {
     };
 
     const fetchAllWidgetData = async (startDate?: string, endDate?: string) => {
-        await fetchDeploymentsCount(startDate, endDate);
-        setTimeout(async () => await fetchDeploymentsTimeline(startDate, endDate), 301); // 300 is the debounce time in generic.service.ts
+        await withDelay(async () => {
+            await Promise.allSettled([
+                fetchDeploymentsCount(startDate, endDate),
+                fetchDeploymentsTimeline(startDate, endDate),
+            ]);
+        });
     };
 
     return {
@@ -202,10 +171,10 @@ export function useDeploymentWidgets() {
         deploymentsTimeline,
         deploymentsTimelineLoading,
         deploymentsTimelineError,
-        previousPeriodCount,
+        deploymentsDelta,
+        deploymentsPreviousCount,
 
         // Computed
-        deploymentsDelta,
         chartData,
         chartOptions,
         hasChartData,

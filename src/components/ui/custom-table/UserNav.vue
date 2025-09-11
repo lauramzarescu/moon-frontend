@@ -21,12 +21,15 @@ import { AuthService } from '@/services/auth.service.ts';
 import { useAuthStore } from '@/stores/authStore.ts';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
+import { useLogout } from '@/composables/useLogout';
+import { LogoutReason } from '@/enums/logout/logout.enum';
 
 const router = useRouter();
 const { isDark, toggleTheme } = useTheme();
 const authService = new AuthService();
 const authStore = useAuthStore();
 const { hasPermission } = usePermissions();
+const { performLogout } = useLogout();
 
 // Get user initials for avatar fallback
 const userInitials = computed(() => {
@@ -105,14 +108,7 @@ const menuItems = computed(() => [
 const hasNotifications = ref(false);
 
 const handleLogout = async () => {
-    const response = (await authService.logout()) as { url: string };
-
-    if (response.url) {
-        await router.push(response.url);
-        return;
-    }
-
-    window.location.href = '/';
+    await performLogout(LogoutReason.MANUAL);
 };
 </script>
 

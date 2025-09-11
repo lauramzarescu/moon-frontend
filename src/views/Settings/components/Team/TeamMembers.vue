@@ -351,7 +351,7 @@ watch(
                                 <AlertDialogTrigger as-child>
                                     <DropdownMenuItem
                                         :disabled="isCurrentUser(user) || !hasPermission(PermissionEnum.USER_WRITE)"
-                                        class="text-destructive focus:text-destructive"
+                                        class="text-destructive hover:text-destructive hover:bg-destructive/10 focus:text-destructive focus:bg-destructive/10"
                                         @select="(e) => e.preventDefault()"
                                     >
                                         Delete User

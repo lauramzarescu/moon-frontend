@@ -3,7 +3,7 @@
         <DialogContent class="sm:max-w-md">
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2">
-                    <ShieldCheckIcon class="h-5 w-5 text-green-600" />
+                    <ShieldCheckIcon class="h-5 w-5 text-primary" />
                     Set Up WebAuthn Security Key
                 </DialogTitle>
                 <DialogDescription> Add a WebAuthn-compatible security key with PIN protection for enhanced security </DialogDescription>
@@ -11,12 +11,12 @@
 
             <div class="space-y-4">
                 <!-- Instructions -->
-                <div class="p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950 dark:border-green-800">
+                <div class="p-4 bg-card border rounded-lg">
                     <div class="flex items-start gap-2">
-                        <InfoIcon class="h-4 w-4 text-green-600 mt-0.5" />
+                        <InfoIcon class="h-4 w-4 text-primary mt-0.5" />
                         <div class="text-sm">
-                            <p class="font-medium text-green-800 dark:text-green-200 mb-1">How to set up your WebAuthn key:</p>
-                            <ol class="text-green-700 dark:text-green-300 space-y-1 list-decimal list-inside">
+                            <p class="font-medium mb-1">How to set up your WebAuthn key:</p>
+                            <ol class="text-muted-foreground space-y-1 list-decimal list-inside">
                                 <li>Insert your security key into a USB port</li>
                                 <li>Click "Register Security Key" below</li>
                                 <li>Follow your browser's prompts</li>
@@ -28,10 +28,10 @@
                 </div>
 
                 <!-- Browser Support Check -->
-                <div v-if="!browserSupported" class="p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-950 dark:border-red-800">
+                <div v-if="!browserSupported" class="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
                     <div class="flex items-center gap-2">
-                        <AlertTriangleIcon class="h-4 w-4 text-red-600" />
-                        <span class="text-sm text-red-700 dark:text-red-300">
+                        <AlertTriangleIcon class="h-4 w-4 text-destructive" />
+                        <span class="text-sm text-destructive">
                             Your browser doesn't support WebAuthn. Please use a modern browser like Chrome, Firefox, Safari, or Edge.
                         </span>
                     </div>
@@ -51,21 +51,10 @@
                 </div>
 
                 <!-- Error Message -->
-                <div v-if="errorMessage" class="p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-950 dark:border-red-800">
+                <div v-if="errorMessage" class="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
                     <div class="flex items-center gap-2">
-                        <AlertTriangleIcon class="h-4 w-4 text-red-600" />
-                        <span class="text-sm text-red-700 dark:text-red-300">{{ errorMessage }}</span>
-                    </div>
-                </div>
-
-                <!-- Success Message -->
-                <div
-                    v-if="successMessage"
-                    class="p-3 bg-green-50 border border-green-200 rounded-md dark:bg-green-950 dark:border-green-800"
-                >
-                    <div class="flex items-center gap-2">
-                        <CheckCircleIcon class="h-4 w-4 text-green-600" />
-                        <span class="text-sm text-green-700 dark:text-green-300">{{ successMessage }}</span>
+                        <AlertTriangleIcon class="h-4 w-4 text-destructive" />
+                        <span class="text-sm text-destructive">{{ errorMessage }}</span>
                     </div>
                 </div>
             </div>
@@ -77,6 +66,23 @@
                     Register Security Key
                 </Button>
             </DialogFooter>
+
+            <!-- Global Loading Overlay -->
+            <div
+                v-if="isLoading || successMessage"
+                class="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+            >
+                <div class="flex items-center gap-3 bg-card border rounded-lg px-4 py-3 shadow-lg">
+                    <div
+                        v-if="!successMessage"
+                        class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"
+                    ></div>
+                    <CheckCircleIcon v-else class="h-5 w-5 text-green-600" />
+                    <span class="text-sm font-medium">
+                        {{ successMessage || 'Registering security key...' }}
+                    </span>
+                </div>
+            </div>
         </DialogContent>
     </Dialog>
 </template>

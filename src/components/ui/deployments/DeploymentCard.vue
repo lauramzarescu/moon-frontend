@@ -148,8 +148,8 @@ const onCopyDescription = async (text: string) => {
                 <span class="opacity-50">→</span>
                 <span class="font-mono break-all">{{ newImage || 'N/A' }}</span>
             </div>
-            <div class="mt-1 text-xs text-muted-foreground">
-                <Clock class="inline h-3 w-3" :title="createdAt" aria-label="Exact date" />
+            <div class="mt-2 text-xs text-muted-foreground">
+                <Clock class="inline h-3 w-3 mr-2" :title="createdAt" aria-label="Exact date" />
                 {{ createdAt.toLocaleString() }}
             </div>
         </div>

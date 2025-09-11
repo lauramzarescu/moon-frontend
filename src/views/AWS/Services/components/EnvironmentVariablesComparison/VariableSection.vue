@@ -7,7 +7,7 @@
         <div class="space-y-1">
             <div v-for="variable in variables" :key="variable.name" :class="getVariableClass(variable)" class="p-2 rounded text-sm border">
                 <div class="font-mono font-medium truncate">{{ variable.name }}</div>
-                <div class="text-xs text-muted-foreground truncate">{{ variable.value }}</div>
+                <div class="text-xs text-muted-foreground truncate">{{ variable.value || variable.valueFrom }}</div>
                 <div v-if="shouldShowConflictWarning(variable)" class="text-xs text-orange-600 dark:text-orange-400 mt-1">
                     ⚠️ Same name, different value across services
                 </div>

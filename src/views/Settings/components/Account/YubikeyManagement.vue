@@ -10,13 +10,13 @@
                     @click="showAddModal = true"
                     size="sm"
                     variant="outline"
-                    :disabled="hasHighSecurityMethods"
+                    :disabled="hasHighSecurityMethods || isLoading || isRemoving"
                     :title="hasHighSecurityMethods ? 'OTP YubiKey registration disabled when high-security methods are available' : ''"
                 >
                     <PlusIcon class="h-4 w-4 mr-2" />
                     Add YubiKey (OTP)
                 </Button>
-                <Button @click="showWebAuthnModal = true" size="sm" variant="outline">
+                <Button @click="showWebAuthnModal = true" size="sm" variant="outline" :disabled="isLoading || isRemoving">
                     <PlusIcon class="h-4 w-4 mr-2" />
                     Add WebAuthn Key
                 </Button>
@@ -24,12 +24,12 @@
         </div>
 
         <!-- Security Warning -->
-        <div v-if="hasHighSecurityMethods" class="p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950 dark:border-blue-800">
+        <div v-if="hasHighSecurityMethods" class="p-3 bg-card border rounded-lg">
             <div class="flex items-start gap-2">
-                <ShieldCheckIcon class="h-4 w-4 text-blue-600 mt-0.5" />
+                <ShieldCheckIcon class="h-4 w-4 text-primary mt-0.5" />
                 <div class="text-sm">
-                    <p class="font-medium text-blue-800 dark:text-blue-200 mb-1">High Security Mode Active</p>
-                    <p class="text-blue-700 dark:text-blue-300">
+                    <p class="font-medium mb-1">High Security Mode Active</p>
+                    <p class="text-muted-foreground">
                         OTP YubiKey registration is disabled because you have high-security methods (Mobile Auth or WebAuthn) configured.
                         This prevents security downgrade attacks.
                     </p>
@@ -41,8 +41,8 @@
         <div v-if="yubikeys.length > 0" class="space-y-2">
             <div v-for="yubikey in yubikeys" :key="yubikey.id" class="flex items-center justify-between p-3 border rounded-lg bg-card">
                 <div class="flex items-center gap-3">
-                    <div class="p-2 bg-blue-100 rounded-lg dark:bg-blue-900">
-                        <ShieldCheckIcon class="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <div class="p-2 bg-primary/10 rounded-lg">
+                        <ShieldCheckIcon class="h-4 w-4 text-primary" />
                     </div>
                     <div>
                         <p class="text-sm font-medium">
@@ -58,7 +58,8 @@
                     @click="handleRemoveYubikey(yubikey)"
                     size="sm"
                     variant="ghost"
-                    class="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    class="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    :disabled="isLoading || isRemoving"
                 >
                     <Trash2Icon class="h-4 w-4" />
                 </Button>
@@ -79,6 +80,19 @@
         <div v-if="isLoading" class="flex items-center justify-center py-4">
             <Loader2Icon class="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
+
+        <!-- Global Loading Overlay -->
+        <div
+            v-if="isLoading || isRemoving"
+            class="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+        >
+            <div class="flex items-center gap-3 bg-card border rounded-lg px-4 py-3 shadow-lg">
+                <div class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                <span class="text-sm font-medium">
+                    {{ isRemoving ? 'Removing security key...' : 'Loading security keys...' }}
+                </span>
+            </div>
+        </div>
     </div>
 
     <!-- Add YubiKey Modal -->
@@ -95,7 +109,7 @@
                 <DialogDescription> Are you sure you want to remove this YubiKey? This action cannot be undone. </DialogDescription>
             </DialogHeader>
 
-            <div v-if="yubikeyToRemove" class="p-3 bg-muted rounded-lg">
+            <div v-if="yubikeyToRemove" class="p-3 bg-card border rounded-lg">
                 <p class="text-sm font-medium">
                     {{ yubikeyToRemove.nickname || `YubiKey ${yubikeyToRemove.publicId.slice(-4)}` }}
                 </p>
@@ -109,6 +123,14 @@
                     Remove YubiKey
                 </Button>
             </DialogFooter>
+
+            <!-- Global Loading Overlay -->
+            <div v-if="isRemoving" class="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+                <div class="flex items-center gap-3 bg-card border rounded-lg px-4 py-3 shadow-lg">
+                    <div class="h-5 w-5 animate-spin rounded-full border-2 border-destructive border-t-transparent"></div>
+                    <span class="text-sm font-medium">Removing YubiKey...</span>
+                </div>
+            </div>
         </DialogContent>
     </Dialog>
 </template>

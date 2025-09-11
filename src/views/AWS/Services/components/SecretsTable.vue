@@ -14,20 +14,13 @@
                                 <CardDescription class="text-xs">Configuration and Secrets</CardDescription>
                             </div>
                         </div>
-                        <!-- Action Buttons -->
                         <div class="flex items-center gap-2">
+                            <Button variant="outline" size="sm" @click="goToCentral"> Central Manager </Button>
                             <SecretsComparisonDialog
                                 :services="services"
                                 :filteredServices="[service]"
                                 :is-filtered="true"
                                 :show-all-services="true"
-                            />
-                            <AddEnvironmentVariableDialog
-                                v-model:open="addDialog.isOpen"
-                                :cluster-name="service.clusterName"
-                                :service-name="service.name"
-                                :container-name="container.name"
-                                @variable-added="handleRefresh"
                             />
                         </div>
                     </div>
@@ -121,15 +114,17 @@
                                 </TableCell>
                                 <TableCell class="group">
                                     <div class="flex items-center gap-2">
-                                        <span class="font-mono bg-muted px-2 py-1 rounded text-sm">{{ secret.value }}</span>
+                                        <span class="font-mono bg-muted px-2 py-1 rounded text-sm">{{ secret.valueFrom }}</span>
                                         <button
-                                            @click.stop="onCopy(secret.value)"
+                                            @click.stop="onCopy(secret.valueFrom)"
                                             class="inline-flex items-center gap-1 whitespace-nowrap invisible group-hover:visible text-muted-foreground hover:text-foreground transition-all duration-200"
-                                            :aria-label="copiedValue === secret.value ? 'Copied' : 'Copy value'"
-                                            :title="copiedValue === secret.value ? 'Copied' : 'Copy value'"
+                                            :aria-label="copiedValue === secret.valueFrom ? 'Copied' : 'Copy value'"
+                                            :title="copiedValue === secret.valueFrom ? 'Copied' : 'Copy value'"
                                         >
-                                            <component :is="copiedValue === secret.value ? Check : Copy" class="h-4 w-4" />
-                                            <span v-if="copiedValue === secret.value" class="text-xs ml-1 max-w-48 truncate align-middle"
+                                            <component :is="copiedValue === secret.valueFrom ? Check : Copy" class="h-4 w-4" />
+                                            <span
+                                                v-if="copiedValue === secret.valueFrom"
+                                                class="text-xs ml-1 max-w-48 truncate align-middle"
                                                 >Copied</span
                                             >
                                         </button>
@@ -181,13 +176,14 @@ import { Check, Copy, EditIcon, GlobeIcon, KeyIcon, MoreHorizontalIcon, Settings
 import { computed, reactive, ref } from 'vue';
 import { copyToClipboard as copyToClipboardHelper } from '@/composables/useClipboard';
 import { AwsService } from '@/services/aws.service';
-import AddEnvironmentVariableDialog from './AddEnvironmentVariableDialog.vue';
 import EditEnvironmentVariableDialog from './EditEnvironmentVariableDialog.vue';
 import type { RemoveEnvironmentVariablesInput } from '@/views/AWS/Services/components/environment-variable.schema';
 import SecretsComparisonDialog from '@/views/AWS/Services/components/EnvironmentVariablesComparison/SecretsComparisonDialog.vue';
 import { storeToRefs } from 'pinia';
 import { useDataStore } from '@/stores/dataStore.ts';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const { services } = storeToRefs(useDataStore());
 const { toast } = useToast();
 const awsService = new AwsService();
@@ -201,7 +197,6 @@ const emit = defineEmits<{
     (e: 'refresh'): void;
 }>();
 
-// Edit dialog state
 const editDialog = reactive({
     isOpen: false,
     variableName: '',
@@ -226,7 +221,6 @@ const onCopy = async (text: string) => {
     }
 };
 
-// Add dialog state
 const addDialog = reactive({
     isOpen: false,
 });
@@ -270,6 +264,17 @@ const deleteVariable = async (variableName: string) => {
             description: error instanceof Error ? error.message : 'An unexpected error occurred',
         });
     }
+};
+
+const goToCentral = () => {
+    // Navigate to environment page with service information to auto-open the dialog
+    router.push({
+        path: '/aws/environment',
+        query: {
+            openService: props.service.name,
+            clusterName: props.service.clusterName,
+        },
+    });
 };
 
 const handleRefresh = () => {

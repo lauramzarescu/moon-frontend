@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import TwoFactorVerificationModal from '@/components/ui/two-factor-verification-modal/TwoFactorVerificationModal.vue';
 import { LoginType, TwoFactorMethod } from '@/enums/user/user.enum.ts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-vue-next';
+import { CheckCircleIcon, InfoIcon } from 'lucide-vue-next';
 import {
     changePasswordSchema,
     changePasswordWith2FASchema,
@@ -29,6 +29,7 @@ const showPasswordModal = ref(false);
 const show2FAVerificationModal = ref(false);
 const step = ref(1); // 1: Password form, 2: 2FA verification (if enabled)
 const isLoading = ref(false);
+const successMessage = ref('');
 const verificationCode = ref(['', '', '', '', '', '']);
 const verificationModalRef = ref<InstanceType<typeof TwoFactorVerificationModal> | null>(null);
 
@@ -77,13 +78,18 @@ async function onPasswordSubmit(values: any) {
             const data = changePasswordSchema.parse(values);
             await userService.changePassword(data);
 
-            toast({
-                title: 'Password changed successfully',
-                description: 'Your password has been updated.',
-                variant: 'success',
-            });
+            successMessage.value = 'Password changed successfully!';
 
-            resetForm();
+            setTimeout(() => {
+                toast({
+                    title: 'Password changed successfully',
+                    description: 'Your password has been updated.',
+                    variant: 'success',
+                });
+
+                resetForm();
+                showPasswordModal.value = false;
+            }, 1500);
         }
     } catch (error) {
         toast({
@@ -101,7 +107,6 @@ const confirmWithTwoFactor = async (verifyData: { code: string; credential?: Aut
     if (!verificationModalRef.value) return;
 
     verificationModalRef.value.setLoading(true);
-    verificationModalRef.value.clearError();
 
     try {
         if (verifyData.code === 'webauthn-pending') {
@@ -115,22 +120,44 @@ const confirmWithTwoFactor = async (verifyData: { code: string; credential?: Aut
             await userService.changePasswordWith2FA(data);
         }
 
-        toast({
-            title: 'Password changed successfully',
-            description: 'Your password has been updated.',
-            variant: 'success',
-        });
-
-        resetForm();
+        // Show success in the password modal overlay
         show2FAVerificationModal.value = false;
+        showPasswordModal.value = true;
+        successMessage.value = 'Password changed successfully!';
+
+        setTimeout(() => {
+            toast({
+                title: 'Password changed successfully',
+                description: 'Your password has been updated.',
+                variant: 'success',
+            });
+
+            resetForm();
+            showPasswordModal.value = false;
+        }, 1500);
     } catch (error: any) {
+        // Close 2FA modal and return to password dialog
+        show2FAVerificationModal.value = false;
+        showPasswordModal.value = true;
+
+        // Show error as toast
         if (verifyData.code === 'webauthn-pending') {
-            verificationModalRef.value.setError('WebAuthn authentication failed. Please try again.');
+            toast({
+                title: 'WebAuthn Authentication Failed',
+                description: error.message || 'WebAuthn authentication failed. Please try again.',
+                variant: 'destructive',
+            });
         } else {
-            verificationModalRef.value.setError('The verification code you entered is incorrect. Please try again.');
+            toast({
+                title: 'Verification Failed',
+                description: 'The verification code you entered is incorrect. Please try again.',
+                variant: 'destructive',
+            });
         }
     } finally {
-        verificationModalRef.value.setLoading(false);
+        if (verificationModalRef.value) {
+            verificationModalRef.value.setLoading(false);
+        }
     }
 };
 
@@ -182,6 +209,7 @@ const resetForm = () => {
     verificationCode.value = ['', '', '', '', '', ''];
     formValues.value = { currentPassword: '', newPassword: '', confirmPassword: '' };
     isLoading.value = false;
+    successMessage.value = '';
 };
 
 const handleDialogClose = () => {
@@ -276,6 +304,23 @@ const handleDialogClose = () => {
                             </Button>
                         </DialogFooter>
                     </Form>
+                </div>
+
+                <!-- Global Loading Overlay -->
+                <div
+                    v-if="isLoading || successMessage"
+                    class="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
+                >
+                    <div class="flex items-center gap-3 bg-card border rounded-lg px-4 py-3 shadow-lg">
+                        <div
+                            v-if="!successMessage"
+                            class="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent"
+                        ></div>
+                        <CheckCircleIcon v-else class="h-5 w-5 text-green-600" />
+                        <span class="text-sm font-medium">
+                            {{ successMessage || (is2FAEnabled ? 'Processing...' : 'Changing password...') }}
+                        </span>
+                    </div>
                 </div>
             </DialogContent>
         </Dialog>

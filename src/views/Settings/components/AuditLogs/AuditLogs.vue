@@ -407,7 +407,7 @@ const {
     hasActiveFilters,
     visiblePages,
 
-    // Methods
+
     fetchAuditLogs,
     goToPage,
     clearFilters,
