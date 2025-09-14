@@ -166,7 +166,7 @@ const handleSetup = async () => {
         challengeId.value = registrationResponse.challengeId;
 
         // Use SimpleWebAuthn to handle the browser WebAuthn API
-        const credential = await startRegistration({ optionsJSON: registrationResponse.options });
+        const credential = await startRegistration({ optionsJSON: registrationResponse });
 
         // Complete registration with challengeId
         const completeData = webauthnRegistrationCompleteSchema.parse({

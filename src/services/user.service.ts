@@ -22,7 +22,7 @@ import type {
 } from '@/views/Settings/components/Team/schema.ts';
 import type { PaginatedResult, PaginationParams } from '@/types/pagination/pagination.interface.ts';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/views/Settings/components/Account/schema.ts';
-import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser';
+import type { PublicKeyCredentialRequestOptionsJSON, PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/browser';
 
 export class UserService extends ApiService {
     public resource = '/users';
