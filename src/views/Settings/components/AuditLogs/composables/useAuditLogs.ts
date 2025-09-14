@@ -75,7 +75,6 @@ export function useAuditLogs() {
         return pages;
     });
 
-
     const fetchAuditLogs = async (page: number = paginationMeta.value?.page || 1) => {
         loading.value = true;
         error.value = null;
@@ -159,7 +158,7 @@ export function useAuditLogs() {
             toast({
                 title: 'Copied to clipboard',
                 description: `${label} has been copied to your clipboard.`,
-                variant: 'default',
+                variant: 'success',
             });
         } catch (error) {
             console.error('Failed to copy to clipboard:', error);
@@ -200,7 +199,6 @@ export function useAuditLogs() {
         hasActiveFilters,
         hasDiffData,
         visiblePages,
-
 
         fetchAuditLogs,
         goToPage,

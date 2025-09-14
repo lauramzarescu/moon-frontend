@@ -58,13 +58,13 @@
                             New Image URI
                             <span v-if="validationError" class="text-xs text-destructive">{{ validationError }}</span>
                         </Label>
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2">
                             <Input
                                 id="new-image"
                                 :default-value="currentImage"
                                 v-model="newImageUri"
                                 placeholder="Enter new image URI"
-                                :class="['font-mono text-xs', { 'border-destructive': validationError }]"
+                                :class="['font-mono text-xs flex-1 min-w-0', { 'border-destructive': validationError }]"
                             />
                             <SplitButton
                                 :button-text="fetchButtonText"
@@ -72,7 +72,7 @@
                                 :loading="commitLoading"
                                 :disabled="fetchButtonDisabled"
                                 variant="outline"
-                                button-class="group"
+                                button-class="group flex-shrink-0"
                                 dropdown-align="end"
                                 :title="fetchButtonTitle"
                                 @click="handleFetchCommit"
@@ -406,13 +406,15 @@ const fetchButtonText = computed(() => {
     if (selectedPullRequest.value) {
         const pr = pullRequests.value.find((p) => p.head.ref === selectedPullRequest.value);
         if (pr) {
-            return `Fetch ${pr.title}`;
+            const title = pr.title.length > 20 ? `${pr.title.substring(0, 20)}...` : pr.title;
+            return `Fetch ${title}`;
         }
         // If it's the main branch, show branch name
         if (selectedPullRequest.value === availableMainBranch.value) {
             return `Fetch ${selectedPullRequest.value}`;
         }
-        return `Fetch ${selectedPullRequest.value}`;
+        const branch = selectedPullRequest.value.length > 15 ? `${selectedPullRequest.value.substring(0, 15)}...` : selectedPullRequest.value;
+        return `Fetch ${branch}`;
     }
     return 'Fetch Latest Commit';
 });
@@ -485,7 +487,7 @@ const handleFetchCommit = async () => {
         toast({
             title: 'Commit fetched successfully',
             description: `Latest commit from ${displayName}: ${short}`,
-            variant: 'default',
+            variant: 'success',
         });
     } catch (e: any) {
         toast({ title: 'Failed to fetch commit', description: e?.message || 'Unexpected error', variant: 'destructive' });
