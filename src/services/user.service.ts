@@ -262,7 +262,7 @@ export class UserService extends ApiService {
      */
     async startWebAuthnRegistration(
         data: WebAuthnRegistrationStartInput,
-    ): Promise<{ options: PublicKeyCredentialRequestOptionsJSON; challengeId: string }> {
+    ): Promise<{ options: PublicKeyCredentialCreationOptionsJSON; challengeId: string }> {
         return this.post(`${this.resource}/2fa/webauthn/registration/start`, data);
     }
 
