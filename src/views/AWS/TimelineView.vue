@@ -439,7 +439,7 @@ watch(auditLogs, () => {
             </div>
             <div v-for="[dayKey, items] in groupedByDay" :key="dayKey" class="mb-8">
                 <div
-                    class="sticky top-0 z-10 bg-background backdrop-blur supports-[backdrop-filter]:bg-background py-2 mb-3"
+                    class="sticky top-0 z-10 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 py-2 mb-3"
                     :data-timeline-day="dayKey"
                     :data-day-label="labelForDay(dayKey)"
                 >
