@@ -17,14 +17,14 @@
                 <div class="flex items-center gap-2">
                     <Label class="text-sm font-medium">From:</Label>
                     <VersionSelect
-                      :model-value="fromVersion"
-                      @update:modelValue="(v: string) => (fromVersion = v)"
-                      :versions="availableVersions"
-                      :is-loading="isLoadingVersions"
-                      :is-loading-more="isLoadingMoreVersions"
-                      :pagination="pagination"
-                      @load-more="loadMoreVersions"
-                      :trigger-class="'w-[200px]'"
+                        :model-value="fromVersion"
+                        @update:modelValue="(v: string) => (fromVersion = v)"
+                        :versions="availableVersions"
+                        :is-loading="isLoadingVersions"
+                        :is-loading-more="isLoadingMoreVersions"
+                        :pagination="pagination"
+                        @load-more="loadMoreVersions"
+                        :trigger-class="'w-[265px]'"
                     />
                 </div>
 
@@ -33,14 +33,14 @@
                 <div class="flex items-center gap-2">
                     <Label class="text-sm font-medium">To:</Label>
                     <VersionSelect
-                      :model-value="toVersion"
-                      @update:modelValue="(v: string) => (toVersion = v)"
-                      :versions="availableVersions"
-                      :is-loading="isLoadingVersions"
-                      :is-loading-more="isLoadingMoreVersions"
-                      :pagination="pagination"
-                      @load-more="loadMoreVersions"
-                      :trigger-class="'w-[200px]'"
+                        :model-value="toVersion"
+                        @update:modelValue="(v: string) => (toVersion = v)"
+                        :versions="availableVersions"
+                        :is-loading="isLoadingVersions"
+                        :is-loading-more="isLoadingMoreVersions"
+                        :pagination="pagination"
+                        @load-more="loadMoreVersions"
+                        :trigger-class="'w-[265px]'"
                     />
                 </div>
 
@@ -288,6 +288,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import VersionSelect from './VersionSelect.vue';
+import { useVersionManagement } from '../composables/useVersionManagement';
 
 import {
     ArrowRightIcon,
@@ -343,6 +344,9 @@ const emit = defineEmits<{
 
 const { toast } = useToast();
 const awsService = new AwsService();
+
+// Use version management composable
+const { availableVersions, isLoadingVersions, isLoadingMoreVersions, pagination, loadVersions, loadMoreVersions } = useVersionManagement();
 
 /**
  * Helper function to determine if variable is secret based on ContainerInterface structure
@@ -435,104 +439,51 @@ const onCopyName = async (name: string) => {
     }, 1500);
 };
 
-const availableVersions = ref<Array<{ revision: number; label: string }>>([]);
-const isLoadingVersions = ref(false);
-
-const isLoadingMoreVersions = ref(false);
-const pagination = ref<{ page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean } | null>(null);
-
-const loadVersions = async () => {
+const loadVersionsForComparison = async () => {
     const service = props.service || (props.services && props.services[0]);
     if (!service || !service.containers.length) return;
 
-    isLoadingVersions.value = true;
-    try {
-        const response = await awsService.getEnvironmentVariableVersions({
-            clusterName: service.clusterName,
-            serviceName: service.name,
-            containerName: service.containers[0].name,
-            page: 1,
-            limit: 10,
-        });
+    await loadVersions(service, service.containers[0].name);
 
-        availableVersions.value = response.versions.map((version: any) => ({
-            revision: version.revision,
-            label: `v${version.revision} (${new Date(version.registeredAt).toLocaleDateString()})`,
-        }));
-        pagination.value = (response as any).pagination || null;
+    // Set default versions - prioritize currentVersion if provided
+    if (availableVersions.value.length >= 2) {
+        const latestRevision = availableVersions.value[0].revision;
 
-        // Set default versions - prioritize currentVersion if provided
-        if (availableVersions.value.length >= 2) {
-            const latestRevision = availableVersions.value[0].revision;
+        if (props.currentVersion) {
+            const currentRevision = (() => {
+                const raw = props.currentVersion as any;
+                const s = typeof raw === 'string' ? raw : String(raw);
+                const m = s.match(/\d+/);
+                return m ? parseInt(m[0]) : parseInt(s);
+            })();
 
-            if (props.currentVersion) {
-                const currentRevision = (() => {
-                    const raw = props.currentVersion as any;
-                    const s = typeof raw === 'string' ? raw : String(raw);
-                    const m = s.match(/\d+/);
-                    return m ? parseInt(m[0]) : parseInt(s);
-                })();
-
-                if (currentRevision === latestRevision) {
-                    // If latest selected: compare latest vs previous
-                    toVersion.value = latestRevision.toString();
-                    fromVersion.value = availableVersions.value[1]?.revision.toString() || latestRevision.toString();
-                } else {
-                    // If a non-latest selected: compare selected vs latest
-                    fromVersion.value = currentRevision.toString();
-                    toVersion.value = latestRevision.toString();
-                }
-            } else {
-                // Default behavior: latest vs previous
+            if (currentRevision === latestRevision) {
+                // If latest selected: compare latest vs previous
                 toVersion.value = latestRevision.toString();
-                fromVersion.value = availableVersions.value[1].revision.toString();
+                fromVersion.value = availableVersions.value[1]?.revision.toString() || latestRevision.toString();
+            } else {
+                // If a non-latest selected: compare selected vs latest
+                fromVersion.value = currentRevision.toString();
+                toVersion.value = latestRevision.toString();
             }
-
-            await withDelay(async () => {
-                if (props.open && fromVersion.value && toVersion.value && fromVersion.value !== toVersion.value) {
-                    await performComparison();
-                }
-            });
-        } else if (availableVersions.value.length === 1) {
-            toVersion.value = availableVersions.value[0].revision.toString();
-            fromVersion.value = availableVersions.value[0].revision.toString();
+        } else {
+            // Default behavior: latest vs previous
+            toVersion.value = latestRevision.toString();
+            fromVersion.value = availableVersions.value[1].revision.toString();
         }
-    } catch (error: any) {
-        console.error('Failed to load versions:', error);
-    } finally {
-        isLoadingVersions.value = false;
-    }
-};
 
-const loadMoreVersions = async () => {
-    if (isLoadingMoreVersions.value || !pagination.value?.hasNextPage) return;
-
-    const service = props.service || (props.services && props.services[0]);
-    if (!service || !service.containers.length) return;
-
-    isLoadingMoreVersions.value = true;
-    try {
-        const response = await awsService.getEnvironmentVariableVersions({
-            clusterName: service.clusterName,
-            serviceName: service.name,
-            containerName: service.containers[0].name,
-            page: (pagination.value?.page || 1) + 1,
-            limit: pagination.value?.limit || 10,
+        await withDelay(async () => {
+            if (props.open && fromVersion.value && toVersion.value && fromVersion.value !== toVersion.value) {
+                await performComparison();
+            }
         });
-
-        const appended = response.versions.map((version: any) => ({
-            revision: version.revision,
-            label: `v${version.revision} (${new Date(version.registeredAt).toLocaleDateString()})`,
-        }));
-        availableVersions.value = [...availableVersions.value, ...appended];
-        pagination.value = (response as any).pagination || pagination.value;
-    } catch (error) {
-        console.error('Failed to load more versions:', error);
-    } finally {
-        isLoadingMoreVersions.value = false;
+    } else if (availableVersions.value.length === 1) {
+        toVersion.value = availableVersions.value[0].revision.toString();
+        fromVersion.value = availableVersions.value[0].revision.toString();
     }
 };
 
+// Removed: now using composable's loadMoreVersions
 
 const comparisonFilters = computed(() => [
     { key: 'all', label: 'All Changes', icon: GitCompareIcon },
@@ -577,7 +528,7 @@ watch(
     () => props.open,
     async (isOpen) => {
         if (isOpen) {
-            await loadVersions();
+            await loadVersionsForComparison();
         }
     },
     { immediate: true },
