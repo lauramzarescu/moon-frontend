@@ -3,6 +3,7 @@ import type { InstanceStateName } from 'aws-sdk/clients/ec2';
 
 export interface ServiceInterface {
     name: string;
+    arn?: string;
     clusterName: string;
     isClusterProduction: boolean;
     desiredCount: number;
@@ -41,7 +42,7 @@ export interface ContainerInterface {
     environmentVariables: {
         environment: Array<{ name: string; value: string }>;
         environmentFiles: any[];
-        secrets: any[];
+        secrets: Array<{ name: string; valueFrom: string }>;
     };
 }
 

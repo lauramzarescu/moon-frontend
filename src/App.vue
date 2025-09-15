@@ -4,53 +4,47 @@ import { useRoute } from 'vue-router';
 import { useDataStore } from '@/stores/dataStore.ts';
 import UserNav from '@/components/ui/custom-table/UserNav.vue';
 import { Toaster } from '@/components/ui/toast';
-import { useAuthStore } from '@/stores/authStore.ts';
-import Cookies from 'js-cookie';
-import { AuthService } from '@/services/auth.service.ts';
 import AppSidebar from '@/components/Sidebar/components/AppSidebar.vue';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Separator } from '@/components/ui/separator';
 import AuthLayout from '@/layouts/AuthLayout.vue';
+import LogoutLoader from '@/components/ui/logout-loader/LogoutLoader.vue';
+import { globalLogoutState } from '@/composables/useLogout';
+import { performSessionLogout, validateSession } from '@/utils/session-validator';
 
 const store = useDataStore();
-const authStore = useAuthStore();
 const route = useRoute();
-const authService = new AuthService();
 
 onMounted(() => {
     store.initializeData();
 });
 
-// Periodic token validation (every minute)
-setInterval(() => {
-    const token = Cookies.get('token');
+// Periodic token validation (every 10 seconds for better responsiveness)
+setInterval(async () => {
     const requiresAuth = route.meta.requiresAuth !== false;
 
-    if (token && authService.isTokenExpired(token)) {
-        authStore.clearUser();
-        Cookies.remove('token');
+    const validation = validateSession({
+        requiresAuth,
+        context: 'interval',
+    });
 
-        // Only redirect to login if the route requires authentication
-        if (requiresAuth) {
-            window.location.href = '/login';
-        }
+    if (validation.shouldLogout && validation.logoutReason) {
+        await performSessionLogout(validation.logoutReason);
     }
-}, 60000);
+}, 10000);
 
-// Check if current route uses auth layout
 const isAuthLayout = computed(() => {
     return route.meta.layout === 'auth';
 });
 
-// Computed property to get the current page title from route meta
 const currentPageTitle = computed(() => {
     return route.meta.title || 'Dashboard';
 });
 </script>
 
 <template>
-    <main vaul-drawer-wrapper autofocus class="h-screen w-screen overflow-hidden">
+    <main autofocus class="h-screen w-screen overflow-hidden">
         <!-- Auth layout for login, forgot-password, reset-password -->
         <AuthLayout v-if="isAuthLayout">
             <router-view />
@@ -92,4 +86,7 @@ const currentPageTitle = computed(() => {
         </div>
     </main>
     <Toaster />
+
+    <!-- Global Logout Loader -->
+    <LogoutLoader :show="globalLogoutState.showLogoutLoader.value" :reason="globalLogoutState.logoutReason.value" />
 </template>

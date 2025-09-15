@@ -135,7 +135,6 @@ export const columns: ColumnDef<Instance>[] = [
                 ip !== '-' &&
                     h(
                         'button',
-                        { onClick: (e: MouseEvent) => e.stopPropagation() },
                         {
                             class: 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 text-muted-foreground hover:text-foreground',
                             'aria-label': () => (copied.value ? 'Copied' : 'Copy IP'),

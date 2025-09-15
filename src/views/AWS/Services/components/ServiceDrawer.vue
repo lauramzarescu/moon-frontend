@@ -16,6 +16,8 @@
                     </div>
 
                     <div class="flex items-center gap-3 mr-5">
+                        <ServiceRepositorySelector :service-arn="props.row?.arn" />
+
                         <!-- Update Count Button -->
                         <UpdateDesiredCountDialog
                             :current-count="props.row?.desiredCount"
@@ -30,6 +32,7 @@
                             :container-name="props.row.containers[0].name"
                             :cluster-name="props.row.clusterName"
                             :service-name="props.row.name"
+                            :service-arn="props.row.arn"
                             :is-cluster-production="props.row.isClusterProduction"
                         />
 
@@ -96,6 +99,7 @@ import { AwsService } from '@/services/aws.service.ts';
 import RestartServiceDialog from '@/views/AWS/Services/components/RestartServiceDialog.vue';
 import UpdateDesiredCountDialog from '@/views/AWS/Services/components/UpdateDesiredCountDialog.vue';
 import UpdateServiceImageDialog from '@/views/AWS/Services/components/UpdateServiceImageDialog.vue';
+import ServiceRepositorySelector from '@/views/AWS/Services/components/ServiceRepositorySelector.vue';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
 

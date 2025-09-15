@@ -175,6 +175,7 @@ const copyToClipboard = async (text: string) => {
     try {
         await navigator.clipboard.writeText(text);
         toast({
+            variant: 'success',
             title: 'Copied to clipboard',
             description: 'Image URI has been copied to your clipboard',
         });

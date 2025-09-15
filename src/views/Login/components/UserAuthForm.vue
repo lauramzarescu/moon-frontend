@@ -18,6 +18,7 @@ import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
 import { setInitialVerificationMethod } from '@/utils/twoFactorMethodUtils.ts';
 import { TwoFactorMethod } from '@/enums/user/user.enum.ts';
 import { startAuthentication } from '@simplewebauthn/browser';
+import LoginSuccessLoader from '@/components/ui/login-success-loader/LoginSuccessLoader.vue';
 
 const authService = new AuthService();
 const userService = new UserService();
@@ -36,6 +37,7 @@ const webauthnChallengeId = ref('');
 
 const show2FAModal = ref(false);
 const qrCodeUrl = ref('');
+const showSuccessLoader = ref(false);
 
 // Security hierarchy information from login response
 const hasTotp = ref(false);
@@ -86,7 +88,7 @@ async function onSubmit(event: Event) {
             show2FAModal.value = true;
             isLoading.value = false;
         } else if (response.status === 'success') {
-            window.location.href = '/';
+            handleSuccessfulLogin();
         } else {
             toast({
                 title: 'Login Failed',
@@ -123,7 +125,7 @@ async function verifyTwoFactorCode() {
                 sessionToken.value,
             );
 
-            window.location.href = '/';
+            handleSuccessfulLogin();
             return;
         } catch (error: any) {
             console.error('WebAuthn authentication error:', error);
@@ -185,7 +187,7 @@ async function verifyTwoFactorCode() {
             await userService.verify2FASession(code);
         }
 
-        window.location.href = '/';
+        handleSuccessfulLogin();
     } catch (error) {
         console.error('2FA verification error:', error);
 
@@ -208,7 +210,7 @@ async function verifyTwoFactorCode() {
 const onSetupComplete = (enabled: boolean, verified: boolean) => {
     show2FAModal.value = false;
     requires2FASetup.value = false;
-    window.location.href = '/';
+    handleSuccessfulLogin();
 };
 
 const handle2FAModalClose = (open: boolean) => {
@@ -303,6 +305,15 @@ const goToForgotPassword = () => {
 
 const goToResetPassword = () => {
     router.push('/reset-password');
+};
+
+// Helper function to handle smooth redirect with loading animation
+const handleSuccessfulLogin = () => {
+    showSuccessLoader.value = true;
+    // Show loader for 1.2 seconds before redirecting
+    setTimeout(() => {
+        window.location.href = '/';
+    }, 1200);
 };
 </script>
 
@@ -481,5 +492,8 @@ const goToResetPassword = () => {
             <BriefcaseIcon v-else class="mr-2 h-4 w-4" />
             SAML
         </Button>
+
+        <!-- Login Success Loader -->
+        <LoginSuccessLoader :show="showSuccessLoader" />
     </div>
 </template>

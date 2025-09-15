@@ -1,5 +1,7 @@
 <template>
-    <div class="text-center space-y-2 mb-8">
+    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div class="text-center space-y-2 mb-8">
         <h1 class="text-3xl font-bold tracking-tight">Reset Two-Factor Authentication</h1>
         <p class="text-sm text-muted-foreground">Click the button below to confirm the reset of your two-factor authentication</p>
     </div>
@@ -15,6 +17,8 @@
                 <Button variant="outline" type="button" @click="backToLogin" :disabled="isLoading" class="mt-2"> Back to Login </Button>
             </div>
         </form>
+        </div>
+    </div>
     </div>
 </template>
 

@@ -1,6 +1,6 @@
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface.ts';
 import type { ComparisonData, ComparisonStats, ServiceData, ServiceVariable } from '@/views/AWS/Services/types/comparison.interface.ts';
-import { VariableStatus, VariableType } from '@/views/AWS/Services/types/comparison.interface.ts';
+import { VariableStatus } from '@/views/AWS/Services/types/comparison.interface.ts';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -49,7 +49,7 @@ export const extractVariables = (service: ServiceData): ServiceVariable[] => {
             variables.push({
                 name: env.name,
                 value: env.value,
-                type: VariableType.ENVIRONMENT,
+                isSecret: false,
                 serviceName: `${service.clusterName}/${service.serviceName}`,
             });
         });
@@ -57,8 +57,8 @@ export const extractVariables = (service: ServiceData): ServiceVariable[] => {
         secrets.forEach((secret: any) => {
             variables.push({
                 name: secret.name,
-                value: secret.value,
-                type: VariableType.SECRET,
+                valueFrom: secret.valueFrom,
+                isSecret: true,
                 serviceName: `${service.clusterName}/${service.serviceName}`,
             });
         });
@@ -231,7 +231,7 @@ export const calculateComparisonStats = (
                 allVariablesByService.forEach((variables) => {
                     variables.forEach((variable) => {
                         if (variable.name === variableName) {
-                            allValuesForVariable.push(variable.value);
+                            allValuesForVariable.push(variable.value ?? variable.valueFrom ?? 'N/A');
                         }
                     });
                 });
@@ -268,8 +268,8 @@ export const getServiceComparisonData = (
     const serviceKey = `${service.clusterName}/${service.serviceName}`;
     const variables = allVariablesByService.get(serviceKey) || [];
 
-    const envVars = sortVariables(variables.filter((v) => v.type === VariableType.ENVIRONMENT));
-    const secrets = sortVariables(variables.filter((v) => v.type === VariableType.SECRET));
+    const envVars = sortVariables(variables.filter((v) => !v.isSecret));
+    const secrets = sortVariables(variables.filter((v) => v.isSecret));
 
     const status = new Map<string, VariableStatus>();
     variables.forEach((variable) => {

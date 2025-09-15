@@ -16,7 +16,9 @@ const { auditLogs, loading, error, filters, paginationMeta, pagination, fetchAud
 const {
     deploymentsCount,
     deploymentsCountLoading,
+    deploymentsCountError,
     deploymentsDelta,
+    deploymentsPreviousCount,
     deploymentsTimelineLoading,
     chartData,
     chartOptions,
@@ -28,11 +30,9 @@ const {
 filters.action = 'aws:service:updated';
 pagination.limit = 1000;
 
-// Infinite scroll state
 const isLoadingMore = ref(false);
 const hasMoreData = ref(true);
 
-// Date formatting utilities using Moment.js
 const formatDate = (dateInput: Date | string | moment.Moment) => {
     const date = moment(dateInput);
     if (!date.isValid()) return 'Invalid Date';
@@ -51,7 +51,6 @@ const toYMD = (dateInput: Date | string | moment.Moment): string => {
     return date.format('YYYY-MM-DD');
 };
 
-// Date range state and management
 const trendDays = ref<number>(14);
 const trendStartStr = ref<string>('');
 const trendEndStr = ref<string>('');
@@ -65,7 +64,6 @@ const trendOptions = [
     { value: 60, label: 'Last 60 days' },
 ];
 
-// Computed properties for date handling using Moment.js
 const trendStartDate = computed(() => (trendStartStr.value ? moment(trendStartStr.value) : undefined));
 const trendEndDate = computed(() => (trendEndStr.value ? moment(trendEndStr.value) : undefined));
 const trendStartValue = computed(() => (trendStartStr.value ? parseDate(trendStartStr.value) : undefined));
@@ -73,26 +71,22 @@ const trendEndValue = computed(() => (trendEndStr.value ? parseDate(trendEndStr.
 const isCustomRangeActive = computed(() => Boolean(trendStartDate.value && trendEndDate.value));
 const isPresetActive = (value: number) => !isCustomRangeActive.value && trendDays.value === value;
 
-// Filter management and API calls
-const updateFilters = (startISO: string, endISO: string) => {
+const updateFilters = async (startISO: string, endISO: string) => {
     filters.startDate = startISO;
     filters.endDate = endISO;
     hasMoreData.value = true;
     isLoadingMore.value = false;
-    fetchAuditLogs(1);
-    // Fetch widget data with new date range
-    fetchAllWidgetData(startISO, endISO);
+
+    await fetchAuditLogs(1);
+    await fetchAllWidgetData(startISO, endISO);
 };
 
 const clearFilters = () => {
     trendStartStr.value = '';
     trendEndStr.value = '';
     updateFilters('', '');
-    // Fetch widget data without date filters
-    fetchAllWidgetData();
 };
 
-// Calendar event handlers
 const onCalendarChange = (val: unknown | undefined, isStart: boolean) => {
     if (val && typeof val === 'object' && 'toString' in val) {
         const d = moment(String(val));
@@ -118,24 +112,31 @@ const onCalendarChange = (val: unknown | undefined, isStart: boolean) => {
 // Preset and range application
 const applyPreset = (days: number) => {
     trendDays.value = days;
+
     const end = moment();
     const start = moment().subtract(days - 1, 'days');
+
     trendStartStr.value = '';
     trendEndStr.value = '';
-    updateFilters(toYMD(start), toYMD(end));
+
+    const startISO = toYMD(start);
+    const endISO = toYMD(end);
+
+    updateFilters(startISO, endISO);
 };
 
 const applyCustomRange = () => {
     if (!trendStartDate.value || !trendEndDate.value) return;
+
     const start = trendStartDate.value.isSameOrBefore(trendEndDate.value) ? trendStartDate.value : trendEndDate.value;
     const end = trendEndDate.value.isSameOrAfter(trendStartDate.value) ? trendEndDate.value : trendStartDate.value;
     const days = Math.max(1, end.diff(start, 'days') + 1);
+
     trendDays.value = Math.min(60, Math.max(1, days));
     updateFilters(toYMD(start), toYMD(end));
     trendPopoverOpen.value = false;
 };
 
-// UI labels and display
 const timeSelectorLabel = computed(() => {
     if (trendStartDate.value && trendEndDate.value) {
         return `Custom: ${formatDateLong(trendStartDate.value)} – ${formatDateLong(trendEndDate.value)}`;
@@ -143,7 +144,6 @@ const timeSelectorLabel = computed(() => {
     return trendOptions.find((o) => o.value === trendDays.value)?.label ?? 'Select range';
 });
 
-// Initialize with 14-day default range on component mount
 onMounted(() => {
     // Set default 14-day range
     trendDays.value = 14;
@@ -158,6 +158,10 @@ onMounted(() => {
     const startISO = toYMD(start);
     const endISO = toYMD(end);
     updateFilters(startISO, endISO);
+
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', updateStackedLabels);
+    requestAnimationFrame(() => updateStackedLabels());
 });
 
 const groupedByDay = computed(() => {
@@ -183,24 +187,30 @@ const labelForDay = (key: string) => {
     const today = moment().startOf('day');
     const target = moment(key);
     const diffDays = today.diff(target, 'days');
+
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
+
     return formatDate(target);
 };
 
-// Load more data for infinite scroll
 const loadMoreData = async () => {
     if (isLoadingMore.value || !hasMoreData.value || !paginationMeta.value) return;
+
     const nextPage = paginationMeta.value.page + 1;
     if (nextPage > paginationMeta.value.totalPages) {
         hasMoreData.value = false;
         return;
     }
+
     isLoadingMore.value = true;
+
     try {
         const currentLogs = [...auditLogs.value];
         await fetchAuditLogs(nextPage);
+
         auditLogs.value = [...currentLogs, ...auditLogs.value];
+
         if (paginationMeta.value && paginationMeta.value.page >= paginationMeta.value.totalPages) {
             hasMoreData.value = false;
         }
@@ -211,11 +221,12 @@ const loadMoreData = async () => {
     }
 };
 
-// Stacked day headers on scroll
 const stackedLabels = ref<string[]>([]);
+
 const updateStackedLabels = () => {
     const headings = Array.from(document.querySelectorAll('[data-timeline-day]')) as HTMLElement[];
     const labels: string[] = [];
+
     for (const h of headings) {
         const rect = h.getBoundingClientRect();
         if (rect.top <= 0) {
@@ -223,11 +234,10 @@ const updateStackedLabels = () => {
             if (lbl) labels.push(lbl);
         }
     }
-    // keep the most recent few
+
     stackedLabels.value = labels.slice(-3);
 };
 
-// Handle scroll events for infinite loading and stacked labels
 const handleScroll = () => {
     const scrollTop = window.scrollY;
     const scrollHeight = document.documentElement.scrollHeight;
@@ -237,14 +247,6 @@ const handleScroll = () => {
     }
     updateStackedLabels();
 };
-
-onMounted(() => {
-    fetchAuditLogs(1);
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', updateStackedLabels);
-    // initial compute after first paint
-    requestAnimationFrame(() => updateStackedLabels());
-});
 
 onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll);
@@ -340,19 +342,50 @@ watch(auditLogs, () => {
         <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch max-w-5xl">
             <!-- Current window with delta -->
             <div class="rounded-lg border bg-card p-4">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 mb-3">
                     <div class="p-2 rounded-md bg-teal-500/10 border border-teal-500/20">
                         <TrendingUp class="h-4 w-4 text-teal-400" />
                     </div>
                     <span class="text-xs text-muted-foreground">Deployments</span>
                 </div>
-                <div v-if="deploymentsCountLoading" class="flex items-center justify-center mt-2 h-12">
+                <div v-if="deploymentsCountLoading" class="flex items-center justify-center mt-2 h-20">
                     <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
                 </div>
-                <div v-else class="flex items-baseline gap-2 mt-2">
-                    <div class="text-3xl font-semibold text-foreground">{{ deploymentsCount }}</div>
-                    <div :class="['text-xs font-medium', deploymentsDelta >= 0 ? 'text-emerald-500' : 'text-red-500']">
-                        {{ deploymentsDelta >= 0 ? '+' : '' }}{{ deploymentsDelta }}%
+                <div v-else-if="deploymentsCountError" class="flex items-center justify-center mt-2 h-20">
+                    <div class="text-center text-red-500">
+                        <div class="text-sm">Error loading deployments count</div>
+                        <div class="text-xs mt-1">{{ deploymentsCountError }}</div>
+                    </div>
+                </div>
+                <div v-else class="space-y-3">
+                    <!-- Current count with delta -->
+                    <div class="flex items-baseline gap-2">
+                        <div class="text-3xl font-semibold text-foreground">{{ deploymentsCount }}</div>
+                        <div
+                            :class="[
+                                'text-xs font-medium px-1.5 py-0.5 rounded-full',
+                                deploymentsDelta >= 0 ? 'text-emerald-600' : 'text-red-600',
+                            ]"
+                        >
+                            {{ deploymentsDelta > 0 ? '+' : '' }}{{ deploymentsDelta || 0 }}%
+                        </div>
+                    </div>
+
+                    <!-- Previous period comparison -->
+                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Previous period:</span>
+                        <span class="font-medium">{{ deploymentsPreviousCount }}</span>
+                    </div>
+
+                    <!-- Change indicator -->
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-muted-foreground">Change:</span>
+                        <div class="flex items-center gap-1">
+                            <span :class="['font-medium', deploymentsDelta >= 0 ? 'text-emerald-600' : 'text-red-600']">
+                                {{ deploymentsDelta > 0 ? '+' : '' }}{{ deploymentsCount - deploymentsPreviousCount }}
+                            </span>
+                            <span class="text-muted-foreground">deployments</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -406,11 +439,11 @@ watch(auditLogs, () => {
             </div>
             <div v-for="[dayKey, items] in groupedByDay" :key="dayKey" class="mb-8">
                 <div
-                    class="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 mb-3"
+                    class="sticky top-0 z-10 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 py-2 mb-3"
                     :data-timeline-day="dayKey"
                     :data-day-label="labelForDay(dayKey)"
                 >
-                    <h3 class="text-base font-semibold text-muted-foreground bg-accent/40 inline-block px-2 py-0.5 rounded">
+                    <h3 class="text-base font-semibold text-muted-foreground inline-block px-2 py-0.5 rounded">
                         {{ labelForDay(dayKey) }}
                     </h3>
                 </div>

@@ -3,7 +3,7 @@
         <DialogContent class="sm:max-w-md">
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2">
-                    <ShieldCheckIcon class="h-5 w-5 text-blue-600" />
+                    <ShieldCheckIcon class="h-5 w-5 text-primary" />
                     {{ title }}
                 </DialogTitle>
                 <DialogDescription>
@@ -85,14 +85,6 @@
                         @submit="handleVerify"
                     />
                 </div>
-
-                <!-- Error Message -->
-                <div v-if="errorMessage" class="p-3 bg-red-50 border border-red-200 rounded-md dark:bg-red-950 dark:border-red-800">
-                    <div class="flex items-center gap-2">
-                        <AlertTriangleIcon class="h-4 w-4 text-red-600" />
-                        <span class="text-sm text-red-700 dark:text-red-300">{{ errorMessage }}</span>
-                    </div>
-                </div>
             </div>
 
             <DialogFooter v-if="!useYubikeyWebAuthn">
@@ -115,7 +107,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertTriangleIcon, Loader2Icon, ShieldCheckIcon, SmartphoneIcon } from 'lucide-vue-next';
+import { Loader2Icon, ShieldCheckIcon, SmartphoneIcon } from 'lucide-vue-next';
 import { TwoFactorMethod, YubikeyAuthType } from '@/enums/user/user.enum.ts';
 import { resetVerificationCode } from '@/utils/twoFactorUtils.ts';
 import { setInitialVerificationMethod } from '@/utils/twoFactorMethodUtils.ts';
@@ -123,6 +115,7 @@ import VerificationCodeInput from '@/components/ui/verification-code-input/Verif
 import type { AuthenticationResponseJSON } from '@simplewebauthn/browser';
 import { browserSupportsWebAuthn, startAuthentication } from '@simplewebauthn/browser';
 import { UserService } from '@/services/user.service.ts';
+import { toast } from '@/components/ui/toast';
 
 const props = defineProps<{
     open: boolean;
@@ -148,7 +141,6 @@ const useYubikey = ref(false);
 const useYubikeyWebAuthn = ref(false);
 const webauthnChallengeId = ref('');
 const isLoading = ref(false);
-const errorMessage = ref('');
 
 // Internal 2FA status - fetched when modal opens
 const hasTotp = ref(false);
@@ -242,7 +234,6 @@ const switchToTotp = () => {
     yubikeyOtp.value = '';
     webauthnChallengeId.value = '';
     resetVerificationCode(verificationCode.value, inputPrefix.value);
-    errorMessage.value = '';
 };
 
 const switchToYubikeyOtp = () => {
@@ -251,7 +242,6 @@ const switchToYubikeyOtp = () => {
     webauthnChallengeId.value = '';
     resetVerificationCode(verificationCode.value, inputPrefix.value);
     yubikeyOtp.value = '';
-    errorMessage.value = '';
 
     setTimeout(() => {
         const yubikeyInput = document.getElementById('verification-yubikey-otp');
@@ -266,14 +256,12 @@ const switchToYubikeyWebAuthn = () => {
     useYubikey.value = false;
     yubikeyOtp.value = '';
     resetVerificationCode(verificationCode.value, inputPrefix.value);
-    errorMessage.value = '';
 };
 
 const resetForm = () => {
     verificationCode.value = ['', '', '', '', '', ''];
     yubikeyOtp.value = '';
     webauthnChallengeId.value = '';
-    errorMessage.value = '';
     isLoading.value = false;
 };
 
@@ -296,7 +284,6 @@ const handleWebAuthnVerify = async () => {
 
     try {
         isLoading.value = true;
-        errorMessage.value = '';
 
         if (!browserSupportsWebAuthn()) {
             throw new Error(
@@ -378,37 +365,16 @@ const handleWebAuthnVerify = async () => {
     } catch (error: any) {
         console.error('WebAuthn verification error:', error);
 
-        let errorMsg = 'WebAuthn authentication failed. Please try again.';
-
-        if (error.name === 'NotAllowedError') {
-            if (error.message && error.message.includes('not registered')) {
-                errorMsg =
-                    'This security key is not registered with your account. Please register it first or use a different authentication method.';
-            } else {
-                errorMsg = 'Authentication was cancelled, timed out, or not allowed. Please try again.';
-            }
-        } else if (error.name === 'SecurityError') {
-            errorMsg = "Security error occurred. Please ensure you're using HTTPS and your security key is properly connected.";
-        } else if (error.name === 'AbortError') {
-            errorMsg = 'Authentication was cancelled. Please try again.';
-        } else if (error.name === 'InvalidStateError') {
-            errorMsg = 'Security key is already in use or in an invalid state. Please try again.';
-        } else if (error.name === 'NotSupportedError') {
-            errorMsg = 'WebAuthn is not supported by your browser or security key.';
-        } else if (error.name === 'UnknownError') {
-            errorMsg = 'An unknown error occurred with your security key. Please try again.';
-        } else if (error.message) {
-            errorMsg = error.message;
-        }
-
-        console.error('Detailed WebAuthn error:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-            cause: error.cause,
+        // Show error as toast
+        toast({
+            title: 'WebAuthn Authentication Failed',
+            description: error.message || 'WebAuthn authentication failed. Please try again.',
+            variant: 'destructive',
         });
 
-        errorMessage.value = errorMsg;
+        // Close the dialog
+        isOpen.value = false;
+        emit('cancel');
     } finally {
         isLoading.value = false;
     }
@@ -424,21 +390,18 @@ const setLoading = (loading: boolean) => {
 };
 
 const setError = (error: string) => {
-    errorMessage.value = error;
-    if (useYubikey.value) {
-        yubikeyOtp.value = '';
-    } else {
-        resetVerificationCode(verificationCode.value, inputPrefix.value);
-    }
-};
+    toast({
+        title: 'Verification Failed',
+        description: error,
+        variant: 'destructive',
+    });
 
-const clearError = () => {
-    errorMessage.value = '';
+    isOpen.value = false;
+    emit('cancel');
 };
 
 defineExpose({
     setLoading,
     setError,
-    clearError,
 });
 </script>

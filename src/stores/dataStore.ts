@@ -297,7 +297,7 @@ export const useDataStore = defineStore(
             isEC2InventoryLoaded,
             clustersWithLoadingStatus,
 
-            // Methods
+
             initializeData,
             setRefreshInterval,
             toggleProgressiveLoading: handleToggleProgressiveLoading,

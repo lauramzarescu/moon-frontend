@@ -4,6 +4,7 @@ import { AuthService } from '@/services/auth.service.ts';
 import { ActionService } from '@/services/action.service.ts';
 import { UserService } from '@/services/user.service.ts';
 import { useAuthStore } from '@/stores/authStore.ts';
+import { performSessionLogout, validateSession } from '@/utils/session-validator';
 
 const authService = new AuthService();
 const actionService = new ActionService();
@@ -85,6 +86,14 @@ const router = createRouter({
             },
         },
         {
+            path: '/aws/environment',
+            name: 'environment',
+            component: () => import('@/views/AWS/EnvVariablesView.vue'),
+            meta: {
+                title: 'Environment',
+            },
+        },
+        {
             path: '/aws/scheduled-tasks',
             name: 'scheduled-tasks',
             component: () => import('@/views/AWS/ScheduledTasksView.vue'),
@@ -100,6 +109,15 @@ const router = createRouter({
                 title: 'Deployment Timeline',
             },
         },
+        {
+            path: '/aws/github-links',
+            name: 'github-links',
+            component: () => import('@/views/AWS/GithubRepoLinksView.vue'),
+            meta: {
+                title: 'GitHub Repository Links',
+            },
+        },
+
         {
             path: '/settings',
             component: () => import('@/views/Settings/SettingsView.vue'),
@@ -172,19 +190,20 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
     document.title = to.meta.title ? `${to.meta.title} - Moon` : 'Moon';
 
-    const token = Cookies.get('token');
-    const isTokenExpired = authService.isTokenExpired(token || '');
-    const isAuthenticated = !!token && !isTokenExpired;
-    const requiresAuth = to.meta.requiresAuth !== false; // Default to true if not specified
+    const requiresAuth = to.meta.requiresAuth !== false;
 
-    // If token is expired, remove it
-    if (token && isTokenExpired) {
-        Cookies.remove('token');
-        const authStore = useAuthStore();
-        authStore.clearUser();
+    const validation = validateSession({
+        requiresAuth,
+        context: 'router',
+    });
+
+    if (validation.shouldLogout && validation.logoutReason) {
+        await performSessionLogout(validation.logoutReason);
+        return;
     }
 
-    // Handle authentication logic
+    const { isAuthenticated } = validation;
+
     if (requiresAuth && !isAuthenticated) {
         // If trying to go to a protected route but not authenticated, redirect to login
         next('/login');
@@ -200,6 +219,7 @@ router.beforeEach(async (to, from, next) => {
     if (isAuthenticated && requiresAuth) {
         try {
             const authStore = useAuthStore();
+            const token = Cookies.get('token');
 
             // Only fetch user data if not already set
             if (!authStore.user) {
@@ -216,11 +236,9 @@ router.beforeEach(async (to, from, next) => {
             });
         } catch (error) {
             console.error('Error setting user from token:', error);
-            // If there's an error getting user data, clear auth and redirect to login
-            Cookies.remove('token');
-            const authStore = useAuthStore();
-            authStore.clearUser();
-            next('/login');
+            // If there's an error getting user data, use logout with loader
+            const { LogoutReason } = await import('@/enums/logout/logout.enum');
+            await performSessionLogout(LogoutReason.AUTH_ERROR);
             return;
         }
     }
