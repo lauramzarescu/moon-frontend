@@ -19,7 +19,7 @@
                                 :key="availableService.name"
                                 :value="availableService.name"
                             >
-                                {{ availableService.name }}
+                                {{ availableService.name }} ({{ availableService.clusterName }})
                             </SelectItem>
                         </SelectContent>
                     </Select>
