@@ -80,3 +80,38 @@ export function delayedExecute(fn: () => void | Promise<void>): void {
         }
     }, 301);
 }
+
+/**
+ * Creates a unique identifier for a service by combining service name and cluster name.
+ * This ensures services with the same name from different clusters can be distinguished.
+ *
+ * @param service - Service object with name and clusterName properties
+ * @returns Unique identifier in format "serviceName@clusterName"
+ *
+ * @example
+ * const service = { name: 'my-api', clusterName: 'production' };
+ * const id = getServiceUniqueId(service); // "my-api@production"
+ */
+export function getServiceUniqueId(service: { name: string; clusterName: string }): string {
+    return `${service.name}@${service.clusterName}`;
+}
+
+/**
+ * Parses a service unique identifier back into service name and cluster name.
+ * Used to extract individual components from the unique identifier format.
+ *
+ * @param serviceId - Unique identifier in format "serviceName@clusterName"
+ * @returns Object with serviceName and clusterName, or null if invalid format
+ *
+ * @example
+ * const parsed = parseServiceId("my-api@production");
+ * // Returns: { serviceName: "my-api", clusterName: "production" }
+ *
+ * const invalid = parseServiceId("invalid-format");
+ * // Returns: null
+ */
+export function parseServiceId(serviceId: string): { serviceName: string; clusterName: string } | null {
+    const parts = serviceId.split('@');
+    if (parts.length !== 2) return null;
+    return { serviceName: parts[0], clusterName: parts[1] };
+}

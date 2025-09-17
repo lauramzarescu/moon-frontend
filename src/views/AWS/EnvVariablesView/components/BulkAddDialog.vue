@@ -334,6 +334,7 @@ import { storeToRefs } from 'pinia';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
 import { usePermissions } from '@/composables/usePermissions.ts';
 import SearchableServiceSelect from './BulkOperationsDialog/SearchableServiceSelect.vue';
+import { parseServiceId } from '@/utils';
 
 interface Variable {
     id: string;
@@ -426,12 +427,19 @@ const parsedVariables = computed(() => {
 
 // Available services for copy operations (excluding current service)
 const availableServices = computed(() => {
-    return services.value.filter((s) => s.name !== props.service?.name && s.clusterName === props.service?.clusterName);
+    return services.value.filter((s) =>
+        !(s.name === props.service?.name && s.clusterName === props.service?.clusterName)
+    );
 });
 
 // Available containers for selected service
 const availableContainers = computed(() => {
-    const service = services.value.find((s) => s.name === copyFromService.value.selectedService);
+    const parsed = parseServiceId(copyFromService.value.selectedService);
+    if (!parsed) return [];
+
+    const service = services.value.find((s) =>
+        s.name === parsed.serviceName && s.clusterName === parsed.clusterName
+    );
     return service?.containers.map((c) => c.name) || [];
 });
 
@@ -477,7 +485,14 @@ const onContainerChange = async () => {
 
     copyFromService.value.isLoadingVariables = true;
     try {
-        const sourceService = services.value.find((s) => s.name === copyFromService.value.selectedService);
+        const parsed = parseServiceId(copyFromService.value.selectedService);
+        if (!parsed) {
+            throw new Error('Invalid service selection');
+        }
+
+        const sourceService = services.value.find((s) =>
+            s.name === parsed.serviceName && s.clusterName === parsed.clusterName
+        );
         const sourceContainer = sourceService?.containers.find((c) => c.name === copyFromService.value.selectedContainer);
 
         if (sourceContainer?.environmentVariables) {

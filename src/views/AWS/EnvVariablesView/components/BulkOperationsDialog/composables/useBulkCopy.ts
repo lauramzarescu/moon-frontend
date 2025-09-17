@@ -4,6 +4,7 @@ import { AwsService } from '@/services/aws.service';
 import { BulkOperationType } from '@/types/aws';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface';
 import type { VariableData } from './useBulkVariables';
+import { parseServiceId } from '@/utils';
 
 export function useBulkCopy(
     service: Ref<ServiceInterface | null>,
@@ -24,7 +25,11 @@ export function useBulkCopy(
     const copySelectedOnly = ref(true);
 
     const destinationContainers = computed(() => {
-        const selectedService = availableServices.value.find((s) => s.name === copyDestination.service);
+        const parsed = parseServiceId(copyDestination.service);
+        if (!parsed) return [];
+        const selectedService = availableServices.value.find((s) =>
+            s.name === parsed.serviceName && s.clusterName === parsed.clusterName
+        );
         return selectedService?.containers.map((c) => c.name) || [];
     });
 
@@ -57,12 +62,17 @@ export function useBulkCopy(
             for (const [sourceContainerName, envVarNames] of byContainer.entries()) {
                 if (envVarNames.length === 0) continue;
 
+                const targetServiceParsed = parseServiceId(copyDestination.service);
+                if (!targetServiceParsed) {
+                    throw new Error('Invalid target service selection');
+                }
+
                 const payloadBase = {
                     sourceClusterName: service.value.clusterName,
                     sourceServiceName: service.value.name,
                     sourceContainerName,
-                    targetClusterName: service.value.clusterName,
-                    targetServiceName: copyDestination.service,
+                    targetClusterName: targetServiceParsed.clusterName,
+                    targetServiceName: targetServiceParsed.serviceName,
                     targetContainerName: copyDestination.container,
                 };
 
@@ -80,10 +90,14 @@ export function useBulkCopy(
             }
 
             const operationText = copyDestination.operation === BulkOperationType.MOVE ? 'moved' : 'copied';
+            const targetServiceParsed = parseServiceId(copyDestination.service);
+            const targetServiceDisplay = targetServiceParsed ?
+                `${targetServiceParsed.serviceName} (${targetServiceParsed.clusterName})` :
+                copyDestination.service;
 
             toast({
                 title: 'Success',
-                description: `Successfully ${operationText} ${variables.length} variables to ${copyDestination.service}/${copyDestination.container}`,
+                description: `Successfully ${operationText} ${variables.length} variables to ${targetServiceDisplay}/${copyDestination.container}`,
                 variant: 'success',
             });
 

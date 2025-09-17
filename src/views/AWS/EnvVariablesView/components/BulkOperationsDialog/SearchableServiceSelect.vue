@@ -23,7 +23,7 @@
                         <CommandGroup :heading="cluster.clusterName">
                             <CommandItem
                                 v-for="service in cluster.services"
-                                :key="service.name"
+                                :key="getServiceUniqueId(service)"
                                 :value="getServiceSearchValue(service)"
                                 @select="selectService(service)"
                                 class="cursor-pointer"
@@ -31,12 +31,12 @@
                                 <CheckIcon
                                     :class="[
                                         'mr-2 h-4 w-4',
-                                        modelValue === service.name ? 'opacity-100' : 'opacity-0'
+                                        modelValue === getServiceUniqueId(service) ? 'opacity-100' : 'opacity-0'
                                     ]"
                                 />
                                 <div class="flex items-center justify-between w-full">
                                     <span class="font-medium">{{ service.name }}</span>
-                                    <Badge 
+                                    <Badge
                                         :variant="service.isClusterProduction ? 'destructive' : 'secondary'"
                                         class="text-xs ml-2"
                                     >
@@ -60,6 +60,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-vue-next';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface';
+import { getServiceUniqueId, parseServiceId } from '@/utils';
 
 interface Props {
     modelValue: string;
@@ -82,9 +83,13 @@ const emit = defineEmits<{
 const open = ref(false);
 
 // Computed properties
-const selectedService = computed(() => 
-    props.availableServices.find(service => service.name === props.modelValue)
-);
+const selectedService = computed(() => {
+    const parsed = parseServiceId(props.modelValue);
+    if (!parsed) return null;
+    return props.availableServices.find(service =>
+        service.name === parsed.serviceName && service.clusterName === parsed.clusterName
+    );
+});
 
 const selectedServiceLabel = computed(() => {
     if (!selectedService.value) return '';
@@ -94,14 +99,14 @@ const selectedServiceLabel = computed(() => {
 const sortedServicesByCluster = computed(() => {
     // Group services by cluster
     const servicesByCluster = new Map<string, ServiceInterface[]>();
-    
+
     props.availableServices.forEach(service => {
         if (!servicesByCluster.has(service.clusterName)) {
             servicesByCluster.set(service.clusterName, []);
         }
         servicesByCluster.get(service.clusterName)!.push(service);
     });
-    
+
     // Sort clusters alphabetically and services within each cluster
     const sortedClusters = Array.from(servicesByCluster.entries())
         .sort(([clusterA], [clusterB]) => clusterA.localeCompare(clusterB))
@@ -109,7 +114,7 @@ const sortedServicesByCluster = computed(() => {
             clusterName,
             services: services.sort((a, b) => a.name.localeCompare(b.name))
         }));
-    
+
     return sortedClusters;
 });
 
@@ -119,19 +124,19 @@ const getServiceSearchValue = (service: ServiceInterface): string => {
 };
 
 const selectService = (service: ServiceInterface) => {
-    emit('update:modelValue', service.name);
+    emit('update:modelValue', getServiceUniqueId(service));
     open.value = false;
 };
 
 const filterFunction = (value: string, search: string): number => {
     const searchLower = search.toLowerCase();
     const valueLower = value.toLowerCase();
-    
+
     // Search in both service name and cluster name
     if (valueLower.includes(searchLower)) {
         return 1;
     }
-    
+
     return 0;
 };
 </script>
