@@ -9,20 +9,12 @@
             <div class="space-y-4">
                 <div>
                     <Label class="text-sm font-medium mb-2 block">Destination Service</Label>
-                    <Select v-model="copyDestinationProxy.service">
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select service" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem
-                                v-for="availableService in availableServices"
-                                :key="availableService.name"
-                                :value="availableService.name"
-                            >
-                                {{ availableService.name }} ({{ availableService.clusterName }})
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <SearchableServiceSelect
+                        v-model="copyDestinationProxy.service"
+                        :available-services="availableServices"
+                        placeholder="Select service"
+                        search-placeholder="Search services..."
+                    />
                 </div>
 
                 <div>
@@ -124,6 +116,7 @@ import { Badge } from '@/components/ui/badge';
 import { InfoIcon } from 'lucide-vue-next';
 import { BulkOperationType } from '@/types/aws';
 import type { ServiceInterface } from '@/views/AWS/Services/types/service.interface';
+import SearchableServiceSelect from './SearchableServiceSelect.vue';
 
 interface Props {
     availableServices: ServiceInterface[];

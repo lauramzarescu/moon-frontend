@@ -214,18 +214,13 @@
                         <!-- Service Selection -->
                         <div class="space-y-2">
                             <Label for="copy-service">Source Service</Label>
-                            <Select v-model="copyFromService.selectedService" @update:model-value="onServiceChange">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select service" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem v-for="service in availableServices" :key="service.name" :value="service.name">
-                                            {{ service.name }} ({{ service.clusterName }})
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
+                            <SearchableServiceSelect
+                                v-model="copyFromService.selectedService"
+                                :available-services="availableServices"
+                                placeholder="Select service"
+                                search-placeholder="Search services..."
+                                @update:model-value="onServiceChange"
+                            />
                         </div>
 
                         <!-- Container Selection -->
@@ -338,6 +333,7 @@ import { useDataStore } from '@/stores/dataStore';
 import { storeToRefs } from 'pinia';
 import { PermissionEnum } from '@/enums/user/user.enum.ts';
 import { usePermissions } from '@/composables/usePermissions.ts';
+import SearchableServiceSelect from './BulkOperationsDialog/SearchableServiceSelect.vue';
 
 interface Variable {
     id: string;
@@ -430,7 +426,7 @@ const parsedVariables = computed(() => {
 
 // Available services for copy operations (excluding current service)
 const availableServices = computed(() => {
-    return services.value.filter((s) => s.name !== props.service?.name);
+    return services.value.filter((s) => s.name !== props.service?.name && s.clusterName === props.service?.clusterName);
 });
 
 // Available containers for selected service
@@ -505,7 +501,7 @@ const onContainerChange = async () => {
                     variables.push({
                         id: `copy-secret-${secret.name}`,
                         name: secret.name,
-                        value: secret.value || secret.valueFrom || '',
+                        value: secret.valueFrom || '',
                         isSecret: true,
                     });
                 });
