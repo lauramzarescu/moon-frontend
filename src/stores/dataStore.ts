@@ -42,18 +42,6 @@ export const useDataStore = defineStore(
         const clientInfo = ref<ClientInfoResponse | null>(null);
         const hasInitialData = ref<boolean>(false);
 
-        // Validation to ensure refreshInterval is always a number
-        // watch(
-        //     refreshInterval,
-        //     (newValue: number) => {
-        //         if (typeof newValue !== 'number') {
-        //             console.warn('Invalid refreshInterval value detected, resetting to default', newValue);
-        //             refreshInterval.value = 0;
-        //         }
-        //     },
-        //     { immediate: true },
-        // );
-
         // Progressive loading state
         const loadingProgress = ref<{ current: number; total: number; stage: string }>({
             current: 0,
@@ -296,7 +284,6 @@ export const useDataStore = defineStore(
             isScheduledTasksLoaded,
             isEC2InventoryLoaded,
             clustersWithLoadingStatus,
-
 
             initializeData,
             setRefreshInterval,
