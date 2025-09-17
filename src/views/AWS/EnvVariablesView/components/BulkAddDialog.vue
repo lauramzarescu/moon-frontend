@@ -221,7 +221,7 @@
                                 <SelectContent>
                                     <SelectGroup>
                                         <SelectItem v-for="service in availableServices" :key="service.name" :value="service.name">
-                                            {{ service.name }}
+                                            {{ service.name }} ({{ service.clusterName }})
                                         </SelectItem>
                                     </SelectGroup>
                                 </SelectContent>
