@@ -14,6 +14,10 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
+                <Button size="sm" variant="outline" class="hover:shadow-sm group transition-all duration-200" @click="openGlobalFindReplace">
+                    <SearchIcon class="h-4 w-4 mr-2" />
+                    Find and Replace
+                </Button>
                 <Button size="sm" variant="outline" class="hover:shadow-sm group transition-all duration-200" @click="refreshServices">
                     <RefreshCwIcon class="h-4 w-4 mr-2 transition-transform duration-200 group-hover:rotate-180" />
                     Refresh
@@ -75,6 +79,9 @@
 
     <!-- Version Comparison Dialog -->
     <VersionComparisonDialog v-model:open="versionComparisonDialog.isOpen" :services="filteredServices" />
+
+    <!-- Global Find and Replace Dialog -->
+    <GlobalFindReplaceDialog v-model:open="globalFindReplaceDialog.isOpen" @completed="handleRefresh" />
 </template>
 
 <script setup lang="ts">
@@ -92,6 +99,7 @@ import type { ServiceInterface } from '@/views/AWS/Services/types/service.interf
 import ServiceCard from './EnvVariablesView/components/ServiceCard.vue';
 import ServiceEnvironmentDialog from './EnvVariablesView/components/ServiceEnvironmentDialog.vue';
 import VersionComparisonDialog from './EnvVariablesView/components/VersionComparisonDialog.vue';
+import GlobalFindReplaceDialog from './EnvVariablesView/components/GlobalFindReplaceDialog.vue';
 
 const store = useDataStore();
 const { services } = storeToRefs(store);
@@ -107,6 +115,10 @@ const serviceDialog = reactive({
 });
 
 const versionComparisonDialog = reactive({
+    isOpen: false,
+});
+
+const globalFindReplaceDialog = reactive({
     isOpen: false,
 });
 
@@ -156,6 +168,10 @@ const filteredServices = computed(() => {
 const openServiceDialog = (service: ServiceInterface) => {
     serviceDialog.service = service;
     serviceDialog.isOpen = true;
+};
+
+const openGlobalFindReplace = () => {
+    globalFindReplaceDialog.isOpen = true;
 };
 
 const refreshServices = () => {
